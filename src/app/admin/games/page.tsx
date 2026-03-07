@@ -1,7 +1,11 @@
 import prisma from "@/lib/prisma";
 import { Search, Filter, MoreVertical, Edit, Trash2, ExternalLink, Plus } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { GameStatusBadge } from "@/components/admin/GameStatusBadge";
+
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
 
 export default async function AdminGamesPage() {
   const games = await prisma.game.findMany({
@@ -56,7 +60,13 @@ export default async function AdminGamesPage() {
                 <td className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/5 relative">
-                      <img src={game.thumbnail} alt="" className="object-cover w-full h-full" />
+                      <Image 
+                        src={game.thumbnail} 
+                        alt="" 
+                        fill 
+                        className="object-cover"
+                        referrerPolicy="no-referrer"
+                      />
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{game.title}</span>

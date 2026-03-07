@@ -3,6 +3,9 @@ import { GameCard } from "@/components/GameCard";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 

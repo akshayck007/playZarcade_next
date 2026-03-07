@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+export const runtime = "edge";
+
 const MODIFIERS = ["unblocked", "online", "fullscreen", "mobile", "pc"];
 
 export async function POST(request: Request) {

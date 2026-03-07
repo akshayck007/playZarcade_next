@@ -1,12 +1,30 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import Parser from 'rss-parser';
 
-const parser = new Parser({
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+export const runtime = "edge";
+
+// Simple XML parser for Google Trends RSS
+function parseTrendsRss(xml: string) {
+  const items: { title: string; traffic: string }[] = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+  const titleRegex = /<title>([\s\S]*?)<\/title>/;
+  const trafficRegex = /<ht:approx_traffic>([\s\S]*?)<\/ht:approx_traffic>/;
+
+  let match;
+  while ((match = itemRegex.exec(xml)) !== null) {
+    const itemContent = match[1];
+    const titleMatch = titleRegex.exec(itemContent);
+    const trafficMatch = trafficRegex.exec(itemContent);
+
+    if (titleMatch) {
+      items.push({
+        title: titleMatch[1].trim(),
+        traffic: trafficMatch ? trafficMatch[1].trim() : '5000'
+      });
+    }
   }
-});
+  return items;
+}
 
 export async function GET(req: Request) {
   try {
@@ -21,7 +39,6 @@ export async function GET(req: Request) {
         'https://trends.google.com/trending/rss?geo=US'
       ];
 
-      let feed = null;
       for (const url of rssUrls) {
         try {
           const response = await fetch(url, {
@@ -34,24 +51,22 @@ export async function GET(req: Request) {
           
           if (response.ok) {
             const xml = await response.text();
-            feed = await parser.parseString(xml);
-            break;
+            const parsedItems = parseTrendsRss(xml);
+            
+            if (parsedItems.length > 0) {
+              parsedItems.forEach(item => {
+                trends.push({ 
+                  keyword: item.title.toLowerCase(), 
+                  volume: parseInt(item.traffic.replace(/[^0-9]/g, '') || '5000'),
+                  source: 'Google Trends RSS'
+                });
+              });
+              break; // Success
+            }
           }
         } catch (e) {
           console.error(`Failed to fetch RSS from ${url}:`, e);
         }
-      }
-
-      if (feed) {
-        feed.items.forEach(item => {
-          if (item.title) {
-            trends.push({ 
-              keyword: item.title.toLowerCase(), 
-              volume: parseInt((item as any).ht_approx_traffic?.replace(/[^0-9]/g, '') || '5000'),
-              source: 'Google Trends RSS'
-            });
-          }
-        });
       }
     } catch (e) {
       console.error("Error fetching Google Trends RSS:", e);

@@ -1,7 +1,11 @@
 import prisma from "@/lib/prisma";
 import { Gamepad2, Users, Play, TrendingUp, ArrowUpRight, ArrowDownRight, Search } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { AdminHeaderActions } from "@/components/admin/AdminHeaderActions";
+
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   const stats = [
@@ -66,7 +70,13 @@ export default async function AdminDashboard() {
               <div key={game.id} className="p-6 flex items-center justify-between hover:bg-white/5 transition-colors group">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/5 relative">
-                    <img src={game.thumbnail} alt="" className="object-cover w-full h-full" />
+                    <Image 
+                      src={game.thumbnail} 
+                      alt="" 
+                      fill 
+                      className="object-cover"
+                      referrerPolicy="no-referrer"
+                    />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{game.title}</span>
@@ -93,7 +103,13 @@ export default async function AdminDashboard() {
               <div key={game.id} className="p-6 flex items-center justify-between hover:bg-white/5 transition-colors group">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/5 relative">
-                    <img src={game.thumbnail} alt="" className="object-cover w-full h-full" />
+                    <Image 
+                      src={game.thumbnail} 
+                      alt="" 
+                      fill 
+                      className="object-cover"
+                      referrerPolicy="no-referrer"
+                    />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{game.title}</span>

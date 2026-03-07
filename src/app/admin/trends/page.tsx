@@ -3,6 +3,9 @@ import { TrendingUp, Search, ArrowUpRight, Plus } from "lucide-react";
 import { TrendMiningConsole } from "@/components/admin/TrendMiningConsole";
 import { GenerateSeoButton } from "@/components/admin/GenerateSeoButton";
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
 export default async function AdminTrendsPage() {
   const trends = await prisma.trendingKeyword.findMany({
     orderBy: { searchVolume: 'desc' }

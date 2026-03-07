@@ -4,7 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { GameCard } from "@/components/GameCard";
 import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import Markdown from "@/components/Markdown";
+
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
 
 interface GamePageProps {
   params: Promise<{ slug: string }>;
@@ -153,7 +156,7 @@ export default async function GamePage({ params }: GamePageProps) {
                   <p>{game.description}</p>
                   {game.contentBody && (
                     <div className="prose prose-invert prose-sm max-w-none">
-                      <ReactMarkdown>{game.contentBody}</ReactMarkdown>
+                      <Markdown content={game.contentBody} />
                     </div>
                   )}
                 </div>

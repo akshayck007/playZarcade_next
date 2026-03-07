@@ -5,9 +5,13 @@ import Image from "next/image";
 import { GameCard } from "@/components/GameCard";
 import { Play, Shield, Zap, Monitor, Smartphone, Globe } from "lucide-react";
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
 interface SeoPageProps {
   params: Promise<{ slug: string }>;
 }
+
 
 // SEO Modifiers and their templates
 const MODIFIERS: Record<string, { title: string, desc: string, icon: any }> = {

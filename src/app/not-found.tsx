@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 
+export const runtime = "edge";
+
 export default function NotFound() {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-8">

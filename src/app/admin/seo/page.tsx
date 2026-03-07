@@ -2,6 +2,9 @@ import prisma from "@/lib/prisma";
 import { FileText, Search, ExternalLink, Trash2, Plus, Globe } from "lucide-react";
 import Link from "next/link";
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
 export default async function AdminSeoPagesPage() {
   const seoPages = await prisma.seoPage.findMany({
     include: { game: true },
