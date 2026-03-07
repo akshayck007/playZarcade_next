@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export const runtime = "edge";
+export const dynamic = "force-dynamic";
 
 const GAMEPIX_SID = "ZA727";
 

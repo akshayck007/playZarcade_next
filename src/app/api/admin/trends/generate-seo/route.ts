@@ -3,11 +3,11 @@ import prisma from '@/lib/prisma';
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const runtime = "edge";
-
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
     const { trendId } = await request.json();
 
     const trend = await prisma.trendingKeyword.findUnique({
