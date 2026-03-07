@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { Plus, Edit, Trash2, Gamepad2, Layers } from "lucide-react";
 import Link from "next/link";
 
@@ -6,6 +6,7 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminCategoriesPage() {
+  const prisma = getPrisma();
   const categories = await prisma.category.findMany({
     include: {
       _count: {

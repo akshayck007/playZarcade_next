@@ -1,9 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { GameCard } from "@/components/GameCard";
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
 export default async function Home() {
+  const prisma = getPrisma();
   const featuredGames = await prisma.game.findMany({
     where: { isFeatured: true, isPublished: true },
     take: 6,

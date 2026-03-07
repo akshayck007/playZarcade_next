@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -28,6 +28,7 @@ function parseTrendsRss(xml: string) {
 }
 
 export async function GET(req: Request) {
+  const prisma = getPrisma();
   try {
     const { searchParams } = new URL(req.url);
     const isPreview = searchParams.get('preview') === 'true';

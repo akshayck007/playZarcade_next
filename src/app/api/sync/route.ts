@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 const GAMEPIX_SID = "ZA727";
 
 export async function GET(request: Request) {
+  const prisma = getPrisma();
   const { searchParams } = new URL(request.url);
   const page = searchParams.get('page') || '1';
   const pagination = searchParams.get('pagination') || '50';

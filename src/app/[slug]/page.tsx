@@ -1,13 +1,15 @@
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { GameCard } from "@/components/GameCard";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const prisma = getPrisma();
 
   const category = await prisma.category.findUnique({
     where: { slug },

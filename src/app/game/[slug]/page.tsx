@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,6 +8,7 @@ import Markdown from "@/components/Markdown";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 interface GamePageProps {
   params: Promise<{ slug: string }>;
@@ -15,6 +16,7 @@ interface GamePageProps {
 
 export async function generateMetadata({ params }: GamePageProps) {
   const { slug } = await params;
+  const prisma = getPrisma();
   const game = await prisma.game.findUnique({ where: { slug } });
   if (!game) return { title: "Game Not Found" };
 
@@ -31,6 +33,7 @@ export async function generateMetadata({ params }: GamePageProps) {
 
 export default async function GamePage({ params }: GamePageProps) {
   const { slug } = await params;
+  const prisma = getPrisma();
   const game = await prisma.game.findUnique({
     where: { slug },
     include: {

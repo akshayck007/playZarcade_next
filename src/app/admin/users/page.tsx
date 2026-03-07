@@ -1,10 +1,11 @@
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { Users, Search, MoreVertical, Shield, Trash2, Mail } from "lucide-react";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
+  const prisma = getPrisma();
   const users = await prisma.user.findMany({
     orderBy: { createdAt: 'desc' }
   });

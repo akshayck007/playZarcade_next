@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 const MODIFIERS = ["unblocked", "online", "fullscreen", "mobile", "pc"];
 
 export async function POST(request: Request) {
+  const prisma = getPrisma();
   try {
     const { gameId } = await request.json();
     

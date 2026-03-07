@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const prisma = getPrisma();
   const baseUrl = process.env.APP_URL || 'https://playzarcade.com';
 
   try {

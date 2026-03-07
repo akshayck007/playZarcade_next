@@ -3,7 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { Navbar } from "@/components/Navbar";
 
 const inter = Inter({ 
@@ -28,6 +28,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const prisma = getPrisma();
   const categories = await prisma.category.findMany({
     orderBy: { name: 'asc' }
   });

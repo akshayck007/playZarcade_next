@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { GameCard } from "@/components/GameCard";
 import { Search as SearchIcon } from "lucide-react";
 
@@ -11,6 +11,7 @@ export default async function SearchPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
+  const prisma = getPrisma();
 
   const games = q
     ? await prisma.game.findMany({

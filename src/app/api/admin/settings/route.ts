@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const prisma = getPrisma();
   try {
     const data = await request.json();
 

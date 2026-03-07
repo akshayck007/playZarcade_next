@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -7,6 +7,7 @@ import { Play, Shield, Zap, Monitor, Smartphone, Globe } from "lucide-react";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 interface SeoPageProps {
   params: Promise<{ slug: string }>;
@@ -60,6 +61,7 @@ export async function generateMetadata({ params }: SeoPageProps) {
   const parsed = parseSeoSlug(slug);
   if (!parsed) return { title: "Page Not Found" };
 
+  const prisma = getPrisma();
   const game = await prisma.game.findUnique({ where: { slug: parsed.gameSlug } });
   if (!game) return { title: "Game Not Found" };
 
@@ -75,6 +77,7 @@ export default async function SeoPlayPage({ params }: SeoPageProps) {
   const parsed = parseSeoSlug(slug);
   if (!parsed) notFound();
 
+  const prisma = getPrisma();
   const game = await prisma.game.findUnique({
     where: { slug: parsed.gameSlug },
     include: { category: true }

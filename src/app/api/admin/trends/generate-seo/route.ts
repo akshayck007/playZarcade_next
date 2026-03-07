@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const prisma = getPrisma();
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
     const { trendId } = await request.json();

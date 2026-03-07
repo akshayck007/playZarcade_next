@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { Gamepad2, Users, Play, TrendingUp, ArrowUpRight, ArrowDownRight, Search } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,6 +8,7 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
+  const prisma = getPrisma();
   const stats = [
     { label: "Total Games", value: await prisma.game.count(), icon: Gamepad2, trend: "+12%", isPositive: true },
     { label: "Total Users", value: await prisma.user.count(), icon: Users, trend: "+5%", isPositive: true },

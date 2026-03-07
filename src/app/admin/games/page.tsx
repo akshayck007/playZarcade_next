@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { Search, Filter, MoreVertical, Edit, Trash2, ExternalLink, Plus } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,6 +8,7 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminGamesPage() {
+  const prisma = getPrisma();
   const games = await prisma.game.findMany({
     include: { category: true },
     orderBy: { createdAt: 'desc' }
