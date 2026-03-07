@@ -3,7 +3,6 @@ import Image from "next/image";
 import { getPrisma } from "@/lib/prisma";
 import { GameCard } from "@/components/GameCard";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 export const revalidate = 300;
 

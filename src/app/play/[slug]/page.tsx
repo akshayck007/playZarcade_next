@@ -5,7 +5,6 @@ import Image from "next/image";
 import { GameCard } from "@/components/GameCard";
 import { Play, Shield, Zap, Monitor, Smartphone, Globe } from "lucide-react";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 export const revalidate = 300;
 

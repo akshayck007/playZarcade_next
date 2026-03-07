@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { AdminHeaderActions } from "@/components/admin/AdminHeaderActions";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {

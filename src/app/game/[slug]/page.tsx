@@ -6,7 +6,6 @@ import { GameCard } from "@/components/GameCard";
 import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle } from "lucide-react";
 import Markdown from "@/components/Markdown";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 export const revalidate = 300;
 

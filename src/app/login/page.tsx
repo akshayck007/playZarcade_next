@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { LogIn, UserPlus, ArrowRight } from 'lucide-react';
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {

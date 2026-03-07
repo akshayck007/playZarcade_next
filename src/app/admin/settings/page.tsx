@@ -2,7 +2,6 @@ import { getPrisma } from "@/lib/prisma";
 import { Save, Globe, Shield, Code, Database, Bell } from "lucide-react";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
