@@ -3,7 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { Navbar } from "@/components/Navbar";
 
 const inter = Inter({ 
@@ -16,6 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
 });
 
+export const runtime = "edge";
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
@@ -28,10 +29,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const prisma = getPrisma();
-  const categories = await prisma.category.findMany({
-    orderBy: { name: 'asc' }
-  });
+  const { data: categories } = await supabase
+    .from("Category")
+    .select("*")
+    .order("name", { ascending: true });
 
   return (
     <html lang="en" className={cn(inter.variable, jetbrainsMono.variable)}>

@@ -1,23 +1,19 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const prisma = getPrisma();
   try {
     // Seed Settings
-    await prisma.settings.upsert({
-      where: { id: "global" },
-      update: {
-        siteName: "PlayZ Arcade",
-      },
-      create: {
+    await supabase
+      .from("Settings")
+      .upsert({
         id: "global",
         siteName: "PlayZ Arcade",
         defaultTheme: "dark",
-      },
-    });
+      }, { onConflict: 'id' });
 
     // Seed Default Categories
     const categories = [
@@ -28,11 +24,9 @@ export async function GET() {
     ];
 
     for (const cat of categories) {
-      await prisma.category.upsert({
-        where: { slug: cat.slug },
-        update: { name: cat.name },
-        create: { name: cat.name, slug: cat.slug },
-      });
+      await supabase
+        .from("Category")
+        .upsert(cat, { onConflict: 'slug' });
     }
 
     // Seed Default Sections
@@ -43,22 +37,19 @@ export async function GET() {
     ];
 
     for (const section of sections) {
-      await prisma.section.upsert({
-        where: { slug: section.slug },
-        update: { name: section.name, order: section.order },
-        create: { name: section.name, slug: section.slug, order: section.order },
-      });
+      await supabase
+        .from("Section")
+        .upsert(section, { onConflict: 'slug' });
     }
 
     // Seed Games
-    const puzzleCat = await prisma.category.findUnique({ where: { slug: "puzzle-games" } });
-    const actionCat = await prisma.category.findUnique({ where: { slug: "action-games" } });
+    const { data: puzzleCat } = await supabase.from("Category").select("*").eq("slug", "puzzle-games").single();
+    const { data: actionCat } = await supabase.from("Category").select("*").eq("slug", "action-games").single();
 
     if (puzzleCat) {
-      await prisma.game.upsert({
-        where: { slug: "2048" },
-        update: {},
-        create: {
+      await supabase
+        .from("Game")
+        .upsert({
           title: "2048",
           slug: "2048",
           description: "A classic puzzle game where you slide numbered tiles on a grid to combine them and create a tile with the number 2048.",
@@ -68,15 +59,13 @@ export async function GET() {
           iframeUrl: "https://gamepix.com/play/2048",
           isPublished: true,
           isFeatured: true,
-        },
-      });
+        }, { onConflict: 'slug' });
     }
 
     if (actionCat) {
-      await prisma.game.upsert({
-        where: { slug: "slope" },
-        update: {},
-        create: {
+      await supabase
+        .from("Game")
+        .upsert({
           title: "Slope",
           slug: "slope",
           description: "Experience the most addictive browser game of the year. Navigate the neon slopes and beat the high score.",
@@ -95,13 +84,11 @@ export async function GET() {
             { "q": "How do I play Slope?", "a": "Use the arrow keys or A/D to steer your ball down the slope." },
             { "q": "Is Slope free?", "a": "Yes, Slope is completely free to play on PlayZ Arcade." }
           ]
-        },
-      });
+        }, { onConflict: 'slug' });
 
-      await prisma.game.upsert({
-        where: { slug: "tunnel-rush" },
-        update: {},
-        create: {
+      await supabase
+        .from("Game")
+        .upsert({
           title: "Tunnel Rush",
           slug: "tunnel-rush",
           description: "Fast-paced 3D runner game. Dodge obstacles in a neon tunnel.",
@@ -112,15 +99,12 @@ export async function GET() {
           iframeUrl: "https://gamepix.com/play/tunnel-rush",
           isPublished: true,
           isFeatured: false,
-        },
-      });
+        }, { onConflict: 'slug' });
     }
 
     return NextResponse.json({ success: true, message: "Database seeded successfully" });
   } catch (error: any) {
     console.error("[SEED ERROR]", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

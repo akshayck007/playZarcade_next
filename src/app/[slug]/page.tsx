@@ -1,43 +1,42 @@
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { GameCard } from "@/components/GameCard";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const prisma = getPrisma();
 
-  const category = await prisma.category.findUnique({
-    where: { slug },
-    include: {
-      games: {
-        where: { isPublished: true },
-        orderBy: { playCount: 'desc' }
-      }
-    }
-  });
+  const { data: category } = await supabase
+    .from("Category")
+    .select("*, Game(*)")
+    .eq("slug", slug)
+    .eq("Game.isPublished", true)
+    .single();
 
   if (!category) {
     // 1. Check if it's an SEO Shadow Page
-    const seoPage = await prisma.seoPage.findUnique({
-      where: { slug },
-      include: { game: true }
-    });
+    const { data: seoPage } = await supabase
+      .from("SeoPage")
+      .select("*, Game(*)")
+      .eq("slug", slug)
+      .single();
 
-    if (seoPage) {
-      redirect(`/game/${seoPage.game.slug}`);
+    if (seoPage && seoPage.Game) {
+      redirect(`/game/${seoPage.Game.slug}`);
     }
 
     // 2. Check if it's a trending page or something else
     if (slug === 'trending') {
-      const trendingGames = await prisma.game.findMany({
-        where: { isPublished: true },
-        orderBy: { trendScore: 'desc' },
-        take: 50
-      });
+      const { data: trendingGames } = await supabase
+        .from("Game")
+        .select("*")
+        .eq("isPublished", true)
+        .order("trendScore", { ascending: false })
+        .limit(50);
 
       return (
         <div className="space-y-12">
@@ -51,7 +50,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-            {trendingGames.map((game) => (
+            {trendingGames?.map((game) => (
               <GameCard key={game.id} game={game} />
             ))}
           </div>
@@ -77,12 +76,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-        {category.games.map((game) => (
+        {category.Game?.map((game: any) => (
           <GameCard key={game.id} game={game} />
         ))}
       </div>
 
-      {category.games.length === 0 && (
+      {(!category.Game || category.Game.length === 0) && (
         <div className="h-[400px] glass rounded-3xl flex flex-col items-center justify-center p-12 text-center space-y-4">
           <p className="text-white/20 font-black uppercase tracking-[0.5em] text-xl">No Games Found</p>
           <p className="text-white/40 max-w-md">We are currently adding more games to this category. Check back soon!</p>

@@ -1,20 +1,23 @@
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { Users, Search, MoreVertical, Shield, Trash2, Mail } from "lucide-react";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
-  const prisma = getPrisma();
-  const users = await prisma.user.findMany({
-    orderBy: { createdAt: 'desc' }
-  });
+  const { data: users } = await supabase
+    .from("User")
+    .select("*")
+    .order("createdAt", { ascending: false });
+
+  const usersList = users || [];
 
   return (
     <div className="space-y-10">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h1 className="text-4xl font-black uppercase tracking-tighter">User Management</h1>
-          <p className="text-white/40 text-sm font-bold uppercase tracking-widest">Manage {users.length} registered players</p>
+          <p className="text-white/40 text-sm font-bold uppercase tracking-widest">Manage {usersList.length} registered players</p>
         </div>
         <button className="bg-emerald-500 text-black px-8 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-colors flex items-center gap-2">
           <Mail className="w-5 h-5" />
@@ -45,7 +48,7 @@ export default async function AdminUsersPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {users.map((user) => (
+            {usersList.map((user) => (
               <tr key={user.id} className="hover:bg-white/5 transition-colors group">
                 <td className="p-6">
                   <div className="flex items-center gap-4">

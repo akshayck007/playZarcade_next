@@ -1,18 +1,16 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const prisma = getPrisma();
   try {
     const data = await request.json();
 
-    await prisma.settings.upsert({
-      where: { id: "global" },
-      update: data,
-      create: { id: "global", ...data }
-    });
+    await supabase
+      .from("Settings")
+      .upsert({ id: "global", ...data }, { onConflict: 'id' });
 
     return NextResponse.json({ success: true });
 

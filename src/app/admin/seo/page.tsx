@@ -1,15 +1,17 @@
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { FileText, Search, ExternalLink, Trash2, Plus, Globe } from "lucide-react";
 import Link from "next/link";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminSeoPagesPage() {
-  const prisma = getPrisma();
-  const seoPages = await prisma.seoPage.findMany({
-    include: { game: true },
-    orderBy: { createdAt: 'desc' }
-  });
+  const { data: seoPagesRaw } = await supabase
+    .from("SeoPage")
+    .select("*, Game(*)")
+    .order("createdAt", { ascending: false });
+
+  const seoPages = (seoPagesRaw || []).map(p => ({ ...p, game: p.Game }));
 
   return (
     <div className="space-y-10">

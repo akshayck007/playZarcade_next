@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 // Simple XML parser for Google Trends RSS
@@ -27,7 +28,6 @@ function parseTrendsRss(xml: string) {
 }
 
 export async function GET(req: Request) {
-  const prisma = getPrisma();
   try {
     const { searchParams } = new URL(req.url);
     const isPreview = searchParams.get('preview') === 'true';
@@ -126,59 +126,69 @@ export async function GET(req: Request) {
     }
 
     // Get settings
-    const settings = await prisma.settings.upsert({
-      where: { id: "global" },
-      update: {},
-      create: { id: "global" }
-    });
+    let { data: settings } = await supabase
+      .from("Settings")
+      .select("*")
+      .eq("id", "global")
+      .single();
+
+    if (!settings) {
+      const { data: newSettings } = await supabase
+        .from("Settings")
+        .insert({ id: "global" })
+        .select()
+        .single();
+      settings = newSettings;
+    }
 
     let newTrendsCount = 0;
     for (const trend of uniqueTrends) {
-      const existing = await prisma.trendingKeyword.findUnique({
-        where: { keyword: trend.keyword }
-      });
+      const { data: existing } = await supabase
+        .from("TrendingKeyword")
+        .select("*")
+        .eq("keyword", trend.keyword)
+        .single();
 
       if (!existing) {
-        await prisma.trendingKeyword.create({
-          data: {
+        await supabase
+          .from("TrendingKeyword")
+          .insert({
             keyword: trend.keyword,
             searchVolume: trend.volume,
             status: "detected"
-          }
-        });
+          });
         newTrendsCount++;
       } else {
-        await prisma.trendingKeyword.update({
-          where: { id: existing.id },
-          data: {
+        await supabase
+          .from("TrendingKeyword")
+          .update({
             searchVolume: trend.volume,
-            lastUpdated: new Date()
-          }
-        });
+            lastUpdated: new Date().toISOString()
+          })
+          .eq("id", existing.id);
       }
 
       // Auto-boost game trend scores if setting is enabled
-      if (settings.autoBoostTrending) {
+      if (settings?.autoBoostTrending) {
         const words = trend.keyword.split(' ').filter(w => w.length > 3);
         if (words.length > 0) {
           // Find games matching the trend
-          const matchingGames = await prisma.game.findMany({
-            where: {
-              OR: words.map(word => ({
-                title: { contains: word, mode: 'insensitive' }
-              }))
-            }
-          });
+          const { data: matchingGames } = await supabase
+            .from("Game")
+            .select("*")
+            .or(words.map(word => `title.ilike.%${word}%`).join(','));
 
-          for (const game of matchingGames) {
-            // Boost score based on volume (normalized)
-            const boost = trend.volume / 1000;
-            await prisma.game.update({
-              where: { id: game.id },
-              data: {
-                trendScore: { increment: boost }
-              }
-            });
+          if (matchingGames) {
+            for (const game of matchingGames) {
+              // Boost score based on volume (normalized)
+              const boost = trend.volume / 1000;
+              await supabase
+                .from("Game")
+                .update({
+                  trendScore: (game.trendScore || 0) + boost
+                })
+                .eq("id", game.id);
+            }
           }
         }
       }

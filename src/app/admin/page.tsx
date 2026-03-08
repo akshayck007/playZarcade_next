@@ -1,31 +1,37 @@
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { Gamepad2, Users, Play, TrendingUp, ArrowUpRight, ArrowDownRight, Search } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { AdminHeaderActions } from "@/components/admin/AdminHeaderActions";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const prisma = getPrisma();
+  const { count: gameCount } = await supabase.from("Game").select("*", { count: "exact", head: true });
+  const { count: userCount } = await supabase.from("User").select("*", { count: "exact", head: true });
+
   const stats = [
-    { label: "Total Games", value: await prisma.game.count(), icon: Gamepad2, trend: "+12%", isPositive: true },
-    { label: "Total Users", value: await prisma.user.count(), icon: Users, trend: "+5%", isPositive: true },
+    { label: "Total Games", value: gameCount || 0, icon: Gamepad2, trend: "+12%", isPositive: true },
+    { label: "Total Users", value: userCount || 0, icon: Users, trend: "+5%", isPositive: true },
     { label: "Daily Plays", value: "124,502", icon: Play, trend: "-2%", isPositive: false },
     { label: "Trend Score", value: "84.2", icon: TrendingUp, trend: "+18%", isPositive: true },
   ];
 
-  const recentGames = await prisma.game.findMany({
-    take: 5,
-    orderBy: { createdAt: 'desc' },
-    include: { category: true }
-  });
+  const { data: recentGamesRaw } = await supabase
+    .from("Game")
+    .select("*, Category(*)")
+    .order("createdAt", { ascending: false })
+    .limit(5);
 
-  const topGames = await prisma.game.findMany({
-    take: 5,
-    orderBy: { playCount: 'desc' },
-    include: { category: true }
-  });
+  const { data: topGamesRaw } = await supabase
+    .from("Game")
+    .select("*, Category(*)")
+    .order("playCount", { ascending: false })
+    .limit(5);
+
+  const recentGames = (recentGamesRaw || []).map(g => ({ ...g, category: g.Category }));
+  const topGames = (topGamesRaw || []).map(g => ({ ...g, category: g.Category }));
 
   return (
     <div className="space-y-10">

@@ -1,4 +1,4 @@
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -6,8 +6,9 @@ import { GameCard } from "@/components/GameCard";
 import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle } from "lucide-react";
 import Markdown from "@/components/Markdown";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
-export const revalidate = 300;
+export const revalidate = 600;
 
 interface GamePageProps {
   params: Promise<{ slug: string }>;
@@ -15,8 +16,12 @@ interface GamePageProps {
 
 export async function generateMetadata({ params }: GamePageProps) {
   const { slug } = await params;
-  const prisma = getPrisma();
-  const game = await prisma.game.findUnique({ where: { slug } });
+  const { data: game } = await supabase
+    .from("Game")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
   if (!game) return { title: "Game Not Found" };
 
   return {
@@ -32,26 +37,23 @@ export async function generateMetadata({ params }: GamePageProps) {
 
 export default async function GamePage({ params }: GamePageProps) {
   const { slug } = await params;
-  const prisma = getPrisma();
-  const game = await prisma.game.findUnique({
-    where: { slug },
-    include: {
-      mediaAssets: true,
-      category: true,
-    }
-  });
+  
+  const { data: game, error } = await supabase
+    .from("Game")
+    .select("*, Category(*), MediaAsset(*)")
+    .eq("slug", slug)
+    .single();
 
-  if (!game) notFound();
+  if (!game || error) notFound();
 
-  const relatedGames = await prisma.game.findMany({
-    where: { 
-      categoryId: game.categoryId,
-      id: { not: game.id },
-      isPublished: true 
-    },
-    take: 12,
-    orderBy: { playCount: 'desc' }
-  });
+  const { data: relatedGames } = await supabase
+    .from("Game")
+    .select("*")
+    .eq("categoryId", game.categoryId)
+    .neq("id", game.id)
+    .eq("isPublished", true)
+    .order("playCount", { ascending: false })
+    .limit(12);
 
   // Structured Data (JSON-LD)
   const jsonLd = {
@@ -60,7 +62,7 @@ export default async function GamePage({ params }: GamePageProps) {
     "name": game.title,
     "description": game.description,
     "image": game.thumbnail,
-    "genre": game.category?.name || "Casual",
+    "genre": game.Category?.name || "Casual",
     "playMode": "SinglePlayer",
     "applicationCategory": "Game",
     "operatingSystem": "Web Browser",
@@ -80,7 +82,7 @@ export default async function GamePage({ params }: GamePageProps) {
       <nav className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-white/30 font-bold">
         <Link href="/" className="hover:text-emerald-500 transition-colors">Home</Link>
         <span>/</span>
-        <Link href={`/${game.category?.slug}`} className="hover:text-emerald-500 transition-colors">{game.category?.name}</Link>
+        <Link href={`/${game.Category?.slug}`} className="hover:text-emerald-500 transition-colors">{game.Category?.name}</Link>
         <span>/</span>
         <span className="text-white/60">{game.title}</span>
       </nav>
@@ -125,7 +127,7 @@ export default async function GamePage({ params }: GamePageProps) {
             <div className="flex items-center gap-6">
               <div className="flex flex-col">
                 <h1 className="text-xl font-black uppercase tracking-tight">{game.title}</h1>
-                <span className="text-[10px] text-white/30 uppercase tracking-widest font-bold">{game.category?.name}</span>
+                <span className="text-[10px] text-white/30 uppercase tracking-widest font-bold">{game.Category?.name}</span>
               </div>
               <div className="h-8 w-px bg-white/10"></div>
               <div className="flex items-center gap-4">
@@ -184,14 +186,14 @@ export default async function GamePage({ params }: GamePageProps) {
 
             {/* Media & FAQ */}
             <div className="space-y-8">
-              {game.mediaAssets.length > 0 && (
+              {game.MediaAsset && game.MediaAsset.length > 0 && (
                 <div className="space-y-4">
                   <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
                     <Play className="w-5 h-5 text-emerald-500" />
                     Gameplay Media
                   </h2>
                   <div className="space-y-4">
-                    {game.mediaAssets.map((asset) => (
+                    {game.MediaAsset.map((asset: any) => (
                       <div key={asset.id} className="rounded-2xl overflow-hidden border border-white/5">
                         {asset.type === 'video_embed' ? (
                           <div className="aspect-video" dangerouslySetInnerHTML={{ __html: asset.url }} />
@@ -272,7 +274,7 @@ export default async function GamePage({ params }: GamePageProps) {
           </h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {relatedGames.map((g) => (
+          {relatedGames?.map((g) => (
             <GameCard key={g.id} game={g} />
           ))}
         </div>

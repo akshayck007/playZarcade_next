@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const prisma = getPrisma();
   try {
     const { gameId, iframeUrl } = await request.json();
 
@@ -12,21 +12,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Iframe URL is required" }, { status: 400 });
     }
 
-    const game = await prisma.game.findUnique({
-      where: { id: gameId }
-    });
+    const { data: game } = await supabase
+      .from("Game")
+      .select("*")
+      .eq("id", gameId)
+      .single();
 
     if (!game) {
       return NextResponse.json({ success: false, error: "Game not found" }, { status: 404 });
     }
 
-    await prisma.game.update({
-      where: { id: gameId },
-      data: {
+    await supabase
+      .from("Game")
+      .update({
         iframeUrl: iframeUrl,
-        updatedAt: new Date()
-      }
-    });
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", gameId);
 
     return NextResponse.json({ 
       success: true, 

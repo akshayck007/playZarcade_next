@@ -1,7 +1,8 @@
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { GameCard } from "@/components/GameCard";
 import { Search as SearchIcon } from "lucide-react";
 
+export const runtime = "edge";
 export const dynamic = 'force-dynamic';
 
 export default async function SearchPage({
@@ -10,22 +11,18 @@ export default async function SearchPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const prisma = getPrisma();
 
-  const games = q
-    ? await prisma.game.findMany({
-        where: {
-          OR: [
-            { title: { contains: q, mode: 'insensitive' } },
-            { description: { contains: q, mode: 'insensitive' } },
-            { tags: { has: q.toLowerCase() } },
-          ],
-          isPublished: true,
-        },
-        take: 24,
-        orderBy: { playCount: 'desc' },
-      })
-    : [];
+  let games: any[] = [];
+  if (q) {
+    const { data } = await supabase
+      .from("Game")
+      .select("*")
+      .or(`title.ilike.%${q}%,description.ilike.%${q}%`)
+      .eq("isPublished", true)
+      .order("playCount", { ascending: false })
+      .limit(24);
+    games = data || [];
+  }
 
   return (
     <div className="space-y-12">

@@ -1,10 +1,11 @@
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { GameCard } from "@/components/GameCard";
 import { Play, Shield, Zap, Monitor, Smartphone, Globe } from "lucide-react";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
@@ -60,8 +61,11 @@ export async function generateMetadata({ params }: SeoPageProps) {
   const parsed = parseSeoSlug(slug);
   if (!parsed) return { title: "Page Not Found" };
 
-  const prisma = getPrisma();
-  const game = await prisma.game.findUnique({ where: { slug: parsed.gameSlug } });
+  const { data: game } = await supabase
+    .from("Game")
+    .select("*")
+    .eq("slug", parsed.gameSlug)
+    .single();
   if (!game) return { title: "Game Not Found" };
 
   const modInfo = MODIFIERS[parsed.modifier];
@@ -76,26 +80,25 @@ export default async function SeoPlayPage({ params }: SeoPageProps) {
   const parsed = parseSeoSlug(slug);
   if (!parsed) notFound();
 
-  const prisma = getPrisma();
-  const game = await prisma.game.findUnique({
-    where: { slug: parsed.gameSlug },
-    include: { category: true }
-  });
+  const { data: game } = await supabase
+    .from("Game")
+    .select("*, Category(*)")
+    .eq("slug", parsed.gameSlug)
+    .single();
 
   if (!game) notFound();
 
   const modInfo = MODIFIERS[parsed.modifier];
   const Icon = modInfo.icon;
 
-  const relatedGames = await prisma.game.findMany({
-    where: { 
-      categoryId: game.categoryId,
-      id: { not: game.id },
-      isPublished: true 
-    },
-    take: 12,
-    orderBy: { playCount: 'desc' }
-  });
+  const { data: relatedGames } = await supabase
+    .from("Game")
+    .select("*")
+    .eq("categoryId", game.categoryId)
+    .neq("id", game.id)
+    .eq("isPublished", true)
+    .order("playCount", { ascending: false })
+    .limit(12);
 
   return (
     <div className="space-y-12">
@@ -209,11 +212,11 @@ export default async function SeoPlayPage({ params }: SeoPageProps) {
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
             <span className="w-2 h-8 bg-emerald-500 rounded-full"></span>
-            More {game.category?.name} Games
+            More {game.Category?.name} Games
           </h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {relatedGames.map((g) => (
+          {relatedGames?.map((g) => (
             <GameCard key={g.id} game={g} />
           ))}
         </div>

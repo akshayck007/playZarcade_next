@@ -5,14 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "postinstall": "prisma generate"
+    "lint": "next lint"
   },
   "dependencies": {
     "@google/genai": "^1.44.0",
-    "@prisma/client": "^6.4.1",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.39.7",
     "@tailwindcss/postcss": "^4.2.1",
@@ -37,12 +35,8 @@
     "eslint": "^9.39.3",
     "eslint-config-next": "15.1.0",
     "postcss": "^8.5.8",
-    "prisma": "^6.4.1",
     "tailwindcss": "^4.2.1",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2"
-  },
-  "prisma": {
-    "seed": "npx tsx prisma/seed.ts"
   }
 }

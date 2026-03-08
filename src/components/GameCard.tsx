@@ -1,10 +1,9 @@
-import { Game } from "@prisma/client";
 import { Play, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 interface GameCardProps {
-  game: Game;
+  game: any;
 }
 
 export function GameCard({ game }: GameCardProps) {

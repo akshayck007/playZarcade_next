@@ -1,15 +1,18 @@
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { TrendingUp, Search, ArrowUpRight, Plus } from "lucide-react";
 import { TrendMiningConsole } from "@/components/admin/TrendMiningConsole";
 import { GenerateSeoButton } from "@/components/admin/GenerateSeoButton";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminTrendsPage() {
-  const prisma = getPrisma();
-  const trends = await prisma.trendingKeyword.findMany({
-    orderBy: { searchVolume: 'desc' }
-  });
+  const { data: trendsRaw } = await supabase
+    .from("TrendingKeyword")
+    .select("*")
+    .order("searchVolume", { ascending: false });
+
+  const trends = trendsRaw || [];
 
   return (
     <div className="space-y-10">

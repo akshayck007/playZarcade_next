@@ -1,19 +1,20 @@
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { Plus, Edit, Trash2, Gamepad2, Layers } from "lucide-react";
 import Link from "next/link";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminCategoriesPage() {
-  const prisma = getPrisma();
-  const categories = await prisma.category.findMany({
-    include: {
-      _count: {
-        select: { games: true }
-      }
-    },
-    orderBy: { name: 'asc' }
-  });
+  const { data: categoriesRaw } = await supabase
+    .from("Category")
+    .select("*, Game(id)")
+    .order("name", { ascending: true });
+
+  const categories = (categoriesRaw || []).map(cat => ({
+    ...cat,
+    _count: { games: cat.Game?.length || 0 }
+  }));
 
   return (
     <div className="space-y-10">

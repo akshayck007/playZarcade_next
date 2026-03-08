@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 const GAMEPIX_SID = "ZA727";
 
 export async function GET(request: Request) {
-  const prisma = getPrisma();
   const { searchParams } = new URL(request.url);
   const page = searchParams.get('page') || '1';
   const pagination = searchParams.get('pagination') || '50';
@@ -42,37 +42,39 @@ export async function GET(request: Request) {
 
       // Find or create category
       const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
-      let category = await prisma.category.findUnique({ where: { slug: categorySlug } });
+      let { data: category } = await supabase
+        .from("Category")
+        .select("*")
+        .eq("slug", categorySlug)
+        .single();
+
       if (!category) {
-        category = await prisma.category.create({
-          data: {
+        const { data: newCat } = await supabase
+          .from("Category")
+          .insert({
             name: categoryName,
             slug: categorySlug
-          }
-        });
+          })
+          .select()
+          .single();
+        category = newCat;
       }
 
-      await prisma.game.upsert({
-        where: { slug: String(slug) },
-        update: {
-          title: String(title),
-          description: String(description),
-          thumbnail: String(thumbnail),
-          iframeUrl: String(iframeUrl),
-          categoryId: category.id,
-          tags: [categoryName.toLowerCase(), "gamepix"],
-        },
-        create: {
-          title: String(title),
+      if (!category) continue;
+
+      await supabase
+        .from("Game")
+        .upsert({
           slug: String(slug),
+          title: String(title),
           description: String(description),
           thumbnail: String(thumbnail),
           iframeUrl: String(iframeUrl),
           categoryId: category.id,
           tags: [categoryName.toLowerCase(), "gamepix"],
-          trendScore: Math.random() * 100, // Initial random trend score
-        },
-      });
+          trendScore: Math.random() * 100,
+        }, { onConflict: 'slug' });
+      
       syncedCount++;
     }
 

@@ -1,12 +1,16 @@
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { Save, Globe, Shield, Code, Database, Bell } from "lucide-react";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
-  const prisma = getPrisma();
-  const settings = await prisma.settings.findUnique({ where: { id: "global" } });
+  const { data: settings } = await supabase
+    .from("Settings")
+    .select("*")
+    .eq("id", "global")
+    .single();
 
   return (
     <div className="space-y-10">
@@ -121,7 +125,7 @@ export default async function AdminSettingsPage() {
             </h2>
             <div className="space-y-3">
               <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                <span className="text-white/40">Prisma Client</span>
+                <span className="text-white/40">Supabase Client</span>
                 <span className="text-emerald-500">Connected</span>
               </div>
               <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">

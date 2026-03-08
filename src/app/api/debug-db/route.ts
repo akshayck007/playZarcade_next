@@ -1,16 +1,21 @@
 import { NextResponse } from "next/server";
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const prisma = getPrisma();
   try {
-    const categories = await prisma.category.findMany();
-    const games = await prisma.game.findMany();
+    const { data: categories, error: catError } = await supabase.from("Category").select("*");
+    const { data: games, error: gameError } = await supabase.from("Game").select("*");
+    
+    if (catError || gameError) {
+      return NextResponse.json({ catError, gameError }, { status: 500 });
+    }
+
     return NextResponse.json({ 
-      categoriesCount: categories.length, 
-      gamesCount: games.length,
+      categoriesCount: categories?.length || 0, 
+      gamesCount: games?.length || 0,
       categories 
     });
   } catch (error: any) {

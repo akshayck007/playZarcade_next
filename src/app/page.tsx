@@ -1,30 +1,34 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getPrisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { GameCard } from "@/components/GameCard";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 export default async function Home() {
-  const prisma = getPrisma();
-  const featuredGames = await prisma.game.findMany({
-    where: { isFeatured: true, isPublished: true },
-    take: 6,
-    orderBy: { playCount: 'desc' }
-  });
+  const { data: featuredGames } = await supabase
+    .from("Game")
+    .select("*")
+    .eq("isFeatured", true)
+    .eq("isPublished", true)
+    .order("playCount", { ascending: false })
+    .limit(6);
 
-  const trendingGames = await prisma.game.findMany({
-    where: { isPublished: true },
-    take: 12,
-    orderBy: { trendScore: 'desc' }
-  });
+  const { data: trendingGames } = await supabase
+    .from("Game")
+    .select("*")
+    .eq("isPublished", true)
+    .order("trendScore", { ascending: false })
+    .limit(12);
 
-  const categories = await prisma.category.findMany({
-    take: 8
-  });
+  const { data: categories } = await supabase
+    .from("Category")
+    .select("*")
+    .limit(8);
 
-  const heroGame = featuredGames[0] || trendingGames[0];
+  const heroGame = (featuredGames?.[0] || trendingGames?.[0]);
 
   return (
     <div className="space-y-16">
