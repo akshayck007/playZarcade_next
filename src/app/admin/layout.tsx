@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, Gamepad2, Layers, TrendingUp, Settings, Search, Users, FileText } from "lucide-react";
+import { LayoutDashboard, Gamepad2, Layers, TrendingUp, Settings, Search, Users, FileText, RefreshCw } from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -9,6 +9,7 @@ export default function AdminLayout({
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
     { icon: Gamepad2, label: "Games", href: "/admin/games" },
+    { icon: RefreshCw, label: "GamePix Sync", href: "/admin/games/sync" },
     { icon: Layers, label: "Categories", href: "/admin/categories" },
     { icon: TrendingUp, label: "Trends", href: "/admin/trends" },
     { icon: FileText, label: "SEO Pages", href: "/admin/seo" },

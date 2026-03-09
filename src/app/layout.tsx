@@ -29,10 +29,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { data: categories } = await supabase
+  const { data: categoriesRaw } = await supabase
     .from("Category")
     .select("*")
     .order("name", { ascending: true });
+  
+  const categories = categoriesRaw || [];
 
   return (
     <html lang="en" className={cn(inter.variable, jetbrainsMono.variable)}>

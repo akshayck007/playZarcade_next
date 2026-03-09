@@ -1,32 +1,85 @@
+'use client';
+
 import { supabase } from "@/lib/supabase";
-import { Plus, Edit, Trash2, Gamepad2, Layers } from "lucide-react";
+import { Plus, Edit, Trash2, Gamepad2, Layers, Sparkles, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-export const runtime = "edge";
-export const dynamic = "force-dynamic";
+export default function AdminCategoriesPage() {
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [cleaning, setCleaning] = useState(false);
+  const router = useRouter();
 
-export default async function AdminCategoriesPage() {
-  const { data: categoriesRaw } = await supabase
-    .from("Category")
-    .select("*, Game(id)")
-    .order("name", { ascending: true });
+  const fetchCategories = async () => {
+    setLoading(true);
+    const { data: categoriesRaw } = await supabase
+      .from("Category")
+      .select("*, Game(id)")
+      .order("name", { ascending: true });
 
-  const categories = (categoriesRaw || []).map(cat => ({
-    ...cat,
-    _count: { games: cat.Game?.length || 0 }
-  }));
+    const processed = (categoriesRaw || []).map(cat => ({
+      ...cat,
+      _count: { games: cat.Game?.length || 0 }
+    }));
+    setCategories(processed);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleCleanup = async () => {
+    if (!confirm("This will merge duplicate categories (Action, Puzzle, etc.) and remove empty ones. Continue?")) return;
+    
+    setCleaning(true);
+    try {
+      const res = await fetch('/api/admin/categories/cleanup');
+      const data = await res.json();
+      if (data.success) {
+        alert("Cleanup successful!");
+        fetchCategories();
+      } else {
+        alert("Cleanup failed: " + data.error);
+      }
+    } catch (err) {
+      alert("An error occurred during cleanup");
+    } finally {
+      setCleaning(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-4xl font-black uppercase tracking-tighter">Categories</h1>
           <p className="text-white/40 text-sm font-bold uppercase tracking-widest">Organize your games into {categories.length} segments</p>
         </div>
-        <button className="bg-emerald-500 text-black px-6 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-colors flex items-center gap-2">
-          <Plus className="w-5 h-5" />
-          New Category
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={handleCleanup}
+            disabled={cleaning}
+            className="bg-white/5 text-white/60 px-6 py-3 rounded-full font-black uppercase tracking-tight hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            {cleaning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-emerald-500" />}
+            Cleanup Duplicates
+          </button>
+          <button className="bg-emerald-500 text-black px-6 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-colors flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            New Category
+          </button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

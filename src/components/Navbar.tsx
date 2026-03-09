@@ -60,14 +60,14 @@ export function Navbar({ categories }: NavbarProps) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="absolute top-full left-0 w-64 glass border border-white/10 rounded-2xl p-4 shadow-2xl origin-top-left"
+                    className="absolute top-full left-0 w-96 bg-[#0a0a0a] border border-white/10 rounded-2xl p-4 shadow-2xl origin-top-left z-50"
                   >
-                    <div className="grid grid-cols-1 gap-2">
+                    <div className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
                       {categories.map((cat) => (
                         <Link 
                           key={cat.id} 
                           href={`/${cat.slug}`}
-                          className="px-4 py-2 rounded-xl hover:bg-white/5 hover:text-emerald-500 transition-colors text-sm font-bold uppercase tracking-tight"
+                          className="px-4 py-2 rounded-xl hover:bg-white/5 text-white/80 hover:text-emerald-500 transition-colors text-sm font-bold uppercase tracking-tight"
                         >
                           {cat.name}
                         </Link>
@@ -117,7 +117,7 @@ export function Navbar({ categories }: NavbarProps) {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="md:hidden absolute top-full left-0 w-full glass border-b border-white/10 overflow-hidden"
+            className="md:hidden absolute top-full left-0 w-full bg-[#0a0a0a] border-b border-white/10 overflow-hidden z-50"
           >
             <nav className="flex flex-col gap-4 py-6 px-6">
               <form onSubmit={handleSearch} className="relative mb-4">
