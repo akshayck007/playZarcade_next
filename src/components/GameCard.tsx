@@ -1,6 +1,9 @@
-import { Play, TrendingUp } from "lucide-react";
+'use client';
+
+import { Play } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "motion/react";
 
 interface GameCardProps {
   game: any;
@@ -10,32 +13,30 @@ export function GameCard({ game }: GameCardProps) {
   return (
     <Link 
       href={`/game/${game.slug}`} 
-      className="group relative flex flex-col gap-3 game-card-hover"
+      className="group relative flex flex-col gap-3"
     >
-      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-white/5">
+      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-white/5 border border-white/5 group-hover:border-emerald-500/50 transition-colors">
         <Image 
           src={game.thumbnail} 
           alt={game.title}
           fill
+          loading="lazy"
           className="object-cover transition-transform duration-500 group-hover:scale-110"
           referrerPolicy="no-referrer"
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
         />
         
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center transform scale-50 group-hover:scale-100 transition-transform duration-300">
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+          <motion.div 
+            initial={{ scale: 0.5 }}
+            whileHover={{ scale: 1.1 }}
+            className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20"
+          >
             <Play className="w-6 h-6 text-black fill-current ml-1" />
-          </div>
+          </motion.div>
+          <span className="text-xs font-black uppercase tracking-widest text-emerald-500">Play Now</span>
         </div>
-
-        {/* Badges */}
-        {game.trendScore > 100 && (
-          <div className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded-md flex items-center gap-1 shadow-lg">
-            <TrendingUp className="w-3 h-3" />
-            Hot
-          </div>
-        )}
       </div>
 
       <div className="px-1">
@@ -44,10 +45,10 @@ export function GameCard({ game }: GameCardProps) {
         </h3>
         <div className="flex items-center justify-between mt-1">
           <span className="text-[10px] text-white/30 uppercase tracking-widest font-medium">
-            {game.tags?.[0] || "Casual"}
+            {game.Category?.name || "Casual"}
           </span>
           <span className="text-[10px] text-white/20 font-mono">
-            {game.playCount.toLocaleString()} Plays
+            {(game.playCount || 0).toLocaleString()} Plays
           </span>
         </div>
       </div>

@@ -1,0 +1,50 @@
+import { NextResponse } from 'next/server';
+import { supabase } from "@/lib/supabase";
+
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const categories = searchParams.get('categories')?.split(',').filter(Boolean);
+  const sort = searchParams.get('sort') || 'trendScore';
+  const limit = parseInt(searchParams.get('limit') || '20');
+  const offset = parseInt(searchParams.get('offset') || '0');
+
+  try {
+    let query = supabase
+      .from("Game")
+      .select("*, Category!inner(name, slug)")
+      .eq("isPublished", true);
+
+    if (categories && categories.length > 0) {
+      // Expand categories to handle both 'action' and 'action-games' patterns
+      const expandedCategories = Array.from(new Set(
+        categories.flatMap(c => [
+          c, 
+          c.endsWith('-games') ? c : `${c}-games`,
+          c.replace(/-games$/, '')
+        ])
+      ));
+      query = query.in('Category.slug', expandedCategories);
+    }
+
+    // Map sort parameter to column name
+    const sortColumn = sort === 'play_count' ? 'playCount' : 
+                       sort === 'quality_score' ? 'qualityScore' : 
+                       sort === 'newest' ? 'created_at' :
+                       'trendScore';
+
+    query = query.order(sortColumn, { ascending: false })
+                 .range(offset, offset + limit - 1);
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, games: data });
+  } catch (error: any) {
+    console.error("[GAMES API ERROR]", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

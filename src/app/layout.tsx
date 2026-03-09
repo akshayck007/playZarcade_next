@@ -34,10 +34,28 @@ export default async function RootLayout({
     .select("*")
     .order("name", { ascending: true });
   
+  const { data: settings } = await supabase
+    .from("Settings")
+    .select("*")
+    .eq("id", "global")
+    .single();
+  
   const categories = categoriesRaw || [];
 
   return (
     <html lang="en" className={cn(inter.variable, jetbrainsMono.variable)}>
+      <head>
+        {settings?.googleVerification && (
+          <meta name="google-site-verification" content={settings.googleVerification} />
+        )}
+        {settings?.adsenseId && (
+          <script 
+            async 
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${settings.adsenseId}`}
+            crossOrigin="anonymous"
+          />
+        )}
+      </head>
       <body className="min-h-screen bg-[#050505] text-white">
         <Navbar categories={categories} />
 

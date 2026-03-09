@@ -8,16 +8,26 @@ interface SettingToggleProps {
   label: string;
   description: string;
   initialValue: boolean;
-  field: string;
+  field?: string;
+  onToggle?: (value: boolean) => void;
 }
 
-export function SettingToggle({ id, label, description, initialValue, field }: SettingToggleProps) {
+export function SettingToggle({ id, label, description, initialValue, field, onToggle }: SettingToggleProps) {
   const [value, setValue] = useState(initialValue);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleToggle = async () => {
-    setIsLoading(true);
     const newValue = !value;
+    
+    if (onToggle) {
+      setValue(newValue);
+      onToggle(newValue);
+      return;
+    }
+
+    if (!field) return;
+
+    setIsLoading(true);
     try {
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
