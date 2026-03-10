@@ -56,14 +56,15 @@ export default async function RootLayout({
           />
         )}
       </head>
-      <body className="min-h-screen bg-[#050505] text-white">
+      <body className="min-h-screen bg-background text-white selection:bg-neon-cyan selection:text-black">
+        <div className="scanline" />
         <Navbar categories={categories} />
 
-        <main className="max-w-7xl mx-auto px-6 py-8">
+        <main className="max-w-7xl mx-auto px-6 py-8 relative z-10">
           {children}
         </main>
 
-        <footer className="border-t border-white/10 px-6 py-12 mt-20">
+        <footer className="border-t border-white/5 px-6 py-12 mt-20 bg-dark-surface/50 backdrop-blur-md relative z-10">
           <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
               <h3 className="text-sm font-bold uppercase mb-4">Platform</h3>

@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { GameCard } from "@/components/GameCard";
-import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle } from "lucide-react";
+import { GameActions } from "@/components/GameActions";
+import { AdSlot } from "@/components/AdSlot";
+import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle, TrendingUp } from "lucide-react";
 import Markdown from "@/components/Markdown";
 
 export const runtime = "edge";
@@ -123,29 +125,7 @@ export default async function GamePage({ params }: GamePageProps) {
           </div>
 
           {/* Action Bar */}
-          <div className="flex items-center justify-between glass p-4 rounded-2xl">
-            <div className="flex items-center gap-6">
-              <div className="flex flex-col">
-                <h1 className="text-xl font-black uppercase tracking-tight">{game.title}</h1>
-                <span className="text-[10px] text-white/30 uppercase tracking-widest font-bold">{game.Category?.name}</span>
-              </div>
-              <div className="h-8 w-px bg-white/10"></div>
-              <div className="flex items-center gap-4">
-                <button className="flex items-center gap-2 text-sm font-bold text-white/60 hover:text-red-500 transition-colors">
-                  <Heart className="w-5 h-5" />
-                  <span>{game.playCount > 1000 ? "1.2k" : "842"}</span>
-                </button>
-                <button className="flex items-center gap-2 text-sm font-bold text-white/60 hover:text-emerald-500 transition-colors">
-                  <Share2 className="w-5 h-5" />
-                  <span>Share</span>
-                </button>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="block text-lg font-black text-emerald-500">{game.playCount.toLocaleString()}</span>
-              <span className="block text-[10px] text-white/30 uppercase tracking-widest font-bold">Total Plays</span>
-            </div>
-          </div>
+          <GameActions game={game} />
 
           {/* Game Info Tabs/Sections */}
           <div className="grid md:grid-cols-2 gap-8">
@@ -236,13 +216,8 @@ export default async function GamePage({ params }: GamePageProps) {
 
         {/* Sidebar - Ads & Related */}
         <aside className="space-y-8">
-          {/* Ad Slot Placeholder */}
-          <div className="h-[600px] glass rounded-3xl flex flex-col items-center justify-center p-6 text-center border-dashed border-white/10">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mb-4">Advertisement</span>
-            <div className="w-full h-full bg-white/5 rounded-2xl flex items-center justify-center">
-              <span className="text-xs text-white/10 font-bold uppercase">Skyscraper Ad Slot</span>
-            </div>
-          </div>
+          {/* Ad Slot */}
+          <AdSlot id="game-page-sidebar" type="skyscraper" className="mx-auto" />
 
           {/* Quick Stats */}
           <div className="glass p-6 rounded-3xl space-y-4">
@@ -260,6 +235,33 @@ export default async function GamePage({ params }: GamePageProps) {
                 <span className="text-xs text-white/60">Platform</span>
                 <span className="text-xs font-bold">HTML5</span>
               </div>
+            </div>
+          </div>
+
+          {/* Popular in Category Sidebar */}
+          <div className="space-y-6">
+            <h3 className="text-sm font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
+              Popular in {game.Category?.name}
+            </h3>
+            <div className="space-y-4">
+              {relatedGames?.slice(0, 5).map((g) => (
+                <Link key={g.id} href={`/game/${g.slug}`} className="flex gap-4 group">
+                  <div className="relative w-20 h-15 rounded-xl overflow-hidden flex-shrink-0 border border-white/5 group-hover:border-emerald-500/50 transition-colors">
+                    <Image 
+                      src={g.thumbnail} 
+                      alt={g.title} 
+                      fill 
+                      className="object-cover transition-transform group-hover:scale-110" 
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                  <div className="flex flex-col justify-center min-w-0">
+                    <h4 className="text-xs font-bold uppercase tracking-tight truncate group-hover:text-emerald-500 transition-colors">{g.title}</h4>
+                    <span className="text-[8px] text-white/20 font-mono uppercase tracking-widest">{g.playCount.toLocaleString()} Plays</span>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         </aside>

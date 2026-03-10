@@ -24,30 +24,32 @@ export function CategoryTabs({ activeTab, onTabChange, onOpenMore }: CategoryTab
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`relative px-6 py-2.5 rounded-full text-sm font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+            className={`relative px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap skew-x-[-12deg] ${
               activeTab === tab.id 
                 ? 'text-black' 
-                : 'text-white/40 hover:text-white hover:bg-white/5'
+                : 'text-white/40 hover:text-white hover:bg-white/5 border border-white/5'
             }`}
           >
             {activeTab === tab.id && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute inset-0 bg-emerald-500 rounded-full"
+                className="absolute inset-0 bg-neon-cyan shadow-[0_0_20px_rgba(0,243,255,0.4)]"
                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
               />
             )}
-            <span className="relative z-10">{tab.label}</span>
+            <span className="relative z-10 block skew-x-[12deg]">{tab.label}</span>
           </button>
         ))}
       </div>
 
       <button
         onClick={onOpenMore}
-        className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-black uppercase tracking-widest text-white/40 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all whitespace-nowrap group"
+        className="flex items-center gap-2 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-neon-cyan hover:bg-neon-cyan/10 transition-all whitespace-nowrap group border border-white/5 skew-x-[-12deg]"
       >
-        More
-        <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        <span className="skew-x-[12deg] flex items-center gap-2">
+          More
+          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </span>
       </button>
     </div>
   );

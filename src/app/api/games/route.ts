@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const categories = searchParams.get('categories')?.split(',').filter(Boolean);
+  const q = searchParams.get('q');
   const sort = searchParams.get('sort') || 'trendScore';
   const limit = parseInt(searchParams.get('limit') || '20');
   const offset = parseInt(searchParams.get('offset') || '0');
@@ -14,8 +15,12 @@ export async function GET(request: Request) {
   try {
     let query = supabase
       .from("Game")
-      .select("*, Category!inner(name, slug)")
+      .select("*, Category(name, slug)")
       .eq("isPublished", true);
+
+    if (q) {
+      query = query.ilike('title', `%${q}%`);
+    }
 
     if (categories && categories.length > 0) {
       // Expand categories to handle both 'action' and 'action-games' patterns
@@ -26,7 +31,20 @@ export async function GET(request: Request) {
           c.replace(/-games$/, '')
         ])
       ));
-      query = query.in('Category.slug', expandedCategories);
+      
+      // Fetch category IDs first to filter more reliably
+      const { data: catData } = await supabase
+        .from("Category")
+        .select("id")
+        .in("slug", expandedCategories);
+      
+      if (catData && catData.length > 0) {
+        const catIds = catData.map(c => c.id);
+        query = query.in('categoryId', catIds);
+      } else {
+        // If no categories match the slugs, return empty results
+        return NextResponse.json({ success: true, games: [] });
+      }
     }
 
     // Map sort parameter to column name

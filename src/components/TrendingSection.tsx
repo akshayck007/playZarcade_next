@@ -80,6 +80,9 @@ export function TrendingSection() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setSelectedCategories([]); // Clear multi-select when switching main tabs
+    if (tab === 'trending') {
+      setSort('trend_score');
+    }
   };
 
   const handleApplyCategories = (categories: string[]) => {
@@ -118,8 +121,8 @@ export function TrendingSection() {
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 flex flex-col items-center justify-center gap-4"
               >
-                <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Fetching Games...</span>
+                <Loader2 className="w-10 h-10 text-neon-cyan animate-spin" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/20">ACCESSING DATABASE...</span>
               </motion.div>
             ) : (
               <motion.div 
@@ -152,9 +155,9 @@ export function TrendingSection() {
                   setActiveTab('trending');
                   setSelectedCategories([]);
                 }}
-                className="text-xs font-bold text-emerald-500 uppercase tracking-widest hover:underline"
+                className="text-xs font-bold text-neon-cyan uppercase tracking-widest hover:underline"
               >
-                Clear all filters
+                Reset Connection
               </button>
             </div>
           )}
@@ -162,7 +165,7 @@ export function TrendingSection() {
           {/* Loading More Spinner */}
           {loadingMore && (
             <div className="flex justify-center py-10">
-              <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+              <Loader2 className="w-6 h-6 text-neon-cyan animate-spin" />
             </div>
           )}
         </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+import { RecentlyPlayed, Favorites } from "@/components/RecentlyPlayed";
 import { TrendingSection } from "@/components/TrendingSection";
 import { Play, Sparkles } from "lucide-react";
 
@@ -9,104 +10,60 @@ export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 export default async function Home() {
-  const { data: featuredGames } = await supabase
-    .from("Game")
-    .select("*, Category(name, slug)")
-    .eq("isFeatured", true)
-    .eq("isPublished", true)
-    .order("playCount", { ascending: false })
-    .limit(1);
-
-  const heroGame = featuredGames?.[0];
+  const { data: categories } = await supabase
+    .from("Category")
+    .select("*")
+    .order("name", { ascending: true });
 
   return (
     <div className="space-y-32 pb-20">
       {/* Discovery Section - Tasks 1-11 - Now at the top */}
+      <RecentlyPlayed />
+      <Favorites />
+      
       <TrendingSection />
 
-      {/* Hero Section - Task 13 Refinement */}
-      <section className="relative z-10 h-[500px] md:h-[600px] rounded-[3rem] overflow-hidden group border border-white/5 shadow-2xl">
-        {heroGame ? (
-          <>
-            <Image 
-              src={heroGame.thumbnail} 
-              alt={heroGame.title} 
-              fill
-              priority
-              className="object-cover transition-transform duration-1000 group-hover:scale-105"
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent flex flex-col justify-end p-10 md:p-16">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-emerald-500 font-black uppercase tracking-[0.3em] text-[10px]">Featured Game</span>
-              </div>
-              <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-6 group-hover:text-emerald-500 transition-colors duration-500 leading-none">
-                {heroGame.title}
-              </h1>
-              <p className="text-white/60 max-w-2xl mb-10 text-lg font-medium leading-relaxed">
-                {heroGame.description}
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Link href={`/game/${heroGame.slug}`} className="bg-emerald-500 text-black px-10 py-4 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-3 active:scale-95">
-                  <Play className="w-5 h-5 fill-current" />
-                  Play Now
-                </Link>
-                <Link href={`/game/${heroGame.slug}`} className="glass px-10 py-4 rounded-full font-black uppercase tracking-tight hover:bg-white/10 transition-all border border-white/10 active:scale-95">
-                  View Details
-                </Link>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="absolute inset-0 bg-white/5 flex flex-col items-center justify-center gap-4">
-            <Sparkles className="w-12 h-12 text-white/10" />
-            <p className="text-white/20 font-black uppercase tracking-[0.5em]">No Featured Games</p>
-          </div>
-        )}
-      </section>
-
       {/* SEO Content Section */}
-      <section className="prose prose-invert max-w-none border-t border-white/10 pt-20">
+      <section className="prose prose-invert max-w-none border-t border-neon-cyan/10 pt-20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
-          <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter m-0">
-            The Best Free <span className="text-emerald-500">Browser Games</span> Online
+          <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter m-0 cyber-text-glow text-neon-cyan">
+            The Best Free <span className="text-white">Browser Games</span> Online
           </h2>
           <div className="flex items-center gap-4">
-            <div className="px-4 py-2 glass rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40">
-              No Downloads
+            <div className="px-4 py-2 bg-neon-cyan/5 border border-neon-cyan/20 rounded-lg text-[10px] font-black uppercase tracking-widest text-neon-cyan">
+              NO DOWNLOADS
             </div>
-            <div className="px-4 py-2 glass rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40">
-              Free to Play
+            <div className="px-4 py-2 bg-neon-magenta/5 border border-neon-magenta/20 rounded-lg text-[10px] font-black uppercase tracking-widest text-neon-magenta">
+              FREE TO PLAY
             </div>
           </div>
         </div>
         
-        <p className="text-white/60 leading-relaxed text-lg max-w-4xl">
-          Welcome to PlayZ Arcade, your number one destination for high-quality browser games. Whether you&apos;re looking for action-packed shooters, brain-teasing puzzles, or high-speed racing games, we have something for everyone. Our platform is optimized for performance, ensuring you can play your favorite games instantly on any device without downloads.
+        <p className="text-white/60 leading-relaxed text-lg max-w-4xl font-mono">
+          [SYSTEM_LOG]: Welcome to PlayZ Arcade. Initializing high-performance gaming protocols. Whether you&apos;re looking for action-packed shooters, brain-teasing puzzles, or high-speed racing games, we have something for everyone. Our platform is optimized for performance, ensuring you can play your favorite games instantly on any device without downloads.
         </p>
         
         <div className="grid md:grid-cols-3 gap-8 mt-16">
-          <div className="glass p-8 rounded-[2rem] border border-white/5 hover:border-emerald-500/30 transition-all group">
-            <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-500 transition-colors">
-              <Sparkles className="w-6 h-6 text-emerald-500 group-hover:text-black transition-colors" />
+          <div className="glass p-8 rounded-none border border-white/5 hover:border-neon-cyan/30 transition-all group skew-x-[-2deg]">
+            <div className="w-12 h-12 bg-neon-cyan/10 rounded-none flex items-center justify-center mb-6 group-hover:bg-neon-cyan transition-colors shadow-[0_0_15px_rgba(0,243,255,0.2)]">
+              <Sparkles className="w-6 h-6 text-neon-cyan group-hover:text-black transition-colors" />
             </div>
-            <h3 className="text-xl font-black uppercase tracking-tight mb-3">No Downloads Required</h3>
-            <p className="text-sm text-white/40 leading-relaxed">All our games are HTML5 based, meaning they run directly in your browser. Just click and play.</p>
+            <h3 className="text-xl font-black uppercase tracking-tight mb-3 text-neon-cyan">Instant Access</h3>
+            <p className="text-xs font-mono text-white/40 leading-relaxed">All our games are HTML5 based, meaning they run directly in your browser. Just click and play.</p>
           </div>
-          <div className="glass p-8 rounded-[2rem] border border-white/5 hover:border-emerald-500/30 transition-all group">
-            <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-500 transition-colors">
-              <Play className="w-6 h-6 text-emerald-500 group-hover:text-black transition-colors" />
+          <div className="glass p-8 rounded-none border border-white/5 hover:border-neon-magenta/30 transition-all group skew-x-[2deg]">
+            <div className="w-12 h-12 bg-neon-magenta/10 rounded-none flex items-center justify-center mb-6 group-hover:bg-neon-magenta transition-colors shadow-[0_0_15px_rgba(255,0,255,0.2)]">
+              <Play className="w-6 h-6 text-neon-magenta group-hover:text-black transition-colors" />
             </div>
-            <h3 className="text-xl font-black uppercase tracking-tight mb-3">Mobile Optimized</h3>
-            <p className="text-sm text-white/40 leading-relaxed">Take your gaming on the go. Our platform is fully responsive and works perfectly on smartphones and tablets.</p>
+            <h3 className="text-xl font-black uppercase tracking-tight mb-3 text-neon-magenta">Mobile Ready</h3>
+            <p className="text-xs font-mono text-white/40 leading-relaxed">Take your gaming on the go. Our platform is fully responsive and works perfectly on smartphones and tablets.</p>
           </div>
-          <div className="glass p-8 rounded-[2rem] border border-white/5 hover:border-emerald-500/30 transition-all group">
-            <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-500 transition-colors">
-              <TrendingUp className="w-6 h-6 text-emerald-500 group-hover:text-black transition-colors" />
+          <div className="glass p-8 rounded-none border border-white/5 hover:border-neon-lime/30 transition-all group skew-x-[-2deg]">
+            <div className="w-12 h-12 bg-neon-lime/10 rounded-none flex items-center justify-center mb-6 group-hover:bg-neon-lime transition-colors shadow-[0_0_15px_rgba(188,255,0,0.2)]">
+              <TrendingUp className="w-6 h-6 text-neon-lime group-hover:text-black transition-colors" />
             </div>
-            <h3 className="text-xl font-black uppercase tracking-tight mb-3">Global Leaderboards</h3>
-            <p className="text-sm text-white/40 leading-relaxed">Compete with players from around the world and prove your skills on our global high-score boards.</p>
+            <h3 className="text-xl font-black uppercase tracking-tight mb-3 text-neon-lime">Global Sync</h3>
+            <p className="text-xs font-mono text-white/40 leading-relaxed">Compete with players from around the world and prove your skills on our global high-score boards.</p>
           </div>
         </div>
       </section>

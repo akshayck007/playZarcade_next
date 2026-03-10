@@ -1,8 +1,9 @@
 'use client';
 
-import { RefreshCw, Eye, X, Terminal, CheckCircle2, AlertCircle } from "lucide-react";
+import { RefreshCw, Eye, X, Terminal, CheckCircle2, AlertCircle, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { GoogleGenAI, Type } from "@google/genai";
 
 interface RawTrend {
   keyword: string;
@@ -16,6 +17,67 @@ export function TrendMiningConsole() {
   const [previewData, setPreviewData] = useState<RawTrend[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'previewing' | 'mining' | 'complete'>('idle');
+  const [isRefining, setIsRefining] = useState(false);
+
+  const handleAIRefine = async () => {
+    if (!previewData || previewData.length === 0) return;
+    
+    setIsRefining(true);
+    setError(null);
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+      
+      if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+        throw new Error("Gemini API Key is missing or invalid. Please set NEXT_PUBLIC_GEMINI_API_KEY in your environment variables or Secrets panel.");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Analyze these raw search trends and identify potential NEW or RISING web/browser games.
+        
+        Raw Trends:
+        ${previewData.map(t => `${t.keyword} (${t.source})`).join('\n')}
+        
+        Rules:
+        1. Extract specific game titles (e.g., "Bloxd.io", "Voxiom", "Slope").
+        2. Focus on "rising" or "trending" titles that are likely to be popular web games.
+        3. Ignore generic terms like "unblocked games" or "io games" unless they are part of a specific search (e.g., "unblocked games 76").
+        4. Filter out non-game trends (weather, news, politics, etc.).
+        5. Use Google Search to verify if a term is a real game if you are unsure.
+        
+        Return the result as a JSON array of strings containing ONLY the kept game titles.`,
+        config: {
+          responseMimeType: "application/json",
+          tools: [{ googleSearch: {} }],
+          responseSchema: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING }
+          }
+        }
+      });
+
+      const filteredKeywords = JSON.parse(response.text || "[]");
+      const filtered = previewData.filter(t => 
+        filteredKeywords.some((fk: string) => fk.toLowerCase() === t.keyword.toLowerCase())
+      );
+      
+      setPreviewData(filtered);
+    } catch (err) {
+      console.error("AI Refine Error:", err);
+      setError("AI Refinement failed. Using heuristic filters only.");
+    } finally {
+      setIsRefining(false);
+    }
+  };
+
+  const removeTrend = (index: number) => {
+    if (!previewData) return;
+    const newData = [...previewData];
+    newData.splice(index, 1);
+    setPreviewData(newData);
+  };
 
   const handlePreview = async () => {
     setIsLoading(true);
@@ -42,15 +104,34 @@ export function TrendMiningConsole() {
     setError(null);
     setStatus('mining');
     try {
-      const res = await fetch('/api/admin/trends/mine');
-      const data = await res.json();
-      if (data.success) {
-        setStatus('complete');
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+      // If we have preview data, we send it via POST to save exactly what we see
+      if (previewData && previewData.length > 0) {
+        const res = await fetch('/api/admin/trends/mine', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trends: previewData })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setStatus('complete');
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } else {
+          setError(data.error || "Mining failed");
+        }
       } else {
-        setError(data.error || "Mining failed");
+        // Otherwise trigger full auto-mine
+        const res = await fetch('/api/admin/trends/mine');
+        const data = await res.json();
+        if (data.success) {
+          setStatus('complete');
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } else {
+          setError(data.error || "Mining failed");
+        }
       }
     } catch (err) {
       setError("Network error during mining");
@@ -145,15 +226,33 @@ export function TrendMiningConsole() {
                 ) : previewData ? (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-xs font-black uppercase tracking-widest text-white/30">Found {previewData.length} Raw Results</h4>
+                      <div className="flex items-center gap-4">
+                        <h4 className="text-xs font-black uppercase tracking-widest text-white/30">Found {previewData.length} Raw Results</h4>
+                        <button 
+                          onClick={handleAIRefine}
+                          disabled={isRefining}
+                          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-400 transition-colors disabled:opacity-50"
+                        >
+                          <Sparkles className={`w-3 h-3 ${isRefining ? 'animate-pulse' : ''}`} />
+                          {isRefining ? 'Refining...' : 'Clean with AI'}
+                        </button>
+                      </div>
                       <span className="text-[10px] font-bold text-emerald-500 uppercase bg-emerald-500/10 px-2 py-1 rounded">Live Data</span>
                     </div>
                     <div className="grid grid-cols-1 gap-2">
                       {previewData.map((item, i) => (
                         <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors group">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{item.keyword}</span>
-                            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">{item.source}</span>
+                          <div className="flex items-center gap-4">
+                            <button 
+                              onClick={() => removeTrend(i)}
+                              className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/10 rounded-lg text-red-500 transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{item.keyword}</span>
+                              <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">{item.source}</span>
+                            </div>
                           </div>
                           <div className="text-right">
                             <span className="text-xs font-mono text-white/40">{item.volume.toLocaleString()} vol</span>

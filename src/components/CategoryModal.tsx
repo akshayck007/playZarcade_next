@@ -71,32 +71,32 @@ export function CategoryModal({ isOpen, onClose, selectedCategories, onApply }: 
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl"
+            className="relative w-full max-w-2xl bg-dark-surface border border-neon-cyan/20 rounded-none overflow-hidden shadow-[0_0_50px_rgba(0,243,255,0.1)]"
           >
             {/* Header */}
-            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/5">
               <div>
-                <h2 className="text-2xl font-black uppercase tracking-tighter">All Categories</h2>
-                <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">Select one or more genres</p>
+                <h2 className="text-2xl font-black uppercase tracking-tighter text-neon-cyan cyber-text-glow">Genre Protocol</h2>
+                <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-1">Select target categories for filtering</p>
               </div>
               <button 
                 onClick={onClose}
-                className="w-10 h-10 glass rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+                className="w-10 h-10 glass rounded-none flex items-center justify-center hover:bg-white/10 transition-colors skew-x-[-12deg]"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 skew-x-[12deg]" />
               </button>
             </div>
 
             {/* Search */}
             <div className="px-8 py-6">
               <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-emerald-500 transition-colors" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-neon-cyan transition-colors" />
                 <input 
                   type="text"
-                  placeholder="Search categories..."
+                  placeholder="SEARCH GENRES..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
+                  className="w-full bg-white/5 border border-white/5 rounded-none py-4 pl-12 pr-4 text-xs font-mono focus:outline-none focus:border-neon-cyan/50 focus:bg-white/10 transition-all"
                 />
               </div>
             </div>
@@ -105,8 +105,8 @@ export function CategoryModal({ isOpen, onClose, selectedCategories, onApply }: 
             <div className="px-8 pb-8 max-h-[400px] overflow-y-auto custom-scrollbar">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
-                  <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Loading Genres...</span>
+                  <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20">ACCESSING GENRES...</span>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -131,13 +131,13 @@ export function CategoryModal({ isOpen, onClose, selectedCategories, onApply }: 
             <div className="p-8 bg-white/5 border-t border-white/5 flex items-center justify-between">
               <button 
                 onClick={() => setTempSelected([])}
-                className="text-xs font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+                className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
               >
                 Clear All
               </button>
               <button 
                 onClick={handleApply}
-                className="bg-emerald-500 text-black px-10 py-4 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                className="cyber-button text-xs"
               >
                 Apply Filters
               </button>

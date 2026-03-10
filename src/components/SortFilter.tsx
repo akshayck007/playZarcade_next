@@ -25,11 +25,13 @@ export function SortFilter({ currentSort, onSortChange }: SortFilterProps) {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 px-6 py-3 glass rounded-full text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all border border-white/5"
+        className="flex items-center gap-3 px-6 py-3 bg-dark-surface border border-neon-cyan/20 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-neon-cyan/5 transition-all skew-x-[-12deg]"
       >
-        <currentOption.icon className="w-4 h-4 text-emerald-500" />
-        {currentOption.label}
-        <ChevronDown className={`w-4 h-4 text-white/20 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="skew-x-[12deg] flex items-center gap-3">
+          <currentOption.icon className="w-4 h-4 text-neon-cyan cyber-text-glow" />
+          {currentOption.label}
+          <ChevronDown className={`w-4 h-4 text-white/20 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        </span>
       </button>
 
       <AnimatePresence>
@@ -40,7 +42,7 @@ export function SortFilter({ currentSort, onSortChange }: SortFilterProps) {
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="absolute right-0 top-full mt-2 w-56 bg-[#0f0f0f] border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50"
+              className="absolute right-0 top-full mt-2 w-56 bg-dark-surface border border-neon-cyan/30 rounded-none overflow-hidden shadow-[0_0_30px_rgba(0,243,255,0.1)] z-50"
             >
               {options.map((opt) => (
                 <button
@@ -51,11 +53,11 @@ export function SortFilter({ currentSort, onSortChange }: SortFilterProps) {
                   }}
                   className={`w-full flex items-center gap-3 px-6 py-4 text-left transition-colors ${
                     currentSort === opt.id 
-                      ? 'bg-emerald-500 text-black' 
-                      : 'text-white/60 hover:bg-white/5 hover:text-white'
+                      ? 'bg-neon-cyan text-black' 
+                      : 'text-white/60 hover:bg-neon-cyan/10 hover:text-neon-cyan'
                   }`}
                 >
-                  <opt.icon className={`w-4 h-4 ${currentSort === opt.id ? 'text-black' : 'text-emerald-500'}`} />
+                  <opt.icon className={`w-4 h-4 ${currentSort === opt.id ? 'text-black' : 'text-neon-cyan'}`} />
                   <span className="text-[10px] font-black uppercase tracking-widest">{opt.label}</span>
                 </button>
               ))}
