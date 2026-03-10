@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { LogIn, UserPlus, ArrowRight, Chrome, Mail, Lock, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {

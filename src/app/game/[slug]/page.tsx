@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { GameCard } from "@/components/GameCard";
 import { GameActions } from "@/components/GameActions";
+import { GamePlayer } from "@/components/GamePlayer";
 import { AdSlot } from "@/components/AdSlot";
 import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle, TrendingUp } from "lucide-react";
 import Markdown from "@/components/Markdown";
@@ -93,8 +94,8 @@ export default async function GamePage({ params }: GamePageProps) {
         {/* Main Content */}
         <div className="space-y-8">
           {/* Game Window Container */}
-          <div className="relative aspect-video bg-black rounded-3xl overflow-hidden border border-white/5 shadow-2xl group">
-            {isShadowPage ? (
+          {isShadowPage ? (
+            <div className="relative aspect-video bg-black rounded-3xl overflow-hidden border border-white/5 shadow-2xl group">
               <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center space-y-6">
                 <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center animate-pulse">
                   <Info className="w-12 h-12 text-white/20" />
@@ -107,22 +108,10 @@ export default async function GamePage({ params }: GamePageProps) {
                   <Link href="#related" className="bg-emerald-500 text-black px-8 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-colors">Try Similar Games</Link>
                 </div>
               </div>
-            ) : (
-              <iframe 
-                src={game.iframeUrl!} 
-                className="w-full h-full border-0"
-                allowFullScreen
-                title={game.title}
-              />
-            )}
-            
-            {/* Fullscreen Overlay (Placeholder for logic) */}
-            <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button className="glass p-3 rounded-full hover:bg-white/10 transition-colors">
-                <Maximize2 className="w-5 h-5" />
-              </button>
             </div>
-          </div>
+          ) : (
+            <GamePlayer iframeUrl={game.iframeUrl!} title={game.title} />
+          )}
 
           {/* Action Bar */}
           <GameActions game={game} />

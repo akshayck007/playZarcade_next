@@ -34,14 +34,14 @@ export function GameActions({ game }: GameActionsProps) {
   };
 
   const handleFullscreen = () => {
-    const iframe = document.querySelector('iframe');
-    if (iframe) {
-      if (iframe.requestFullscreen) {
-        iframe.requestFullscreen();
-      } else if ((iframe as any).webkitRequestFullscreen) {
-        (iframe as any).webkitRequestFullscreen();
-      } else if ((iframe as any).msRequestFullscreen) {
-        (iframe as any).msRequestFullscreen();
+    const container = document.querySelector('.game-container') || document.querySelector('iframe');
+    if (container) {
+      if (container.requestFullscreen) {
+        container.requestFullscreen();
+      } else if ((container as any).webkitRequestFullscreen) {
+        (container as any).webkitRequestFullscreen();
+      } else if ((container as any).msRequestFullscreen) {
+        (container as any).msRequestFullscreen();
       }
     }
   };
