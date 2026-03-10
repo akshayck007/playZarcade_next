@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User } from 'lucide-react';
+import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User, Home, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
@@ -102,8 +102,14 @@ export function Navbar({ categories }: NavbarProps) {
           </Link>
           
           <nav className="hidden md:flex items-center gap-6 text-xs font-black uppercase tracking-widest text-white/60">
-            <Link href="/" className="hover:text-neon-cyan transition-colors">Home</Link>
-            <Link href="/trending" className="hover:text-neon-cyan transition-colors">Trending</Link>
+            <Link href="/" className="hover:text-neon-cyan transition-colors flex items-center gap-2">
+              <Home className="w-3.5 h-3.5" />
+              Home
+            </Link>
+            <Link href="/trending" className="hover:text-neon-cyan transition-colors flex items-center gap-2">
+              <Flame className="w-3.5 h-3.5" />
+              Trending
+            </Link>
             
             {/* Genres Dropdown */}
             <div 
@@ -365,8 +371,14 @@ export function Navbar({ categories }: NavbarProps) {
                   )}
                 </AnimatePresence>
               </div>
-              <Link href="/" className="text-lg font-bold uppercase tracking-tight" onClick={() => setIsMenuOpen(false)}>Home</Link>
-              <Link href="/trending" className="text-lg font-bold uppercase tracking-tight" onClick={() => setIsMenuOpen(false)}>Trending</Link>
+              <Link href="/" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                <Home className="w-5 h-5 text-neon-cyan" />
+                Home
+              </Link>
+              <Link href="/trending" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                <Flame className="w-5 h-5 text-neon-cyan" />
+                Trending
+              </Link>
               
               {user ? (
                 <button 

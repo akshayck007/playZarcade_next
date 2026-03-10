@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { Navbar } from "@/components/Navbar";
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -108,6 +109,9 @@ export default async function RootLayout({
             &copy; {new Date().getFullYear()} PlayZ Arcade. All rights reserved.
           </div>
         </footer>
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        )}
       </body>
     </html>
   );
