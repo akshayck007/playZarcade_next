@@ -1,11 +1,26 @@
 import Link from "next/link";
-import { LayoutDashboard, Gamepad2, Layers, TrendingUp, Settings, Search, Users, FileText, RefreshCw } from "lucide-react";
+import { LayoutDashboard, Gamepad2, Layers, TrendingUp, Settings, Search, Users, FileText, RefreshCw, LogOut } from "lucide-react";
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { SignOutButton } from "@/components/admin/SignOutButton";
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = createServerComponentClient({ cookies });
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  // Basic admin check - you can expand this to check roles or specific emails
+  // For now, we'll just ensure they are logged in.
+  // In a real app, you might check: if (session.user.email !== 'admin@example.com') redirect('/')
+
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
     { icon: Gamepad2, label: "Games", href: "/admin/games" },
@@ -40,16 +55,21 @@ export default function AdminLayout({
           ))}
         </nav>
 
-        <div className="absolute bottom-0 w-full p-6 border-t border-white/10">
+        <div className="absolute bottom-0 w-full p-6 border-t border-white/10 space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center font-black text-black">
-              AD
+            <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center font-black text-black overflow-hidden">
+              {session.user.user_metadata?.avatar_url ? (
+                <img src={session.user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                session.user.email?.substring(0, 2).toUpperCase()
+              )}
             </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-bold">Admin User</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-bold truncate">{session.user.user_metadata?.full_name || session.user.email}</span>
               <span className="text-[10px] text-white/40">Super Admin</span>
             </div>
           </div>
+          <SignOutButton />
         </div>
       </aside>
 

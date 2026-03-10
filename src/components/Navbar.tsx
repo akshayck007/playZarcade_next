@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Search, Menu, X, Loader2, Play } from 'lucide-react';
+import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 
 interface Category {
   id: string;
@@ -21,17 +22,35 @@ interface NavbarProps {
 export function Navbar({ categories }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGenresOpen, setIsGenresOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -209,12 +228,62 @@ export function Navbar({ categories }: NavbarProps) {
             </AnimatePresence>
           </div>
           
-          <Link 
-            href="/login"
-            className="cyber-button text-xs"
-          >
-            Login
-          </Link>
+          {user ? (
+            <div className="relative" ref={profileRef}>
+              <button 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="w-10 h-10 rounded-full bg-neon-cyan/20 border border-neon-cyan/30 flex items-center justify-center overflow-hidden hover:border-neon-cyan transition-all"
+              >
+                {user.user_metadata?.avatar_url ? (
+                  <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-5 h-5 text-neon-cyan" />
+                )}
+              </button>
+
+              <AnimatePresence>
+                {isProfileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-full right-0 mt-2 w-48 bg-dark-surface border border-white/10 rounded-xl p-2 shadow-2xl z-50"
+                  >
+                    <div className="px-3 py-2 border-b border-white/5 mb-1">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white/40 truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                    <Link 
+                      href="/admin" 
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors"
+                    >
+                      Admin Panel
+                    </Link>
+                    <button 
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        setIsProfileOpen(false);
+                        router.refresh();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-500 text-xs font-bold transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <Link 
+              href="/login"
+              className="cyber-button text-xs"
+            >
+              Login
+            </Link>
+          )}
 
           {/* Mobile Menu Toggle */}
           <button 
@@ -298,7 +367,22 @@ export function Navbar({ categories }: NavbarProps) {
               </div>
               <Link href="/" className="text-lg font-bold uppercase tracking-tight" onClick={() => setIsMenuOpen(false)}>Home</Link>
               <Link href="/trending" className="text-lg font-bold uppercase tracking-tight" onClick={() => setIsMenuOpen(false)}>Trending</Link>
-              <Link href="/login" className="text-lg font-bold uppercase tracking-tight text-emerald-500" onClick={() => setIsMenuOpen(false)}>Login / Sign Up</Link>
+              
+              {user ? (
+                <button 
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    setIsMenuOpen(false);
+                    router.refresh();
+                  }}
+                  className="text-lg font-bold uppercase tracking-tight text-red-500 flex items-center gap-2"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Sign Out
+                </button>
+              ) : (
+                <Link href="/login" className="text-lg font-bold uppercase tracking-tight text-emerald-500" onClick={() => setIsMenuOpen(false)}>Login / Sign Up</Link>
+              )}
               
               <div className="space-y-4">
                 <span className="text-xs font-black uppercase tracking-widest text-white/30">All Genres</span>
