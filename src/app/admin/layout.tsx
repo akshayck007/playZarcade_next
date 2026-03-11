@@ -10,16 +10,20 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createServerComponentClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
+  const supabase = createServerComponentClient({ cookies: () => cookies() });
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/login");
   }
 
-  // Basic admin check - you can expand this to check roles or specific emails
-  // For now, we'll just ensure they are logged in.
-  // In a real app, you might check: if (session.user.email !== 'admin@example.com') redirect('/')
+  // Restrict admin access to specific email
+  const adminEmail = 'godsenseneo@gmail.com';
+  const userEmail = user.email?.toLowerCase().trim();
+
+  if (userEmail !== adminEmail) {
+    redirect("/");
+  }
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
@@ -58,14 +62,14 @@ export default async function AdminLayout({
         <div className="absolute bottom-0 w-full p-6 border-t border-white/10 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center font-black text-black overflow-hidden">
-              {session.user.user_metadata?.avatar_url ? (
-                <img src={session.user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+              {user.user_metadata?.avatar_url ? (
+                <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
               ) : (
-                session.user.email?.substring(0, 2).toUpperCase()
+                user.email?.substring(0, 2).toUpperCase()
               )}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-bold truncate">{session.user.user_metadata?.full_name || session.user.email}</span>
+              <span className="text-xs font-bold truncate">{user.user_metadata?.full_name || user.email}</span>
               <span className="text-[10px] text-white/40">Super Admin</span>
             </div>
           </div>

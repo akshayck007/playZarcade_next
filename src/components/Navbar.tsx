@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User, Home, Flame } from 'lucide-react';
+import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User, Home, Flame, History, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
@@ -109,6 +109,10 @@ export function Navbar({ categories }: NavbarProps) {
             <Link href="/trending" className="hover:text-neon-cyan transition-colors flex items-center gap-2">
               <Flame className="w-3.5 h-3.5" />
               Trending
+            </Link>
+            <Link href="/recently-played" className="hover:text-neon-cyan transition-colors flex items-center gap-2">
+              <History className="w-3.5 h-3.5" />
+              Recent
             </Link>
             
             {/* Genres Dropdown */}
@@ -260,13 +264,16 @@ export function Navbar({ categories }: NavbarProps) {
                         {user.email}
                       </p>
                     </div>
-                    <Link 
-                      href="/admin" 
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors"
-                    >
-                      Admin Panel
-                    </Link>
+                    {user.email?.toLowerCase().trim() === 'godsenseneo@gmail.com' && (
+                      <Link 
+                        href="/admin" 
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors text-emerald-500"
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        Admin Panel
+                      </Link>
+                    )}
                     <button 
                       onClick={async () => {
                         await supabase.auth.signOut();
@@ -378,6 +385,10 @@ export function Navbar({ categories }: NavbarProps) {
               <Link href="/trending" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
                 <Flame className="w-5 h-5 text-neon-cyan" />
                 Trending
+              </Link>
+              <Link href="/recently-played" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                <History className="w-5 h-5 text-neon-cyan" />
+                Recently Played
               </Link>
               
               {user ? (

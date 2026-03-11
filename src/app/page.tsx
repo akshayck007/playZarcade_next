@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
-import { RecentlyPlayed, Favorites } from "@/components/RecentlyPlayed";
+import { FeaturedSection } from "@/components/FeaturedSection";
 import { TrendingSection } from "@/components/TrendingSection";
 import { Play, Sparkles } from "lucide-react";
 
@@ -17,9 +17,7 @@ export default async function Home() {
 
   return (
     <div className="space-y-32 pb-20">
-      {/* Discovery Section - Tasks 1-11 - Now at the top */}
-      <RecentlyPlayed />
-      <Favorites />
+      <FeaturedSection />
       
       <TrendingSection />
 

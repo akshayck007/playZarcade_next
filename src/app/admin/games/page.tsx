@@ -3,6 +3,7 @@ import { Search, Filter, MoreVertical, Edit, Trash2, ExternalLink, Plus } from "
 import Link from "next/link";
 import Image from "next/image";
 import { GameStatusBadge } from "@/components/admin/GameStatusBadge";
+import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -96,6 +97,7 @@ export default async function AdminGamesPage() {
                 </td>
                 <td className="p-6 text-right">
                   <div className="flex items-center justify-end gap-2">
+                    <FeaturedToggle gameId={game.id} isFeatured={game.isFeatured} />
                     <Link href={`/game/${game.slug}`} target="_blank" className="p-2 glass rounded-lg hover:bg-white/10 transition-colors">
                       <ExternalLink className="w-4 h-4 text-white/40" />
                     </Link>
