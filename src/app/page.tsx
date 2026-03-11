@@ -16,7 +16,7 @@ export default async function Home() {
     .order("name", { ascending: true });
 
   return (
-    <div className="space-y-32 pb-20">
+    <div className="space-y-16 pb-20">
       <FeaturedSection />
       
       <TrendingSection />

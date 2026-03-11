@@ -13,12 +13,35 @@ export function FeaturedSection() {
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
+        // First try to fetch from SectionItem for custom ordering
+        const { data: sectionData } = await supabase
+          .from("Section")
+          .select("id")
+          .eq("slug", "featured")
+          .single();
+
+        if (sectionData) {
+          const { data: items, error } = await supabase
+            .from("SectionItem")
+            .select("*, Game(*, Category(name, slug))")
+            .eq("sectionId", sectionData.id)
+            .order("order", { ascending: true });
+
+          if (!error && items && items.length > 0) {
+            setFeaturedGames(items.map(item => item.Game).filter(Boolean));
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Fallback to isFeatured if no section items found
         const { data, error } = await supabase
           .from("Game")
           .select("*, Category(name, slug)")
           .eq("isFeatured", true)
           .eq("isPublished", true)
-          .limit(8);
+          .order("trendScore", { ascending: false })
+          .limit(10);
         
         if (error) throw error;
         setFeaturedGames(data || []);
@@ -52,17 +75,24 @@ export function FeaturedSection() {
         </h2>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
-        {featuredGames.map((game, index) => (
-          <motion.div
-            key={game.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-          >
-            <GameCard game={game} />
-          </motion.div>
-        ))}
+      <div className="relative group/featured">
+        <div className="flex overflow-x-auto gap-6 pb-6 scrollbar-hide snap-x snap-mandatory -mx-6 px-6 md:mx-0 md:px-0">
+          {featuredGames.map((game, index) => (
+            <motion.div
+              key={game.id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="min-w-[280px] md:min-w-[320px] snap-start"
+            >
+              <GameCard game={game} />
+            </motion.div>
+          ))}
+        </div>
+        
+        {/* Gradient Fades for Scroll */}
+        <div className="absolute left-0 top-0 bottom-6 w-12 bg-gradient-to-r from-[#0a0a0a] to-transparent pointer-events-none opacity-0 group-hover/featured:opacity-100 transition-opacity hidden md:block" />
+        <div className="absolute right-0 top-0 bottom-6 w-12 bg-gradient-to-l from-[#0a0a0a] to-transparent pointer-events-none opacity-0 group-hover/featured:opacity-100 transition-opacity hidden md:block" />
       </div>
     </section>
   );

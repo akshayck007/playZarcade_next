@@ -1,9 +1,12 @@
 import Link from "next/link";
-import { LayoutDashboard, Gamepad2, Layers, TrendingUp, Settings, Search, Users, FileText, RefreshCw, LogOut } from "lucide-react";
+import { LayoutDashboard, Gamepad2, Layers, TrendingUp, Settings, Search, Users, FileText, RefreshCw, LogOut, Star } from "lucide-react";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignOutButton } from "@/components/admin/SignOutButton";
+
+export const runtime = "edge";
+export const revalidate = 0;
 
 export default async function AdminLayout({
   children,
@@ -11,23 +14,32 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const supabase = createServerComponentClient({ cookies: () => cookies() });
-  const { data: { user } } = await supabase.auth.getUser();
+  
+  // Try getSession first as it's faster, then getUser for verification
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   if (!user) {
-    redirect("/login");
+    console.log("Admin access denied: No session/user found in cookies");
+    redirect("/login?reason=no_user");
   }
 
   // Restrict admin access to specific email
   const adminEmail = 'godsenseneo@gmail.com';
   const userEmail = user.email?.toLowerCase().trim();
+  const metadataEmail = user.user_metadata?.email?.toLowerCase().trim();
 
-  if (userEmail !== adminEmail) {
-    redirect("/");
+  const isAdmin = userEmail === adminEmail || metadataEmail === adminEmail;
+
+  if (!isAdmin) {
+    console.log(`Admin access denied for: ${userEmail || metadataEmail}`);
+    redirect("/?reason=not_admin&email=" + encodeURIComponent(userEmail || 'unknown'));
   }
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
     { icon: Gamepad2, label: "Games", href: "/admin/games" },
+    { icon: Star, label: "Featured Order", href: "/admin/featured" },
     { icon: RefreshCw, label: "GamePix Sync", href: "/admin/games/sync" },
     { icon: Layers, label: "Categories", href: "/admin/categories" },
     { icon: TrendingUp, label: "Trends", href: "/admin/trends" },

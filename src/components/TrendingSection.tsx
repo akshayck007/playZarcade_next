@@ -95,7 +95,7 @@ export function TrendingSection() {
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8">
       {/* Task 3 & 6: Tabs and Sort - Now at the top */}
       <section className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/5 pb-6">
