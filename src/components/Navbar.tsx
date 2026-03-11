@@ -264,16 +264,26 @@ export function Navbar({ categories }: NavbarProps) {
                         {user.email}
                       </p>
                     </div>
-                    {user.email?.toLowerCase().trim() === 'godsenseneo@gmail.com' && (
-                      <Link 
-                        href="/admin" 
-                        onClick={() => setIsProfileOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors text-emerald-500"
-                      >
-                        <ShieldCheck className="w-4 h-4" />
-                        Admin Panel
-                      </Link>
-                    )}
+                    {(() => {
+                      const adminEmail = 'godsenseneo@gmail.com';
+                      const userEmail = user.email?.toLowerCase().trim();
+                      const metadataEmail = user.user_metadata?.email?.toLowerCase().trim();
+                      const isAdmin = userEmail === adminEmail || metadataEmail === adminEmail;
+                      
+                      if (isAdmin) {
+                        return (
+                          <Link 
+                            href="/admin" 
+                            onClick={() => setIsProfileOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors text-emerald-500"
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                            Admin Panel
+                          </Link>
+                        );
+                      }
+                      return null;
+                    })()}
                     <button 
                       onClick={async () => {
                         await supabase.auth.signOut();

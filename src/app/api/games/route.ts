@@ -39,7 +39,7 @@ export async function GET(request: Request) {
         .in("slug", expandedCategories);
       
       if (catData && catData.length > 0) {
-        const catIds = catData.map(c => c.id);
+        const catIds = Array.from(new Set(catData.map(c => c.id)));
         query = query.in('categoryId', catIds);
       } else {
         // If no categories match the slugs, return empty results

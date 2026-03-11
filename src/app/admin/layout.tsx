@@ -15,12 +15,11 @@ export default async function AdminLayout({
 }) {
   const supabase = createServerComponentClient({ cookies: () => cookies() });
   
-  // Try getSession first as it's faster, then getUser for verification
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
-
-  if (!user) {
-    console.log("Admin access denied: No session/user found in cookies");
+  // Use getUser() for more reliable verification in server components
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !user) {
+    console.log("Admin access denied: No user found or session expired", userError);
     redirect("/login?reason=no_user");
   }
 

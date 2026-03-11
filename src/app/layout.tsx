@@ -39,7 +39,7 @@ export default async function RootLayout({
     .from("Settings")
     .select("*")
     .eq("id", "global")
-    .single();
+    .maybeSingle();
   
   const categories = categoriesRaw || [];
 

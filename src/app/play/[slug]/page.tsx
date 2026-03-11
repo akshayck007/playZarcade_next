@@ -65,7 +65,7 @@ export async function generateMetadata({ params }: SeoPageProps) {
     .from("Game")
     .select("*")
     .eq("slug", parsed.gameSlug)
-    .single();
+    .maybeSingle();
   if (!game) return { title: "Game Not Found" };
 
   const modInfo = MODIFIERS[parsed.modifier];
@@ -84,7 +84,7 @@ export default async function SeoPlayPage({ params }: SeoPageProps) {
     .from("Game")
     .select("*, Category(*)")
     .eq("slug", parsed.gameSlug)
-    .single();
+    .maybeSingle();
 
   if (!game) notFound();
 

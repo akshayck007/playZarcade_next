@@ -15,7 +15,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     .select("*, Game(*)")
     .eq("slug", slug)
     .eq("Game.isPublished", true)
-    .single();
+    .maybeSingle();
 
   if (!category) {
     // 1. Check if it's an SEO Shadow Page
@@ -23,7 +23,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       .from("SeoPage")
       .select("*, Game(*)")
       .eq("slug", slug)
-      .single();
+      .maybeSingle();
 
     if (seoPage && seoPage.Game) {
       redirect(`/game/${seoPage.Game.slug}`);

@@ -18,7 +18,7 @@ export function FeaturedSection() {
           .from("Section")
           .select("id")
           .eq("slug", "featured")
-          .single();
+          .maybeSingle();
 
         if (sectionData) {
           const { data: items, error } = await supabase

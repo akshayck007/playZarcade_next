@@ -15,6 +15,7 @@ export function TrendingSection() {
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,6 +37,7 @@ export function TrendingSection() {
     if (reset) {
       setLoading(true);
       setOffset(0);
+      setError(null);
     } else {
       setLoadingMore(true);
     }
@@ -55,12 +57,20 @@ export function TrendingSection() {
         if (reset) {
           setGames(data.games);
         } else {
-          setGames(prev => [...prev, ...data.games]);
+          setGames(prev => {
+            // Deduplicate games by ID to prevent key warnings
+            const existingIds = new Set(prev.map(g => g.id));
+            const newGames = data.games.filter((g: any) => !existingIds.has(g.id));
+            return [...prev, ...newGames];
+          });
         }
         setHasMore(data.games.length === 8);
+      } else {
+        setError(data.error || "Failed to fetch games");
       }
     } catch (err) {
       console.error(err);
+      setError("Network error accessing database");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -146,14 +156,18 @@ export function TrendingSection() {
             )}
           </AnimatePresence>
 
-          {/* Empty State */}
-          {!loading && games.length === 0 && (
+          {/* Empty State / Error State */}
+          {!loading && (games.length === 0 || error) && (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <p className="text-white/20 font-black uppercase tracking-widest">No games found for this filter</p>
+              <p className="text-white/20 font-black uppercase tracking-widest">
+                {error ? "Connection Interrupted" : "No games found for this filter"}
+              </p>
+              {error && <p className="text-[10px] text-white/10 uppercase tracking-widest max-w-xs text-center">The database protocol encountered an issue. Please try resetting the connection.</p>}
               <button 
                 onClick={() => {
                   setActiveTab('trending');
                   setSelectedCategories([]);
+                  setError(null);
                 }}
                 className="text-xs font-bold text-neon-cyan uppercase tracking-widest hover:underline"
               >

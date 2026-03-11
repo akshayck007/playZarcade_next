@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: GamePageProps) {
     .from("Game")
     .select("*")
     .eq("slug", slug)
-    .single();
+    .maybeSingle();
 
   if (!game) return { title: "Game Not Found" };
 
@@ -45,7 +45,7 @@ export default async function GamePage({ params }: GamePageProps) {
     .from("Game")
     .select("*, Category(*), MediaAsset(*)")
     .eq("slug", slug)
-    .single();
+    .maybeSingle();
 
   if (!game || error) notFound();
 

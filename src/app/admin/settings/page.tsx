@@ -9,7 +9,7 @@ export default async function AdminSettingsPage() {
     .from("Settings")
     .select("*")
     .eq("id", "global")
-    .single();
+    .maybeSingle();
 
   return <SettingsForm initialSettings={settings} />;
 }

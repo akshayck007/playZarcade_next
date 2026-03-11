@@ -19,6 +19,14 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const reason = searchParams.get('reason');
+    if (reason === 'no_user') {
+      setError("Session expired or not found. Please log in again.");
+    } else if (reason === 'not_admin') {
+      setError("Access denied. You do not have administrator privileges.");
+    }
+
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
