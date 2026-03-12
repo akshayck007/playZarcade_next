@@ -13,6 +13,29 @@ export function FeaturedSection() {
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
+        // Fetch settings to check mode
+        const { data: settings } = await supabase
+          .from("Settings")
+          .select("featuredMode")
+          .eq("id", "global")
+          .maybeSingle();
+
+        const mode = settings?.featuredMode || 'manual';
+
+        if (mode === 'quality') {
+          const { data, error } = await supabase
+            .from("Game")
+            .select("*, Category(name, slug)")
+            .eq("isPublished", true)
+            .order("qualityScore", { ascending: false })
+            .limit(10);
+          
+          if (error) throw error;
+          setFeaturedGames(data || []);
+          setLoading(false);
+          return;
+        }
+
         // First try to fetch from SectionItem for custom ordering
         const { data: sectionData } = await supabase
           .from("Section")

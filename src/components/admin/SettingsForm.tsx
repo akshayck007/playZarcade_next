@@ -100,6 +100,30 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
               SEO & Monetization
             </h2>
             <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Featured Section Mode</label>
+                  <select 
+                    value={settings?.featuredMode || "manual"}
+                    onChange={(e) => setSettings({ ...settings, featuredMode: e.target.value })}
+                    className="w-full glass p-4 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none"
+                  >
+                    <option value="manual">Manual Selection</option>
+                    <option value="quality">Top Quality Score (Auto)</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Trending Section Mode</label>
+                  <select 
+                    value={settings?.trendingMode || "manual"}
+                    onChange={(e) => setSettings({ ...settings, trendingMode: e.target.value })}
+                    className="w-full glass p-4 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none"
+                  >
+                    <option value="manual">Manual Selection</option>
+                    <option value="quality">Top Quality Score (Auto)</option>
+                  </select>
+                </div>
+              </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Ads.txt Content</label>
                 <textarea 

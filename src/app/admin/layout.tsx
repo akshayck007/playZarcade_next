@@ -23,12 +23,12 @@ export default async function AdminLayout({
     redirect("/login?reason=no_user");
   }
 
-  // Restrict admin access to specific email
-  const adminEmail = 'godsenseneo@gmail.com';
+  // Restrict admin access to specific emails
+  const adminEmails = ['godsenseneo@gmail.com', 'akshayck007@gmail.com'];
   const userEmail = user.email?.toLowerCase().trim();
   const metadataEmail = user.user_metadata?.email?.toLowerCase().trim();
 
-  const isAdmin = userEmail === adminEmail || metadataEmail === adminEmail;
+  const isAdmin = (userEmail && adminEmails.includes(userEmail)) || (metadataEmail && adminEmails.includes(metadataEmail));
 
   if (!isAdmin) {
     console.log(`Admin access denied for: ${userEmail || metadataEmail}`);

@@ -71,6 +71,7 @@ export async function GET(request: Request) {
           thumbnail: String(thumbnail),
           iframeUrl: String(iframeUrl),
           categoryId: category.id,
+          qualityScore: gp.quality_score || 0,
           tags: [categoryName.toLowerCase(), "gamepix"],
           trendScore: Math.random() * 100,
         }, { onConflict: 'slug' });

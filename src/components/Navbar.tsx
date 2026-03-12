@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabase';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface Category {
   id: string;
@@ -20,6 +20,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ categories }: NavbarProps) {
+  const supabase = createClientComponentClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGenresOpen, setIsGenresOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -42,7 +43,7 @@ export function Navbar({ categories }: NavbarProps) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase.auth]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -265,10 +266,10 @@ export function Navbar({ categories }: NavbarProps) {
                       </p>
                     </div>
                     {(() => {
-                      const adminEmail = 'godsenseneo@gmail.com';
+                      const adminEmails = ['godsenseneo@gmail.com', 'akshayck007@gmail.com'];
                       const userEmail = user.email?.toLowerCase().trim();
                       const metadataEmail = user.user_metadata?.email?.toLowerCase().trim();
-                      const isAdmin = userEmail === adminEmail || metadataEmail === adminEmail;
+                      const isAdmin = (userEmail && adminEmails.includes(userEmail)) || (metadataEmail && adminEmails.includes(metadataEmail));
                       
                       if (isAdmin) {
                         return (

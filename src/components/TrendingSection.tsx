@@ -7,6 +7,7 @@ import { GameCard } from "./GameCard";
 import { CategoryModal } from "./CategoryModal";
 import { Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { supabase } from "@/lib/supabase";
 
 export function TrendingSection() {
   const [activeTab, setActiveTab] = useState('trending');
@@ -50,7 +51,21 @@ export function TrendingSection() {
         categoriesParam = categoriesParam ? `${categoriesParam},${activeTab}` : activeTab;
       }
 
-      const res = await fetch(`/api/games?categories=${categoriesParam}&sort=${sort}&limit=8&offset=${targetOffset}`);
+      // Fetch settings to check mode if we are on trending tab
+      let currentSort = sort;
+      if (activeTab === 'trending') {
+        const { data: settings } = await supabase
+          .from("Settings")
+          .select("trendingMode")
+          .eq("id", "global")
+          .maybeSingle();
+        
+        if (settings?.trendingMode === 'quality') {
+          currentSort = 'quality_score';
+        }
+      }
+
+      const res = await fetch(`/api/games?categories=${categoriesParam}&sort=${currentSort}&limit=8&offset=${targetOffset}`);
       const data = await res.json();
       
       if (data.success) {

@@ -17,6 +17,7 @@ export interface Game {
   category: string;
   trending: boolean;
   isFeatured: boolean;
+  qualityScore: number;
   tags: string[];
   iframeUrl: string;
   playCount?: number;
@@ -29,6 +30,8 @@ export interface Settings {
   siteName: string;
   defaultTheme: string;
   adsTxt?: string;
+  featuredMode?: 'manual' | 'quality';
+  trendingMode?: 'manual' | 'quality';
 }
 
 export interface Section {

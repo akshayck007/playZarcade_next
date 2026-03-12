@@ -1,12 +1,13 @@
 'use client';
 
-import { Database, RefreshCw, Plus } from "lucide-react";
+import { Database, RefreshCw, Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 export function AdminHeaderActions() {
   const [isSeeding, setIsSeeding] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isPopulating, setIsPopulating] = useState(false);
 
   const handleSeed = async () => {
     if (!confirm("Are you sure you want to seed the database? This will add initial data.")) return;
@@ -20,6 +21,36 @@ export function AdminHeaderActions() {
       alert("Failed to seed database");
     } finally {
       setIsSeeding(false);
+    }
+  };
+
+  const handlePopulateQuality = async () => {
+    if (!confirm("This will fetch quality scores for all games. It might take a while. Continue?")) return;
+    setIsPopulating(true);
+    try {
+      // We'll use the advanced sync route with mode=sync_all to ensure quality scores are updated
+      const res = await fetch('/api/admin/games/sync-gamepix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          sid: "ZA727", 
+          page: 1, 
+          pagination: 100, 
+          mode: 'sync_all', 
+          totalPages: 5 
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Successfully updated quality scores for ${data.stats.updated} games!`);
+        window.location.reload();
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch (err) {
+      alert("Failed to populate quality scores");
+    } finally {
+      setIsPopulating(false);
     }
   };
 
@@ -46,6 +77,14 @@ export function AdminHeaderActions() {
       >
         <Database className={`w-5 h-5 ${isSeeding ? 'animate-spin' : ''}`} />
         {isSeeding ? 'Seeding...' : 'Seed DB'}
+      </button>
+      <button 
+        onClick={handlePopulateQuality}
+        disabled={isPopulating}
+        className="glass px-6 py-3 rounded-full font-bold uppercase tracking-tight hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
+      >
+        <Sparkles className={`w-5 h-5 ${isPopulating ? 'animate-spin' : ''}`} />
+        {isPopulating ? 'Populating...' : 'Populate Quality'}
       </button>
       <button 
         onClick={handleSync}

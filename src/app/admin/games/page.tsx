@@ -53,6 +53,7 @@ export default async function AdminGamesPage() {
               <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Game</th>
               <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Category</th>
               <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Stats</th>
+              <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Quality</th>
               <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Status</th>
               <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 text-right">Actions</th>
             </tr>
@@ -84,8 +85,19 @@ export default async function AdminGamesPage() {
                 </td>
                 <td className="p-6">
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-emerald-500">{game.playCount.toLocaleString()} Plays</span>
-                    <span className="text-[10px] text-white/30 uppercase tracking-widest">Trend: {game.trendScore.toFixed(1)}</span>
+                    <span className="text-xs font-bold text-emerald-500">{(game.playCount || 0).toLocaleString()} Plays</span>
+                    <span className="text-[10px] text-white/30 uppercase tracking-widest">Trend: {(game.trendScore || 0).toFixed(1)}</span>
+                  </div>
+                </td>
+                <td className="p-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-12 h-2 bg-white/5 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-emerald-500" 
+                        style={{ width: `${(game.qualityScore || 0) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-black text-white/60">{(game.qualityScore || 0).toFixed(2)}</span>
                   </div>
                 </td>
                 <td className="p-6">

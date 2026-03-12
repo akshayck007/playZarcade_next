@@ -123,7 +123,7 @@ export default async function AdminDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="block text-xs font-bold text-emerald-500">{game.playCount.toLocaleString()}</span>
+                  <span className="block text-xs font-bold text-emerald-500">{(game.playCount || 0).toLocaleString()}</span>
                   <span className="block text-[10px] text-white/30 uppercase tracking-widest">Plays</span>
                 </div>
               </div>

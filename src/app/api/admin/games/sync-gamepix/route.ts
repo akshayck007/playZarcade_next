@@ -127,6 +127,7 @@ export async function POST(request: Request) {
                 categoryId: category.id,
                 description: existingGame.description || item.description,
                 thumbnail: existingGame.thumbnail || item.banner_image,
+                qualityScore: item.quality_score || 0,
                 tags: Array.from(new Set([...(existingGame.tags || []), categoryName.toLowerCase(), "gamepix"]))
               })
               .eq("id", existingGame.id);
@@ -152,6 +153,7 @@ export async function POST(request: Request) {
                 thumbnail: item.banner_image,
                 iframeUrl: item.url.includes('?') ? `${item.url}&sid=${sid}` : `${item.url}?sid=${sid}`,
                 categoryId: category.id,
+                qualityScore: item.quality_score || 0,
                 isPublished: true,
                 playCount: 0,
                 trendScore: Math.random() * 10,
