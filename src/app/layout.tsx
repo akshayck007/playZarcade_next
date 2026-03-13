@@ -58,7 +58,7 @@ export default async function RootLayout({
           />
         )}
       </head>
-      <body className="min-h-screen bg-background selection:bg-accent/30">
+      <body className="min-h-screen bg-background">
         <ThemeProvider>
           <div className="scanline" />
           <Navbar categories={categories} />

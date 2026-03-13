@@ -50,7 +50,7 @@
 
 @layer base {
   body {
-    @apply bg-background text-foreground font-sans antialiased selection:bg-accent/30;
+    @apply bg-background text-foreground font-sans antialiased;
     background-image: 
       linear-gradient(var(--grid-color) 1px, transparent 1px),
       linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
@@ -60,6 +60,10 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-mono tracking-tighter uppercase;
+  }
+
+  ::selection {
+    background-color: rgba(255, 0, 255, 0.3);
   }
 }
 
