@@ -35,7 +35,7 @@ export function AdminHeaderActions() {
         body: JSON.stringify({ 
           sid: "ZA727", 
           page: 1, 
-          pagination: 100, 
+          pagination: 96, 
           mode: 'sync_all', 
           totalPages: 5 
         })

@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
-const GAMEPIX_SID = "7E271";
+const GAMEPIX_SID = "ZA727";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

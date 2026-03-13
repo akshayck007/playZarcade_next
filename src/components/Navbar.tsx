@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { ThemeToggle } from './ThemeToggle';
 
 interface Category {
   id: string;
@@ -239,6 +240,8 @@ export function Navbar({ categories }: NavbarProps) {
             </AnimatePresence>
           </div>
           
+          <ThemeToggle />
+
           {user ? (
             <div className="relative" ref={profileRef}>
               <button 
@@ -389,6 +392,12 @@ export function Navbar({ categories }: NavbarProps) {
                   )}
                 </AnimatePresence>
               </div>
+
+              <div className="flex items-center justify-between px-4 py-3 bg-white/5 rounded-xl border border-white/10">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Interface Theme</span>
+                <ThemeToggle />
+              </div>
+
               <Link href="/" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
                 <Home className="w-5 h-5 text-neon-cyan" />
                 Home

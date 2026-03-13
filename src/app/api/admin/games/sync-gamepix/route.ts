@@ -24,7 +24,8 @@ export async function POST(request: Request) {
     for (let currentPage = page; currentPage < page + totalPages; currentPage++) {
       addLog(`Fetching GamePix Page ${currentPage} (SID: ${sid})...`);
       
-      const response = await fetch(`https://feeds.gamepix.com/v2/json/?order=quality&page=${currentPage}&pagination=${pagination}&sid=${sid}`);
+      // Use the standard GamePix JSON feed URL structure
+      const response = await fetch(`https://feeds.gamepix.com/v2/json?sid=${sid}&page=${currentPage}&pagination=${pagination}`);
       if (!response.ok) {
         addLog(`Error fetching page ${currentPage}: ${response.status}`);
         continue;

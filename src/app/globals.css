@@ -4,22 +4,58 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
   
-  --color-background: #020205;
-  --color-foreground: #ffffff;
-  --color-neon-cyan: #00f3ff;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-neon-cyan: var(--accent);
   --color-neon-magenta: #ff00ff;
   --color-neon-lime: #bcff00;
   --color-neon-purple: #9d00ff;
-  --color-dark-surface: #0a0a12;
+  --color-dark-surface: var(--surface);
+}
+
+:root {
+  /* Default: Cyber Pink */
+  --background: #0d0214;
+  --foreground: #ffffff;
+  --surface: #1a0526;
+  --accent: #ff00ff;
+  --accent-glow: rgba(255, 0, 255, 0.3);
+  --grid-color: rgba(255, 0, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='midnight'] {
+  --background: #020205;
+  --foreground: #ffffff;
+  --surface: #0a0a12;
+  --accent: #00f3ff;
+  --accent-glow: rgba(0, 243, 255, 0.3);
+  --grid-color: rgba(0, 243, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='cyber-pink'] {
+  /* Same as root, but kept for explicit selection */
+  --background: #0d0214;
+  --foreground: #ffffff;
+  --surface: #1a0526;
+  --accent: #ff00ff;
+  --accent-glow: rgba(255, 0, 255, 0.3);
+  --grid-color: rgba(255, 0, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.5);
 }
 
 @layer base {
   body {
-    @apply bg-background text-foreground font-sans antialiased selection:bg-neon-cyan selection:text-black;
+    @apply bg-background text-foreground font-sans antialiased selection:bg-accent/30;
     background-image: 
-      linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+      linear-gradient(var(--grid-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
     background-size: 40px 40px;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -29,15 +65,15 @@
 
 @layer components {
   .glass {
-    @apply bg-dark-surface/80 backdrop-blur-xl border border-white/10 shadow-[0_0_20px_rgba(0,0,0,0.5)];
+    @apply bg-dark-surface/80 backdrop-blur-xl border border-[var(--glass-border)] shadow-[0_0_20px_var(--glass-shadow)];
   }
 
   .cyber-border {
-    @apply border border-neon-cyan/30 shadow-[0_0_10px_rgba(0,243,255,0.1)] hover:border-neon-cyan hover:shadow-[0_0_20px_rgba(0,243,255,0.3)] transition-all duration-300;
+    @apply border border-neon-cyan/30 shadow-[0_0_10px_var(--accent-glow)] hover:border-neon-cyan hover:shadow-[0_0_20px_var(--accent-glow)] transition-all duration-300;
   }
 
   .cyber-button {
-    @apply relative overflow-hidden bg-neon-cyan text-black font-black uppercase tracking-tighter px-6 py-2 skew-x-[-12deg] hover:bg-white hover:shadow-[0_0_30px_rgba(0,243,255,0.8)] transition-all active:scale-95;
+    @apply relative overflow-hidden bg-neon-cyan text-black font-black uppercase tracking-tighter px-6 py-2 skew-x-[-12deg] hover:bg-white hover:shadow-[0_0_30px_var(--accent-glow)] transition-all active:scale-95;
   }
 
   .cyber-text-glow {

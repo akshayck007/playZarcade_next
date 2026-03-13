@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Terminal, RefreshCw, Database, AlertTriangle, CheckCircle2, Play, Layers } from 'lucide-react';
 
 export default function GamePixSyncPage() {
-  const [sid, setSid] = useState('7E271');
+  const [sid, setSid] = useState('ZA727');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(96);
   const [totalPages, setTotalPages] = useState(5);
