@@ -18,7 +18,6 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
 });
 
-export const runtime = "edge";
 export const revalidate = 3600; // Revalidate every hour
 
 export const metadata: Metadata = {
@@ -72,25 +71,25 @@ export default async function RootLayout({
               <div>
                 <h3 className="text-sm font-bold uppercase mb-4">Platform</h3>
                 <ul className="space-y-2 text-sm text-foreground/50">
-                  <li><Link href="/about">About Us</Link></li>
-                  <li><Link href="/contact">Contact</Link></li>
-                  <li><Link href="/sitemap.xml">Sitemap</Link></li>
+                  <li><Link href="/about" className="hover:text-neon-cyan transition-colors">About Us</Link></li>
+                  <li><Link href="/contact" className="hover:text-neon-magenta transition-colors">Contact</Link></li>
+                  <li><Link href="/sitemap.xml" className="hover:text-neon-lime transition-colors">Sitemap</Link></li>
                 </ul>
               </div>
               <div>
                 <h3 className="text-sm font-bold uppercase mb-4">Legal</h3>
                 <ul className="space-y-2 text-sm text-foreground/50">
-                  <li><Link href="/privacy-policy">Privacy Policy</Link></li>
-                  <li><Link href="/terms-of-service">Terms of Service</Link></li>
-                  <li><Link href="/cookie-policy">Cookie Policy</Link></li>
+                  <li><Link href="/privacy-policy" className="hover:text-neon-cyan transition-colors">Privacy Policy</Link></li>
+                  <li><Link href="/terms-of-service" className="hover:text-neon-lime transition-colors">Terms of Service</Link></li>
+                  <li><Link href="/cookie-policy" className="hover:text-neon-magenta transition-colors">Cookie Policy</Link></li>
                 </ul>
               </div>
               <div>
                 <h3 className="text-sm font-bold uppercase mb-4">Trending</h3>
                 <ul className="space-y-2 text-sm text-foreground/50">
-                  <li><Link href="/play/play-slope-unblocked" className="hover:text-emerald-500 transition-colors">Slope Unblocked</Link></li>
-                  <li><Link href="/play/play-monkey-mart-online" className="hover:text-emerald-500 transition-colors">Monkey Mart</Link></li>
-                  <li><Link href="/play/play-subway-surfers-fullscreen" className="hover:text-emerald-500 transition-colors">Subway Surfers</Link></li>
+                  <li><Link href="/game/slope-unblocked" className="hover:text-neon-cyan transition-colors">Slope Unblocked</Link></li>
+                  <li><Link href="/game/monkey-mart" className="hover:text-neon-magenta transition-colors">Monkey Mart</Link></li>
+                  <li><Link href="/game/subway-surfers" className="hover:text-neon-lime transition-colors">Subway Surfers</Link></li>
                 </ul>
               </div>
               <div>

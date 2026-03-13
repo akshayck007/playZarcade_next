@@ -102,7 +102,7 @@ export default async function AdminDashboard() {
         <div className="glass rounded-3xl overflow-hidden border border-white/5">
           <div className="p-8 border-b border-white/10 flex items-center justify-between">
             <h2 className="text-xl font-black uppercase tracking-tight">Top Performing</h2>
-            <Link href="/admin/analytics" className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-emerald-500 transition-colors">Analytics</Link>
+            <Link href="/admin/trends" className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-emerald-500 transition-colors">Analytics</Link>
           </div>
           <div className="divide-y divide-white/5">
             {topGames.map((game) => (
