@@ -4,6 +4,8 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignOutButton } from "@/components/admin/SignOutButton";
+import { isAdmin, checkAdminStatus } from "@/lib/auth";
+import Image from "next/image";
 
 export const runtime = "edge";
 export const revalidate = 0;
@@ -23,16 +25,12 @@ export default async function AdminLayout({
     redirect("/login?reason=no_user");
   }
 
-  // Restrict admin access to specific emails
-  const adminEmails = ['godsenseneo@gmail.com', 'akshayck007@gmail.com'];
-  const userEmail = user.email?.toLowerCase().trim();
-  const metadataEmail = user.user_metadata?.email?.toLowerCase().trim();
+  // Authoritative DB check + fallback to email list
+  const isAuthorized = await checkAdminStatus(user.id) || isAdmin(user);
 
-  const isAdmin = (userEmail && adminEmails.includes(userEmail)) || (metadataEmail && adminEmails.includes(metadataEmail));
-
-  if (!isAdmin) {
-    console.log(`Admin access denied for: ${userEmail || metadataEmail}`);
-    redirect("/?reason=not_admin&email=" + encodeURIComponent(userEmail || 'unknown'));
+  if (!isAuthorized) {
+    console.log(`Admin access denied for: ${user.email}`);
+    redirect("/?reason=not_admin&email=" + encodeURIComponent(user.email || 'unknown'));
   }
 
   const menuItems = [
@@ -72,9 +70,15 @@ export default async function AdminLayout({
 
         <div className="absolute bottom-0 w-full p-6 border-t border-white/10 space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center font-black text-black overflow-hidden">
+            <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center font-black text-black overflow-hidden relative">
               {user.user_metadata?.avatar_url ? (
-                <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+                <Image 
+                  src={user.user_metadata.avatar_url} 
+                  alt="Admin" 
+                  fill 
+                  className="object-cover" 
+                  referrerPolicy="no-referrer"
+                />
               ) : (
                 user.email?.substring(0, 2).toUpperCase()
               )}

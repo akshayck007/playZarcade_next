@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User, Home, Flame, History, ShieldCheck } from 'lucide-react';
+import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User, Home, Flame, History, ShieldCheck, LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { ThemeToggle } from './ThemeToggle';
+import { isAdmin } from '@/lib/auth';
 
 interface Category {
   id: string;
@@ -249,7 +250,14 @@ export function Navbar({ categories }: NavbarProps) {
                 className="w-10 h-10 rounded-full bg-neon-cyan/20 border border-neon-cyan/30 flex items-center justify-center overflow-hidden hover:border-neon-cyan transition-all"
               >
                 {user.user_metadata?.avatar_url ? (
-                  <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+                  <Image 
+                    src={user.user_metadata.avatar_url} 
+                    alt="Profile" 
+                    width={40} 
+                    height={40} 
+                    className="w-full h-full object-cover" 
+                    referrerPolicy="no-referrer"
+                  />
                 ) : (
                   <User className="w-5 h-5 text-neon-cyan" />
                 )}
@@ -268,26 +276,16 @@ export function Navbar({ categories }: NavbarProps) {
                         {user.email}
                       </p>
                     </div>
-                    {(() => {
-                      const adminEmails = ['godsenseneo@gmail.com', 'akshayck007@gmail.com'];
-                      const userEmail = user.email?.toLowerCase().trim();
-                      const metadataEmail = user.user_metadata?.email?.toLowerCase().trim();
-                      const isAdmin = (userEmail && adminEmails.includes(userEmail)) || (metadataEmail && adminEmails.includes(metadataEmail));
-                      
-                      if (isAdmin) {
-                        return (
-                          <Link 
-                            href="/admin" 
-                            onClick={() => setIsProfileOpen(false)}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors text-emerald-500"
-                          >
-                            <ShieldCheck className="w-4 h-4" />
-                            Admin Panel
-                          </Link>
-                        );
-                      }
-                      return null;
-                    })()}
+                    {isAdmin(user) && (
+                      <Link 
+                        href="/admin" 
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors text-emerald-500"
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        Admin Panel
+                      </Link>
+                    )}
                     <button 
                       onClick={async () => {
                         await supabase.auth.signOut();
@@ -306,9 +304,10 @@ export function Navbar({ categories }: NavbarProps) {
           ) : (
             <Link 
               href="/login"
-              className="cyber-button text-xs"
+              className="cyber-button text-xs flex items-center gap-2"
             >
-              Login
+              <span className="hidden sm:inline">Login</span>
+              <LogIn className="w-4 h-4 sm:hidden" />
             </Link>
           )}
 

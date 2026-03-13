@@ -10,8 +10,7 @@ import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCirc
 import Markdown from "@/components/Markdown";
 
 export const runtime = "edge";
-export const dynamic = "force-dynamic";
-export const revalidate = 600;
+export const revalidate = 3600; // Revalidate every hour
 
 interface GamePageProps {
   params: Promise<{ slug: string }>;

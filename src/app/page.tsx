@@ -6,8 +6,7 @@ import { TrendingSection } from "@/components/TrendingSection";
 import { Play, Sparkles } from "lucide-react";
 
 export const runtime = "edge";
-export const dynamic = "force-dynamic";
-export const revalidate = 300;
+export const revalidate = 600; // Revalidate every 10 minutes
 
 export default async function Home() {
   const { data: categories } = await supabase

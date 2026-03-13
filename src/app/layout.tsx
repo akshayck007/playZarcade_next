@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const runtime = "edge";
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // Revalidate every hour
 
 export const metadata: Metadata = {
   title: "PlayZ Arcade | High-Performance Browser Gaming",

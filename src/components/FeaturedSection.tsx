@@ -1,14 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { GameCard } from './GameCard';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase';
 
 export function FeaturedSection() {
   const [featuredGames, setFeaturedGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, clientWidth } = scrollContainerRef.current;
+      const scrollTo = direction === 'left' 
+        ? scrollLeft - clientWidth * 0.8 
+        : scrollLeft + clientWidth * 0.8;
+      
+      scrollContainerRef.current.scrollTo({
+        left: scrollTo,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchFeatured = async () => {
@@ -99,7 +114,10 @@ export function FeaturedSection() {
       </div>
 
       <div className="relative group/featured">
-        <div className="flex overflow-x-auto gap-6 pb-6 scrollbar-hide snap-x snap-mandatory -mx-6 px-6 md:mx-0 md:px-0">
+        <div 
+          ref={scrollContainerRef}
+          className="flex overflow-x-auto gap-6 pb-6 scrollbar-hide snap-x snap-mandatory -mx-6 px-6 md:mx-0 md:px-0"
+        >
           {featuredGames.map((game, index) => (
             <motion.div
               key={game.id}
@@ -113,6 +131,22 @@ export function FeaturedSection() {
           ))}
         </div>
         
+        {/* Navigation Arrows */}
+        <button 
+          onClick={() => scroll('left')}
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 glass rounded-full flex items-center justify-center text-white/50 hover:text-neon-cyan hover:border-neon-cyan/50 transition-all opacity-0 group-hover/featured:opacity-100 hidden md:flex z-20"
+          aria-label="Scroll Left"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <button 
+          onClick={() => scroll('right')}
+          className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 glass rounded-full flex items-center justify-center text-white/50 hover:text-neon-cyan hover:border-neon-cyan/50 transition-all opacity-0 group-hover/featured:opacity-100 hidden md:flex z-20"
+          aria-label="Scroll Right"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
+
         {/* Gradient Fades for Scroll */}
         <div className="absolute left-0 top-0 bottom-6 w-12 bg-gradient-to-r from-[#0a0a0a] to-transparent pointer-events-none opacity-0 group-hover/featured:opacity-100 transition-opacity hidden md:block" />
         <div className="absolute right-0 top-0 bottom-6 w-12 bg-gradient-to-l from-[#0a0a0a] to-transparent pointer-events-none opacity-0 group-hover/featured:opacity-100 transition-opacity hidden md:block" />

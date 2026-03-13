@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { supabase } from "@/lib/supabase";
 
 export const runtime = "edge";
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -60,7 +59,14 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, games: data });
+    return NextResponse.json(
+      { success: true, games: data },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      }
+    );
   } catch (error: any) {
     console.error("[GAMES API ERROR]", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
