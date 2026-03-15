@@ -1,6 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { NextResponse } from 'next/server';
 
+export const runtime = "edge";
+
 export async function POST(req: Request) {
   try {
     // Log available keys (names only) to help debug

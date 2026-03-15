@@ -1,6 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { NextResponse } from 'next/server';
 
+export const runtime = "edge";
+
 export async function POST(req: Request) {
   try {
     const envKeys = Object.keys(process.env).filter(k => k.includes('KEY') || k.includes('GEMINI') || k.includes('GOOGLE'));

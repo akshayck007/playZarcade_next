@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const runtime = "edge";
+
 export async function GET() {
   // Check multiple possible names the platform might use
   const apiKey = process.env.GEMINI_API_KEY || 

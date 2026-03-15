@@ -4,9 +4,10 @@ import { cookies } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import Markdown from 'react-markdown';
+import Markdown from '@/components/Markdown';
 import { Calendar, Tag, ChevronLeft, Share2, Clock, Gamepad2 } from 'lucide-react';
 
+export const runtime = "edge";
 export const dynamic = 'force-dynamic';
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -79,14 +80,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <main className="lg:col-span-8 space-y-16">
           <div className="relative">
             <div className="absolute -left-8 top-0 bottom-0 w-[1px] bg-white/5 hidden md:block" />
-            <div className="markdown-body prose prose-invert prose-emerald max-w-none 
+            <div className="prose prose-invert prose-emerald max-w-none 
               prose-h2:text-3xl prose-h2:font-black prose-h2:uppercase prose-h2:tracking-tight prose-h2:italic
               prose-p:text-white/70 prose-p:leading-relaxed prose-p:text-lg prose-p:font-mono
               prose-strong:text-emerald-500 prose-strong:font-black
               prose-li:text-white/60 prose-li:font-mono
               prose-blockquote:border-emerald-500 prose-blockquote:bg-emerald-500/5 prose-blockquote:py-2 prose-blockquote:px-8 prose-blockquote:rounded-r-2xl
             ">
-              <Markdown>{post.content}</Markdown>
+              <Markdown content={post.content} />
             </div>
           </div>
           

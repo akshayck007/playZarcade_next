@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabase } from "@/lib/supabase";
 
-// Using Node.js runtime for better stability
-// export const runtime = "edge";
+// Using Edge Runtime for Cloudflare Pages
+export const runtime = "edge";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

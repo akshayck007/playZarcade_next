@@ -4,8 +4,8 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, Tag, ChevronRight, Newspaper } from 'lucide-react';
-import { motion } from 'motion/react';
 
+export const runtime = "edge";
 export const dynamic = 'force-dynamic';
 
 export default async function BlogPage() {
