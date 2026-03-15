@@ -4,11 +4,12 @@ import { supabase } from '@/lib/supabase';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://playzarcade.com';
 
-  // Fetch all games
+  // Fetch games - increasing limit to 40,000 to stay under the 50k sitemap limit
   const { data: games } = await supabase
     .from('Game')
     .select('slug, updated_at')
-    .eq('isPublished', true);
+    .eq('isPublished', true)
+    .limit(40000);
 
   // Fetch all categories
   const { data: categories } = await supabase
@@ -19,6 +20,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: seoPages } = await supabase
     .from('SeoPage')
     .select('slug');
+
+  const staticPages = [
+    { url: '', priority: 1.0, changeFrequency: 'daily' as const },
+    { url: '/blog', priority: 0.9, changeFrequency: 'daily' as const },
+    { url: '/about', priority: 0.5, changeFrequency: 'monthly' as const },
+    { url: '/contact', priority: 0.5, changeFrequency: 'monthly' as const },
+    { url: '/privacy-policy', priority: 0.3, changeFrequency: 'monthly' as const },
+    { url: '/terms-of-service', priority: 0.3, changeFrequency: 'monthly' as const },
+    { url: '/cookie-policy', priority: 0.3, changeFrequency: 'monthly' as const },
+    { url: '/recently-played', priority: 0.4, changeFrequency: 'daily' as const },
+  ].map((page) => ({
+    url: `${baseUrl}${page.url}`,
+    lastModified: new Date(),
+    changeFrequency: page.changeFrequency,
+    priority: page.priority,
+  }));
 
   const gameUrls = (games || []).map((game) => ({
     url: `${baseUrl}/game/${game.slug}`,
@@ -42,12 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1,
-    },
+    ...staticPages,
     ...categoryUrls,
     ...gameUrls,
     ...seoUrls,

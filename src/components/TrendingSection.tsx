@@ -6,10 +6,11 @@ import { SortFilter } from "./SortFilter";
 import { GameCard } from "./GameCard";
 import { CategoryModal } from "./CategoryModal";
 import { Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { supabase } from "@/lib/supabase";
+import { motion } from "motion/react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export function TrendingSection() {
+  const supabase = createClientComponentClient();
   const [activeTab, setActiveTab] = useState('trending');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sort, setSort] = useState('trend_score');
@@ -35,6 +36,7 @@ export function TrendingSection() {
 
   // Fetch games based on filters
   const fetchGames = useCallback(async (reset = false, targetOffset: number) => {
+    console.log('[TrendingSection] Fetching games:', { reset, targetOffset, activeTab, sort });
     if (reset) {
       setLoading(true);
       setOffset(0);
@@ -90,7 +92,7 @@ export function TrendingSection() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [activeTab, selectedCategories, sort]);
+  }, [activeTab, selectedCategories, sort, supabase]);
 
   useEffect(() => {
     fetchGames(true, 0);
@@ -137,39 +139,31 @@ export function TrendingSection() {
 
         {/* Game Grid */}
         <div className="relative min-h-[400px]">
-          <AnimatePresence mode="wait">
-            {loading ? (
-              <motion.div 
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-4"
-              >
-                <Loader2 className="w-10 h-10 text-neon-cyan animate-spin" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/20">ACCESSING DATABASE...</span>
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="grid"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-6"
-              >
-                {games.map((game, index) => {
-                  if (games.length === index + 1) {
-                    return (
-                      <div ref={lastGameElementRef} key={game.id}>
-                        <GameCard game={game} />
-                      </div>
-                    );
-                  } else {
-                    return <GameCard key={game.id} game={game} />;
-                  }
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {loading ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+              <Loader2 className="w-10 h-10 text-neon-cyan animate-spin" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">ACCESSING DATABASE...</span>
+            </div>
+          ) : (
+            <motion.div 
+              key="grid"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-6"
+            >
+              {games.map((game, index) => {
+                if (games.length === index + 1) {
+                  return (
+                    <div ref={lastGameElementRef} key={game.id}>
+                      <GameCard game={game} />
+                    </div>
+                  );
+                } else {
+                  return <GameCard key={game.id} game={game} />;
+                }
+              })}
+            </motion.div>
+          )}
 
           {/* Empty State / Error State */}
           {!loading && (games.length === 0 || error) && (

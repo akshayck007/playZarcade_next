@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { GoogleGenAI, Type } from "@google/genai";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-    const { trendId } = await request.json();
+    const { trendId, gameData } = await request.json();
 
     const { data: trend } = await supabase
       .from("TrendingKeyword")
@@ -78,46 +76,17 @@ export async function POST(request: Request) {
         }, { status: 400 });
       }
 
-      // Use Gemini to generate game data for the shadow page
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Generate game metadata for a browser game called "${trend.keyword}". 
-        The keyword might include modifiers like "unblocked" or "online". 
-        Focus on the core game title.`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              description: { type: Type.STRING },
-              faq: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    q: { type: Type.STRING },
-                    a: { type: Type.STRING }
-                  }
-                }
-              }
-            }
-          }
-        }
-      });
-
-      const gameData = JSON.parse(response.text || "{}");
-      
+      // Use pre-generated game data from client
       // Create the Shadow Game
       const slug = trend.keyword.toLowerCase().replace(/\s+/g, '-');
       const { data: newGame } = await supabase
         .from("Game")
         .insert({
-          title: gameData.title || trend.keyword,
+          title: gameData?.title || trend.keyword,
           slug: slug,
-          description: gameData.description || `Play ${trend.keyword} online for free.`,
+          description: gameData?.description || `Play ${trend.keyword} online for free.`,
           thumbnail: `https://picsum.photos/seed/${slug}/800/600`,
-          faq: gameData.faq || [],
+          faq: gameData?.faq || [],
           isPublished: true,
           iframeUrl: null, // This makes it a shadow page
         })

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   GripVertical, 
@@ -15,26 +15,25 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function FeaturedOrderPage() {
+export default function SectionOrderPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const [items, setItems] = useState<any[]>([]);
+  const [sectionName, setSectionName] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    fetchFeaturedItems();
-  }, []);
-
-  const fetchFeaturedItems = async () => {
+  const fetchSectionItems = React.useCallback(async () => {
     setLoading(true);
     try {
       const { data: section } = await supabase
         .from("Section")
-        .select("id")
-        .eq("slug", "featured")
+        .select("id, name")
+        .eq("slug", slug)
         .single();
 
       if (section) {
+        setSectionName(section.name);
         const { data, error } = await supabase
           .from("SectionItem")
           .select("*, Game(*)")
@@ -45,11 +44,15 @@ export default function FeaturedOrderPage() {
         setItems(data || []);
       }
     } catch (error) {
-      console.error("Failed to fetch featured items", error);
+      console.error("Failed to fetch section items", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    fetchSectionItems();
+  }, [fetchSectionItems]);
 
   const moveItem = (index: number, direction: 'up' | 'down') => {
     const newItems = [...items];
@@ -70,13 +73,16 @@ export default function FeaturedOrderPage() {
   };
 
   const removeItem = async (itemId: string, gameId: string) => {
-    if (!window.confirm("Remove this game from featured?")) return;
+    if (!window.confirm(`Remove this game from ${sectionName}?`)) return;
 
     try {
       // Remove from SectionItem
       await supabase.from("SectionItem").delete().eq("id", itemId);
-      // Update Game table
-      await supabase.from("Game").update({ isFeatured: false }).eq("id", gameId);
+      
+      // If it's the featured section, also update the Game table flag
+      if (slug === 'featured') {
+        await supabase.from("Game").update({ isFeatured: false }).eq("id", gameId);
+      }
       
       setItems(items.filter(i => i.id !== itemId));
     } catch (error) {
@@ -122,9 +128,9 @@ export default function FeaturedOrderPage() {
     <div className="space-y-10">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="text-4xl font-black uppercase tracking-tighter">Featured Order</h1>
+          <h1 className="text-4xl font-black uppercase tracking-tighter">{sectionName} Order</h1>
           <p className="text-white/40 text-sm font-bold uppercase tracking-widest">
-            Drag and drop or use arrows to set the order of featured games
+            Drag and drop or use arrows to set the order of games in this section
           </p>
         </div>
         
@@ -146,9 +152,9 @@ export default function FeaturedOrderPage() {
             <Star className="w-10 h-10 text-white/10" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-black uppercase tracking-tight">No Featured Games</h3>
+            <h3 className="text-xl font-black uppercase tracking-tight">No Games in {sectionName}</h3>
             <p className="text-white/40 text-sm font-bold uppercase tracking-widest max-w-xs mx-auto">
-              Go to the Game Library to feature some games first.
+              Go to the Game Library to add some games to this section.
             </p>
           </div>
           <Link href="/admin/games" className="text-emerald-500 text-[10px] font-black uppercase tracking-widest hover:underline">

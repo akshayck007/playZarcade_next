@@ -9,7 +9,8 @@ import { AdSlot } from "@/components/AdSlot";
 import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle, TrendingUp } from "lucide-react";
 import Markdown from "@/components/Markdown";
 
-export const runtime = "edge";
+// Using Node.js runtime for better stability
+// export const runtime = "edge";
 export const revalidate = 3600; // Revalidate every hour
 
 interface GamePageProps {

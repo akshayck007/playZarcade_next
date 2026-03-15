@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from "motion/react";
-import { ChevronRight, Flame, Users, Swords, Car } from "lucide-react";
+import { ChevronRight, Flame, Users, Swords, Car, Sparkles } from "lucide-react";
 
 interface CategoryTabsProps {
   activeTab: string;
@@ -15,6 +15,7 @@ export function CategoryTabs({ activeTab, onTabChange, onOpenMore }: CategoryTab
     { id: 'multiplayer-games', label: 'Multiplayer', icon: Users },
     { id: 'action-games', label: 'Action', icon: Swords },
     { id: 'racing-games', label: 'Racing', icon: Car },
+    { id: 'puzzle-games', label: 'Puzzle', icon: Sparkles },
   ];
 
   return (

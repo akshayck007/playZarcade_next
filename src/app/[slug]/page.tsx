@@ -3,7 +3,8 @@ import { GameCard } from "@/components/GameCard";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 
-export const runtime = "edge";
+// Using Node.js runtime for better stability
+// export const runtime = "edge";
 export const dynamic = "force-dynamic";
 export const revalidate = 300;
 

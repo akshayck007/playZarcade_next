@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User, Home, Flame, History, ShieldCheck, LogIn } from 'lucide-react';
+import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User, Home, Flame, History, ShieldCheck, LogIn, Newspaper } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
@@ -113,9 +113,9 @@ export function Navbar({ categories }: NavbarProps) {
               <Flame className="w-3.5 h-3.5" />
               Trending
             </Link>
-            <Link href="/recently-played" className="hover:text-neon-cyan transition-colors flex items-center gap-2">
-              <History className="w-3.5 h-3.5" />
-              Recent
+            <Link href="/blog" className="hover:text-neon-cyan transition-colors flex items-center gap-2">
+              <Newspaper className="w-3.5 h-3.5" />
+              Blog
             </Link>
             
             {/* Genres Dropdown */}
@@ -404,6 +404,10 @@ export function Navbar({ categories }: NavbarProps) {
               <Link href="/trending" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
                 <Flame className="w-5 h-5 text-neon-cyan" />
                 Trending
+              </Link>
+              <Link href="/blog" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                <Newspaper className="w-5 h-5 text-neon-cyan" />
+                Blog
               </Link>
               <Link href="/recently-played" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
                 <History className="w-5 h-5 text-neon-cyan" />

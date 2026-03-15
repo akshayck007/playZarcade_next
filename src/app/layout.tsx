@@ -72,7 +72,8 @@ export default async function RootLayout({
                 <h3 className="text-sm font-bold uppercase mb-4">Platform</h3>
                 <ul className="space-y-2 text-sm text-foreground/50">
                   <li><Link href="/about" className="hover:text-neon-cyan transition-colors">About Us</Link></li>
-                  <li><Link href="/contact" className="hover:text-neon-magenta transition-colors">Contact</Link></li>
+                  <li><Link href="/blog" className="hover:text-neon-magenta transition-colors">Blog</Link></li>
+                  <li><Link href="/contact" className="hover:text-neon-cyan transition-colors">Contact</Link></li>
                   <li><Link href="/sitemap.xml" className="hover:text-neon-lime transition-colors">Sitemap</Link></li>
                 </ul>
               </div>

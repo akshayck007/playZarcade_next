@@ -1,13 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
-import { FeaturedSection } from "@/components/FeaturedSection";
+import { HomeTabsSection } from "@/components/HomeTabsSection";
 import { TrendingSection } from "@/components/TrendingSection";
+import { BlogSection } from "@/components/BlogSection";
 import { Play, Sparkles } from "lucide-react";
 
-export const revalidate = 600; // Revalidate every 10 minutes
+export const revalidate = 600; // Revalidate every hour
 
 export default async function Home() {
+  console.log('[Home] Rendering home page on server');
   const { data: categories } = await supabase
     .from("Category")
     .select("*")
@@ -15,9 +17,11 @@ export default async function Home() {
 
   return (
     <div className="space-y-16 pb-20">
-      <FeaturedSection />
+      <HomeTabsSection />
       
       <TrendingSection />
+
+      <BlogSection />
 
       {/* SEO Content Section */}
       <section className="prose prose-invert max-w-none border-t border-neon-cyan/10 pt-20">

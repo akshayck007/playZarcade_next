@@ -76,6 +76,34 @@ export default function LoginPage() {
     }
   };
 
+  const [isMagicLoading, setIsMagicLoading] = useState(false);
+  const [magicSent, setMagicSent] = useState(false);
+
+  const handleMagicLink = async () => {
+    if (!email) {
+      setError("Please enter your email first");
+      return;
+    }
+    setIsMagicLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+      if (error) throw error;
+      setMagicSent(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to send magic link");
+    } finally {
+      setIsMagicLoading(false);
+    }
+  };
+
+  const isDev = typeof window !== 'undefined' && (window.location.hostname.includes('run.app') || window.location.hostname.includes('localhost'));
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-6">
       <motion.div 
@@ -89,6 +117,35 @@ export default function LoginPage() {
           </h1>
           <p className="text-white/40 font-medium">Log in to your PlayZ account to save progress.</p>
         </div>
+
+        {isDev && (
+          <div className="p-4 bg-neon-cyan/5 border border-neon-cyan/20 rounded-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-neon-cyan">Dev Admin Helper</span>
+              <div className="w-2 h-2 rounded-full bg-neon-cyan animate-pulse" />
+            </div>
+            <p className="text-[10px] text-white/40 leading-relaxed uppercase font-bold">
+              If Google Login fails, ensure this URL is in your Supabase Redirect Allow List:
+            </p>
+            <code className="block p-2 bg-black/40 rounded text-[9px] font-mono text-neon-cyan break-all">
+              {typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : ''}
+            </code>
+            <button 
+              type="button"
+              onClick={handleMagicLink}
+              disabled={isMagicLoading}
+              className="w-full py-2 bg-neon-cyan/10 border border-neon-cyan/30 rounded-xl text-[10px] font-black uppercase tracking-widest text-neon-cyan hover:bg-neon-cyan/20 transition-all flex items-center justify-center gap-2"
+            >
+              {isMagicLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : magicSent ? "Link Sent!" : "Send Magic Link (Email Login)"}
+            </button>
+            <Link 
+              href="/dev-admin"
+              className="block w-full py-2 text-center text-[9px] font-black uppercase tracking-widest text-white/20 hover:text-white/40 transition-all"
+            >
+              Go to Dev Admin Bypass
+            </Link>
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-6">
           {error && (

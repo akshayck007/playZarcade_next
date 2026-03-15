@@ -120,7 +120,7 @@ export async function GET(req: Request) {
     // 1. Fetch from Google Trends RSS (Daily and Real-time)
     try {
       const rssUrls = [
-        'https://trends.google.com/trends/trendingsearches/daily/rss?geo=US',
+        'https://trends.google.com/trending/rss?geo=US',
         'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=all',
         'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=e', // Entertainment
         'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=t'  // Sci/Tech

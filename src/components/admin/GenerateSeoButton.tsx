@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Sparkles, Check, Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { GoogleGenAI, Type } from "@google/genai";
+import { supabase } from '@/lib/supabase';
 
 interface GenerateSeoButtonProps {
   trendId: string;
@@ -18,26 +20,61 @@ export function GenerateSeoButton({ trendId, status, keyword }: GenerateSeoButto
   const handleGenerate = async () => {
     setIsLoading(true);
     try {
+      // 1. Get trend data
+      const { data: trend } = await supabase
+        .from("TrendingKeyword")
+        .select("*")
+        .eq("id", trendId)
+        .single();
+
+      if (!trend) throw new Error("Trend not found");
+
+      // 2. Check for matching game
+      const { data: matchingGame } = await supabase
+        .from("Game")
+        .select("*")
+        .ilike("title", trend.keyword)
+        .limit(1)
+        .maybeSingle();
+
+      let gameData = null;
+
+      // 3. If no matching game, generate metadata with Gemini on server
+      if (!matchingGame) {
+        const aiRes = await fetch('/api/ai/generate-game-metadata', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword: trend.keyword })
+        });
+
+        if (!aiRes.ok) {
+          const errorData = await aiRes.json();
+          throw new Error(errorData.error || "Failed to generate game metadata");
+        }
+
+        gameData = await aiRes.json();
+      }
+
+      // 4. Call API route to handle DB operations
       const res = await fetch('/api/admin/trends/generate-seo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trendId })
+        body: JSON.stringify({ trendId, gameData })
       });
       const data = await res.json();
       
       if (data.success) {
         setIsSuccess(true);
         setGeneratedSlug(data.slug);
-        // Refresh the page after a short delay to show the updated status
         setTimeout(() => {
           window.location.reload();
         }, 2000);
       } else {
         alert(data.error || "Failed to generate SEO page");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating SEO page:", error);
-      alert("An error occurred while generating the SEO page");
+      alert(error.message || "An error occurred while generating the SEO page");
     } finally {
       setIsLoading(false);
     }
