@@ -67,7 +67,12 @@ export default function DevAdminPage() {
         .select()
         .single();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        if (dbError.message.includes("relation") && dbError.message.includes("does not exist")) {
+          throw new Error("Database table 'BlogPost' is missing. Please run the SQL schema in your Supabase SQL Editor. You can find the schema in the 'schema.sql' file in the project root.");
+        }
+        throw dbError;
+      }
 
       addLog(`Successfully published blog post: ${post.title}`);
     } catch (err: any) {

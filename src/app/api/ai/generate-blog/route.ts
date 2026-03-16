@@ -42,12 +42,11 @@ export async function POST(req: Request) {
     // 2. Get the prompt from the request (optional, but good for flexibility)
     const { prompt } = await req.json();
 
-    // 3. Generate Content with Google Search Grounding
+    // 3. Generate Content (Removed Google Search grounding to avoid quota issues)
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
