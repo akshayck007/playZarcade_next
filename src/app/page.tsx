@@ -6,6 +6,7 @@ import { TrendingSection } from "@/components/TrendingSection";
 import { BlogSection } from "@/components/BlogSection";
 import { Play, Sparkles } from "lucide-react";
 
+export const runtime = "edge";
 export const revalidate = 600; // Revalidate every hour
 
 export default async function Home() {
