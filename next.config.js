@@ -33,6 +33,22 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.example.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.ignimgs.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.gamespot.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.wp.com',
+      },
     ],
   },
   // Security headers

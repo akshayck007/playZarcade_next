@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 const RECENTLY_PLAYED_KEY = 'playz_recently_played';
 const FAVORITES_KEY = 'playz_favorites';
-const MAX_RECENT = 8;
+const MAX_RECENT = 24;
 
 export function Favorites() {
   const [favoriteGames, setFavoriteGames] = useState<any[]>([]);
@@ -119,6 +119,7 @@ export function RecentlyPlayed() {
 
 export function trackPlay(game: any) {
   if (typeof window === 'undefined') return;
+  console.log('[RecentlyPlayed] Tracking play for:', game.title);
 
   const stored = localStorage.getItem(RECENTLY_PLAYED_KEY);
   let recent: any[] = [];
@@ -146,4 +147,15 @@ export function trackPlay(game: any) {
   recent = recent.slice(0, MAX_RECENT);
 
   localStorage.setItem(RECENTLY_PLAYED_KEY, JSON.stringify(recent));
+
+  // Also update playz_history for HomeTabsSection compatibility
+  const historyStored = localStorage.getItem('playz_history');
+  let history: string[] = [];
+  if (historyStored) {
+    try {
+      history = JSON.parse(historyStored);
+    } catch (e) {}
+  }
+  history = [game.id, ...history.filter(id => id !== game.id)].slice(0, 30);
+  localStorage.setItem('playz_history', JSON.stringify(history));
 }

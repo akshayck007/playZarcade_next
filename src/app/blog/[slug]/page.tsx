@@ -48,7 +48,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <div className="max-w-5xl mx-auto w-full text-center space-y-12">
             <div className="flex items-center justify-center gap-4">
               <div className="h-[1px] w-8 bg-emerald-500" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-500">Intelligence Report</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-500">Latest News</span>
               <div className="h-[1px] w-8 bg-emerald-500" />
             </div>
             
@@ -107,7 +107,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-emerald-500"
               >
                 <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                Return to Chronicles
+                Back to News
               </Link>
               <div className="flex items-center gap-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Broadcast</span>
@@ -127,19 +127,19 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center border border-emerald-500/20">
                 <Gamepad2 className="w-4 h-4 text-emerald-500" />
               </div>
-              <h3 className="text-sm font-black uppercase tracking-widest">Compatible Protocols</h3>
+              <h3 className="text-sm font-black uppercase tracking-widest">Recommended Games</h3>
             </div>
             
             <div className="space-y-4">
               {relatedGames?.map((game: any) => (
                 <Link 
                   key={game.id} 
-                  href={`/play/${game.slug}`}
+                  href={`/game/${game.slug}`}
                   className="group flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-emerald-500/30 transition-all"
                 >
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden grayscale group-hover:grayscale-0 transition-all">
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden grayscale group-hover:grayscale-0 transition-all bg-white/5">
                     <Image 
-                      src={game.thumbnailUrl} 
+                      src={game.thumbnail || game.thumbnailUrl || `https://picsum.photos/seed/${game.slug}/200/200`} 
                       alt={game.title} 
                       fill 
                       className="object-cover"
@@ -159,19 +159,19 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <div className="p-8 bg-emerald-500 space-y-6 transform skew-x-[-2deg]">
             <div className="transform skew-x-[2deg] space-y-6">
               <h3 className="text-2xl font-black uppercase tracking-tighter text-black leading-none">
-                Join the <br /> Resistance
+                Stay <br /> Updated
               </h3>
               <p className="text-xs text-black/70 font-bold uppercase tracking-tight leading-relaxed">
-                Get high-priority intelligence reports delivered to your secure terminal daily.
+                Get the latest gaming news and updates delivered to your inbox daily.
               </p>
               <div className="space-y-2">
                 <input 
                   type="email" 
-                  placeholder="TERMINAL_ID@EMAIL.COM" 
+                  placeholder="YOUR@EMAIL.COM" 
                   className="w-full bg-black/10 border border-black/20 rounded-none px-4 py-4 text-[10px] font-black placeholder:text-black/30 focus:outline-none focus:bg-black/20 transition-all text-black"
                 />
                 <button className="w-full py-4 bg-black text-emerald-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-black/90 transition-all">
-                  Initialize Sync
+                  Subscribe Now
                 </button>
               </div>
             </div>

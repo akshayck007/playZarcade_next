@@ -49,7 +49,22 @@ export function HomeTabsSection() {
         let fetchedGames: any[] = [];
 
         if (activeTab === 'continue-playing') {
-          const history = JSON.parse(localStorage.getItem('playz_history') || '[]');
+          let history = JSON.parse(localStorage.getItem('playz_history') || '[]');
+          
+          // Fallback to playz_recently_played if history is empty (migration)
+          if (history.length === 0) {
+            const stored = localStorage.getItem('playz_recently_played');
+            if (stored) {
+              try {
+                const recent = JSON.parse(stored);
+                history = recent.map((g: any) => g.id).filter(Boolean);
+                if (history.length > 0) {
+                  localStorage.setItem('playz_history', JSON.stringify(history));
+                }
+              } catch (e) {}
+            }
+          }
+
           if (history.length > 0) {
             const { data } = await supabase
               .from("Game")

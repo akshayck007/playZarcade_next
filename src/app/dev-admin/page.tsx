@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Database, RefreshCw, Sparkles, Home, ShieldAlert, Search, Plus, Trash2, Star, Newspaper } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "motion/react";
 import { supabase } from "@/lib/supabase";
-import { GoogleGenAI, Type } from "@google/genai";
 
 export default function DevAdminPage() {
   const [isSeeding, setIsSeeding] = useState(false);
@@ -17,21 +15,30 @@ export default function DevAdminPage() {
   const [siteName, setSiteName] = useState('PlayZ Arcade');
   const [trendingMode, setTrendingMode] = useState('trending');
   const [logs, setLogs] = useState<string[]>([]);
+  const [clickCount, setClickCount] = useState(0);
+
+  useEffect(() => {
+    console.log("DevAdminPage mounted");
+    addLog("Dev Admin Panel loaded and ready.");
+  }, []);
 
   const handleGenerateBlog = async () => {
+    console.log("handleGenerateBlog START");
+    setClickCount(prev => {
+      console.log("Updating click count to:", prev + 1);
+      return prev + 1;
+    });
     setIsGeneratingBlog(true);
     addLog("Initializing AI and searching for trending gaming news...");
     try {
+      console.log("Constructing prompt...");
       const prompt = `
         Search for the absolute latest, most viral trending news in the video game industry from the last 24 hours.
         Pick one high-impact topic (e.g., a major game release, a massive update, industry-shaking news, or a viral gaming trend).
-        
         Write a viral, SEO-maximized blog post about this topic.
-        The post should be engaging, informative, and encourage users to play games.
-        Make sure the content is at least 600 words.
-        Include a section "Games You Might Like" at the end (just the header).
       `;
 
+      console.log("Sending fetch request to /api/ai/generate-blog");
       addLog("Sending request to server for AI generation...");
       
       const aiRes = await fetch('/api/ai/generate-blog', {
@@ -40,24 +47,16 @@ export default function DevAdminPage() {
         body: JSON.stringify({ prompt })
       });
 
+      console.log("Fetch response status:", aiRes.status);
+
       if (!aiRes.ok) {
-        const errorData = await aiRes.json();
-        let errorMsg = errorData.error || "Failed to generate blog content";
-        
-        if (errorData.isPlaceholder) {
-          errorMsg = "⚠️ Gemini API Key is missing or set to a placeholder. Please go to the 'Secrets' panel in the sidebar and add your real GEMINI_API_KEY.";
-        } else if (errorMsg.includes("429") || errorMsg.includes("RESOURCE_EXHAUSTED")) {
-          errorMsg = "⚠️ API Quota Exceeded. You've hit the rate limit for your Gemini API key. Please wait a minute or check your quota in Google AI Studio (https://aistudio.google.com/app/plan_and_billing).";
-        }
-        
-        const debugInfo = errorData.detectedKeys ? ` (Server Keys: ${errorData.detectedKeys.join(', ')})` : "";
-        throw new Error(`${errorMsg}${debugInfo}`);
+        const errorData = await aiRes.json().catch(() => ({ error: "Server error" }));
+        throw new Error(errorData.error || "Failed to generate blog content");
       }
 
       const blogData = await aiRes.json();
-      addLog(`AI generated post: "${blogData.title}". Saving to database...`);
+      addLog(`AI generated: "${blogData.title}". Saving...`);
 
-      // 3. Save to Database using Supabase client
       const { data: post, error: dbError } = await supabase
         .from('BlogPost')
         .insert([{
@@ -67,17 +66,12 @@ export default function DevAdminPage() {
         .select()
         .single();
 
-      if (dbError) {
-        if (dbError.message.includes("relation") && dbError.message.includes("does not exist")) {
-          throw new Error("Database table 'BlogPost' is missing. Please run the SQL schema in your Supabase SQL Editor. You can find the schema in the 'schema.sql' file in the project root.");
-        }
-        throw dbError;
-      }
+      if (dbError) throw dbError;
 
-      addLog(`Successfully published blog post: ${post.title}`);
+      addLog(`Successfully published: ${post.title}`);
     } catch (err: any) {
       console.error("Generation Error:", err);
-      addLog(`Failed to generate blog post: ${err.message}`);
+      addLog(`Error: ${err.message}`);
     } finally {
       setIsGeneratingBlog(false);
     }
@@ -92,30 +86,38 @@ export default function DevAdminPage() {
 
   React.useEffect(() => {
     const fetchSettings = async () => {
-      const { data } = await supabase.from("Settings").select("*").eq("id", "global").maybeSingle();
-      if (data) {
-        setSiteName(data.siteName || 'PlayZ Arcade');
-        setTrendingMode(data.trendingMode || 'trending');
+      try {
+        const { data } = await supabase.from("Settings").select("*").eq("id", "global").maybeSingle();
+        if (data) {
+          setSiteName(data.siteName || 'PlayZ Arcade');
+          setTrendingMode(data.trendingMode || 'trending');
+        }
+      } catch (e) {
+        console.error("Failed to fetch settings:", e);
       }
     };
 
     const fetchEditorsChoice = async () => {
-      const { data: section } = await supabase
-        .from("Section")
-        .select("id")
-        .eq("slug", "editors-choice")
-        .maybeSingle();
+      try {
+        const { data: section } = await supabase
+          .from("Section")
+          .select("id")
+          .eq("slug", "editors-choice")
+          .maybeSingle();
 
-      if (section) {
-        const { data: items } = await supabase
-          .from("SectionItem")
-          .select("*, Game(*)")
-          .eq("sectionId", section.id)
-          .order("order", { ascending: true });
-        
-        if (items) {
-          setEditorsChoiceGames(items.map(item => ({ ...item.Game, sectionItemId: item.id })));
+        if (section) {
+          const { data: items } = await supabase
+            .from("SectionItem")
+            .select("*, Game(*)")
+            .eq("sectionId", section.id)
+            .order("order", { ascending: true });
+          
+          if (items) {
+            setEditorsChoiceGames(items.map(item => ({ ...item.Game, sectionItemId: item.id })));
+          }
         }
+      } catch (e) {
+        console.error("Failed to fetch editor's choice:", e);
       }
     };
 
@@ -307,6 +309,15 @@ export default function DevAdminPage() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white p-8 font-sans">
+      <button 
+        onClick={() => {
+          console.log("DEBUG BUTTON CLICKED");
+          alert('DEBUG: Page is interactive!');
+        }}
+        className="fixed top-4 left-4 z-[9999] bg-red-600 text-white px-6 py-3 rounded-full font-black shadow-2xl hover:bg-red-700 active:scale-95 transition-all"
+      >
+        DEBUG: CLICK ME
+      </button>
       <div className="max-w-4xl mx-auto space-y-8">
         <header className="flex justify-between items-center">
           <div className="space-y-1">
@@ -392,12 +403,15 @@ export default function DevAdminPage() {
                 <RefreshCw className={`w-4 h-4 text-blue-500 ${isSyncing ? 'animate-spin' : ''}`} />
               </button>
               <button 
-                onClick={handleGenerateBlog}
+                onClick={() => {
+                  console.log("GENERATE BLOG CLICKED");
+                  handleGenerateBlog();
+                }}
                 disabled={isGeneratingBlog}
-                className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl hover:bg-emerald-500/20 transition-all disabled:opacity-50"
+                className="flex items-center justify-between p-4 bg-emerald-500 text-black rounded-xl hover:bg-emerald-400 transition-all disabled:opacity-50 cursor-pointer"
               >
-                <span className="text-xs font-bold uppercase tracking-widest text-emerald-500">Generate Blog Post</span>
-                <Newspaper className={`w-4 h-4 text-emerald-500 ${isGeneratingBlog ? 'animate-spin' : ''}`} />
+                <span className="text-xs font-bold uppercase tracking-widest">Generate Blog Post {clickCount > 0 && `(${clickCount})`}</span>
+                <Newspaper className={`w-4 h-4 ${isGeneratingBlog ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
@@ -434,36 +448,32 @@ export default function DevAdminPage() {
               </div>
 
               <div className="space-y-2 max-h-[300px] overflow-y-auto scrollbar-hide">
-                <AnimatePresence>
-                  {searchResults.map(game => (
-                    <motion.div 
-                      key={game.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0">
-                          <Image 
-                            src={game.thumbnailUrl} 
-                            alt={game.title} 
-                            fill 
-                            className="object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                        <span className="text-xs font-bold truncate max-w-[150px]">{game.title}</span>
+                {searchResults.map(game => (
+                  <div 
+                    key={game.id}
+                    className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0">
+                        <Image 
+                          src={game.thumbnail || game.thumbnailUrl || "https://picsum.photos/seed/game/200/200"} 
+                          alt={game.title} 
+                          fill 
+                          className="object-cover"
+                          referrerPolicy="no-referrer"
+                        />
                       </div>
-                      <button 
-                        onClick={() => addToEditorsChoice(game)}
-                        disabled={isAddingGame === game.id}
-                        className="p-2 hover:bg-emerald-500 hover:text-black rounded-lg transition-all text-emerald-500"
-                      >
-                        {isAddingGame === game.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                      </button>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+                      <span className="text-xs font-bold truncate max-w-[150px]">{game.title}</span>
+                    </div>
+                    <button 
+                      onClick={() => addToEditorsChoice(game)}
+                      disabled={isAddingGame === game.id}
+                      className="p-2 hover:bg-emerald-500 hover:text-black rounded-lg transition-all text-emerald-500"
+                    >
+                      {isAddingGame === game.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -479,7 +489,7 @@ export default function DevAdminPage() {
                     <div className="flex items-center gap-3">
                       <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0">
                         <Image 
-                          src={game.thumbnailUrl} 
+                          src={game.thumbnail || game.thumbnailUrl || "https://picsum.photos/seed/game/200/200"} 
                           alt={game.title} 
                           fill 
                           className="object-cover"

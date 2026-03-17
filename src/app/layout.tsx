@@ -56,10 +56,14 @@ export default async function RootLayout({
             crossOrigin="anonymous"
           />
         )}
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.addEventListener('click', (e) => {
+            console.log('GLOBAL CLICK:', e.target);
+          }, true);
+        ` }} />
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider>
-          <div className="scanline" />
           <Navbar categories={categories} />
 
           <main className="max-w-7xl mx-auto px-6 py-8 relative z-10">

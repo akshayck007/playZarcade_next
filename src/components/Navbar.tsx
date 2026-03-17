@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User, Home, Flame, History, ShieldCheck, LogIn, Newspaper } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'motion/react';
+// import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -128,29 +128,23 @@ export function Navbar({ categories }: NavbarProps) {
                 Genres <ChevronDown className={cn("w-4 h-4 transition-transform", isGenresOpen && "rotate-180")} />
               </button>
               
-              <AnimatePresence>
-                {isGenresOpen && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="absolute top-full left-0 w-96 bg-dark-surface border border-neon-cyan/20 rounded-2xl p-4 shadow-[0_0_50px_rgba(0,243,255,0.1)] origin-top-left z-50"
-                  >
-                    <div className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-neon-cyan/10">
-                      {categories.map((cat) => (
-                        <Link 
-                          key={cat.id} 
-                          href={`/${cat.slug}`}
-                          className="px-4 py-2 rounded-xl hover:bg-neon-cyan/10 text-white/80 hover:text-neon-cyan transition-colors text-xs font-black uppercase tracking-widest"
-                        >
-                          {cat.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {isGenresOpen && (
+                <div 
+                  className="absolute top-full left-0 w-96 bg-dark-surface border border-neon-cyan/20 rounded-2xl p-4 shadow-[0_0_50px_rgba(0,243,255,0.1)] origin-top-left z-50"
+                >
+                  <div className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-neon-cyan/10">
+                    {categories.map((cat) => (
+                      <Link 
+                        key={cat.id} 
+                        href={`/${cat.slug}`}
+                        className="px-4 py-2 rounded-xl hover:bg-neon-cyan/10 text-white/80 hover:text-neon-cyan transition-colors text-xs font-black uppercase tracking-widest"
+                      >
+                        {cat.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </nav>
         </div>
@@ -175,70 +169,65 @@ export function Navbar({ categories }: NavbarProps) {
               />
             </form>
 
-            <AnimatePresence>
-              {showSuggestions && (searchQuery.length >= 2) && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute top-full right-0 mt-2 w-[400px] bg-dark-surface border border-neon-cyan/20 rounded-xl overflow-hidden shadow-[0_0_50px_rgba(0,243,255,0.15)] z-[60]"
-                >
-                  <div className="p-2 space-y-1">
-                    {suggestions.length > 0 ? (
-                      <>
-                        <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/20 border-b border-white/5 mb-1">
-                          Matching Protocols
-                        </div>
-                        {suggestions.map((game) => (
-                          <Link
-                            key={game.id}
-                            href={`/game/${game.slug}`}
-                            onClick={() => setShowSuggestions(false)}
-                            className="flex items-center gap-3 p-2 hover:bg-neon-cyan/10 rounded-lg group transition-colors"
-                          >
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-white/10">
-                              <Image
-                                src={game.thumbnail}
-                                alt={game.title}
-                                fill
-                                className="object-cover"
-                                referrerPolicy="no-referrer"
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs font-black uppercase tracking-tight text-white group-hover:text-neon-cyan transition-colors truncate">
-                                {game.title}
-                              </div>
-                              <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                                {game.Category?.name}
-                              </div>
-                            </div>
-                            <Play className="w-4 h-4 text-neon-cyan opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" />
-                          </Link>
-                        ))}
-                        <button
-                          onClick={handleSearch}
-                          className="w-full mt-2 p-3 text-[10px] font-black uppercase tracking-widest text-neon-cyan hover:bg-neon-cyan/5 transition-colors border-t border-white/5"
+            {showSuggestions && (searchQuery.length >= 2) && (
+              <div
+                className="absolute top-full right-0 mt-2 w-[400px] bg-dark-surface border border-neon-cyan/20 rounded-xl overflow-hidden shadow-[0_0_50px_rgba(0,243,255,0.15)] z-[60]"
+              >
+                <div className="p-2 space-y-1">
+                  {suggestions.length > 0 ? (
+                    <>
+                      <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/20 border-b border-white/5 mb-1">
+                        Matching Protocols
+                      </div>
+                      {suggestions.map((game) => (
+                        <Link
+                          key={game.id}
+                          href={`/game/${game.slug}`}
+                          onClick={() => setShowSuggestions(false)}
+                          className="flex items-center gap-3 p-2 hover:bg-neon-cyan/10 rounded-lg group transition-colors"
                         >
-                          View all results for &quot;{searchQuery}&quot;
-                        </button>
-                      </>
-                    ) : !isSearching ? (
-                      <div className="p-8 text-center">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-white/20">
-                          No matching protocols found
-                        </div>
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-white/10">
+                            <Image
+                              src={game.thumbnail}
+                              alt={game.title}
+                              fill
+                              className="object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-black uppercase tracking-tight text-white group-hover:text-neon-cyan transition-colors truncate">
+                              {game.title}
+                            </div>
+                            <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                              {game.Category?.name}
+                            </div>
+                          </div>
+                          <Play className="w-4 h-4 text-neon-cyan opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" />
+                        </Link>
+                      ))}
+                      <button
+                        onClick={handleSearch}
+                        className="w-full mt-2 p-3 text-[10px] font-black uppercase tracking-widest text-neon-cyan hover:bg-neon-cyan/5 transition-colors border-t border-white/5"
+                      >
+                        View all results for &quot;{searchQuery}&quot;
+                      </button>
+                    </>
+                  ) : !isSearching ? (
+                    <div className="p-8 text-center">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-white/20">
+                        No matching protocols found
                       </div>
-                    ) : (
-                      <div className="p-8 flex flex-col items-center gap-3">
-                        <Loader2 className="w-6 h-6 text-neon-cyan animate-spin" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Accessing Database...</span>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    </div>
+                  ) : (
+                    <div className="p-8 flex flex-col items-center gap-3">
+                      <Loader2 className="w-6 h-6 text-neon-cyan animate-spin" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Accessing Database...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           
           <ThemeToggle />
@@ -263,12 +252,8 @@ export function Navbar({ categories }: NavbarProps) {
                 )}
               </button>
 
-              <AnimatePresence>
                 {isProfileOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  <div
                     className="absolute top-full right-0 mt-2 w-48 bg-dark-surface border border-white/10 rounded-xl p-2 shadow-2xl z-50"
                   >
                     <div className="px-3 py-2 border-b border-white/5 mb-1">
@@ -297,9 +282,8 @@ export function Navbar({ categories }: NavbarProps) {
                       <LogOut className="w-4 h-4" />
                       Sign Out
                     </button>
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
             </div>
           ) : (
             <Link 
@@ -322,133 +306,122 @@ export function Navbar({ categories }: NavbarProps) {
       </div>
 
       {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="md:hidden absolute top-full left-0 w-full bg-[#0a0a0a] border-b border-white/10 overflow-hidden z-50"
-          >
-            <nav className="flex flex-col gap-4 py-6 px-6">
-              <div className="relative mb-4">
-                <form onSubmit={handleSearch} className="relative">
-                  <button type="submit" className="absolute left-3 top-1/2 -translate-y-1/2 hover:text-neon-cyan transition-colors">
-                    {isSearching ? (
-                      <Loader2 className="w-4 h-4 text-neon-cyan animate-spin" />
-                    ) : (
-                      <Search className="w-4 h-4 text-white/30" />
-                    )}
-                  </button>
-                  <input 
-                    type="text" 
-                    placeholder="SEARCH PROTOCOL..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-sm w-full focus:outline-none focus:border-neon-cyan/50 transition-all font-mono"
-                  />
-                </form>
-
-                <AnimatePresence>
-                  {showSuggestions && searchQuery.length >= 2 && suggestions.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-2 bg-white/5 border border-white/10 rounded-xl overflow-hidden"
-                    >
-                      {suggestions.map((game) => (
-                        <Link
-                          key={game.id}
-                          href={`/game/${game.slug}`}
-                          onClick={() => {
-                            setIsMenuOpen(false);
-                            setShowSuggestions(false);
-                          }}
-                          className="flex items-center gap-3 p-3 hover:bg-neon-cyan/10 transition-colors border-b border-white/5 last:border-0"
-                        >
-                          <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10">
-                            <Image
-                              src={game.thumbnail}
-                              alt={game.title}
-                              fill
-                              className="object-cover"
-                              referrerPolicy="no-referrer"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs font-black uppercase tracking-tight text-white truncate">
-                              {game.title}
-                            </div>
-                            <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                              {game.Category?.name}
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </motion.div>
+      {isMenuOpen && (
+        <div 
+          className="md:hidden absolute top-full left-0 w-full bg-[#0a0a0a] border-b border-white/10 overflow-hidden z-50"
+        >
+          <nav className="flex flex-col gap-4 py-6 px-6">
+            <div className="relative mb-4">
+              <form onSubmit={handleSearch} className="relative">
+                <button type="submit" className="absolute left-3 top-1/2 -translate-y-1/2 hover:text-neon-cyan transition-colors">
+                  {isSearching ? (
+                    <Loader2 className="w-4 h-4 text-neon-cyan animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4 text-white/30" />
                   )}
-                </AnimatePresence>
-              </div>
-
-              <div className="flex items-center justify-between px-4 py-3 bg-white/5 rounded-xl border border-white/10">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Interface Theme</span>
-                <ThemeToggle />
-              </div>
-
-              <Link href="/" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
-                <Home className="w-5 h-5 text-neon-cyan" />
-                Home
-              </Link>
-              <Link href="/trending" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
-                <Flame className="w-5 h-5 text-neon-cyan" />
-                Trending
-              </Link>
-              <Link href="/blog" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
-                <Newspaper className="w-5 h-5 text-neon-cyan" />
-                Blog
-              </Link>
-              <Link href="/recently-played" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
-                <History className="w-5 h-5 text-neon-cyan" />
-                Recently Played
-              </Link>
-              
-              {user ? (
-                <button 
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    setIsMenuOpen(false);
-                    router.refresh();
-                  }}
-                  className="text-lg font-bold uppercase tracking-tight text-red-500 flex items-center gap-2"
-                >
-                  <LogOut className="w-5 h-5" />
-                  Sign Out
                 </button>
-              ) : (
-                <Link href="/login" className="text-lg font-bold uppercase tracking-tight text-emerald-500" onClick={() => setIsMenuOpen(false)}>Login / Sign Up</Link>
-              )}
-              
-              <div className="space-y-4">
-                <span className="text-xs font-black uppercase tracking-widest text-white/30">All Genres</span>
-                <div className="grid grid-cols-2 gap-2">
-                  {categories.map((cat) => (
-                    <Link 
-                      key={cat.id} 
-                      href={`/${cat.slug}`}
-                      className="px-4 py-2 rounded-xl bg-white/5 text-sm font-bold uppercase tracking-tight"
-                      onClick={() => setIsMenuOpen(false)}
+                <input 
+                  type="text" 
+                  placeholder="SEARCH PROTOCOL..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-sm w-full focus:outline-none focus:border-neon-cyan/50 transition-all font-mono"
+                />
+              </form>
+
+              {showSuggestions && searchQuery.length >= 2 && suggestions.length > 0 && (
+                <div
+                  className="mt-2 bg-white/5 border border-white/10 rounded-xl overflow-hidden"
+                >
+                  {suggestions.map((game) => (
+                    <Link
+                      key={game.id}
+                      href={`/game/${game.slug}`}
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setShowSuggestions(false);
+                      }}
+                      className="flex items-center gap-3 p-3 hover:bg-neon-cyan/10 transition-colors border-b border-white/5 last:border-0"
                     >
-                      {cat.name}
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10">
+                        <Image
+                          src={game.thumbnail}
+                          alt={game.title}
+                          fill
+                          className="object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-black uppercase tracking-tight text-white truncate">
+                          {game.title}
+                        </div>
+                        <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                          {game.Category?.name}
+                        </div>
+                      </div>
                     </Link>
                   ))}
                 </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between px-4 py-3 bg-white/5 rounded-xl border border-white/10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Interface Theme</span>
+              <ThemeToggle />
+            </div>
+
+            <Link href="/" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+              <Home className="w-5 h-5 text-neon-cyan" />
+              Home
+            </Link>
+            <Link href="/trending" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+              <Flame className="w-5 h-5 text-neon-cyan" />
+              Trending
+            </Link>
+            <Link href="/blog" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+              <Newspaper className="w-5 h-5 text-neon-cyan" />
+              Blog
+            </Link>
+            <Link href="/recently-played" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+              <History className="w-5 h-5 text-neon-cyan" />
+              Recently Played
+            </Link>
+            
+            {user ? (
+              <button 
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  setIsMenuOpen(false);
+                  router.refresh();
+                }}
+                className="text-lg font-bold uppercase tracking-tight text-red-500 flex items-center gap-2"
+              >
+                <LogOut className="w-5 h-5" />
+                Sign Out
+              </button>
+            ) : (
+              <Link href="/login" className="text-lg font-bold uppercase tracking-tight text-emerald-500" onClick={() => setIsMenuOpen(false)}>Login / Sign Up</Link>
+            )}
+            
+            <div className="space-y-4">
+              <span className="text-xs font-black uppercase tracking-widest text-white/30">All Genres</span>
+              <div className="grid grid-cols-2 gap-2">
+                {categories.map((cat) => (
+                  <Link 
+                    key={cat.id} 
+                    href={`/${cat.slug}`}
+                    className="px-4 py-2 rounded-xl bg-white/5 text-sm font-bold uppercase tracking-tight"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {cat.name}
+                  </Link>
+                ))}
               </div>
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
