@@ -261,6 +261,14 @@ export function Navbar({ categories }: NavbarProps) {
                         {user.email}
                       </p>
                     </div>
+                    <Link 
+                      href="/profile" 
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors text-white"
+                    >
+                      <User className="w-4 h-4" />
+                      My Profile
+                    </Link>
                     {isAdmin(user) && (
                       <Link 
                         href="/admin" 
@@ -389,17 +397,23 @@ export function Navbar({ categories }: NavbarProps) {
             </Link>
             
             {user ? (
-              <button 
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  setIsMenuOpen(false);
-                  router.refresh();
-                }}
-                className="text-lg font-bold uppercase tracking-tight text-red-500 flex items-center gap-2"
-              >
-                <LogOut className="w-5 h-5" />
-                Sign Out
-              </button>
+              <>
+                <Link href="/profile" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                  <User className="w-5 h-5 text-neon-cyan" />
+                  My Profile
+                </Link>
+                <button 
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    setIsMenuOpen(false);
+                    router.refresh();
+                  }}
+                  className="text-lg font-bold uppercase tracking-tight text-red-500 flex items-center gap-2"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Sign Out
+                </button>
+              </>
             ) : (
               <Link href="/login" className="text-lg font-bold uppercase tracking-tight text-emerald-500" onClick={() => setIsMenuOpen(false)}>Login / Sign Up</Link>
             )}

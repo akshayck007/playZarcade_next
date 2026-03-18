@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function AdminCategoriesPage() {
+export default function DevCategoriesPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [cleaning, setCleaning] = useState(false);
@@ -75,7 +75,7 @@ export default function AdminCategoriesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
       </div>
     );
   }
@@ -84,7 +84,7 @@ export default function AdminCategoriesPage() {
     <div className="space-y-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-4xl font-black uppercase tracking-tighter">Categories</h1>
+          <h1 className="text-4xl font-black uppercase tracking-tighter text-neon-cyan">Categories (Dev)</h1>
           <p className="text-white/40 text-sm font-bold uppercase tracking-widest">Organize your games into {categories.length} segments</p>
         </div>
         <div className="flex items-center gap-3">
@@ -93,7 +93,7 @@ export default function AdminCategoriesPage() {
             disabled={recategorizing}
             className="bg-white/5 text-white/60 px-6 py-3 rounded-full font-black uppercase tracking-tight hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
-            {recategorizing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Gamepad2 className="w-5 h-5 text-emerald-500" />}
+            {recategorizing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Gamepad2 className="w-5 h-5 text-neon-cyan" />}
             Fix Multiplayer
           </button>
           <button 
@@ -101,10 +101,10 @@ export default function AdminCategoriesPage() {
             disabled={cleaning}
             className="bg-white/5 text-white/60 px-6 py-3 rounded-full font-black uppercase tracking-tight hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
-            {cleaning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-emerald-500" />}
+            {cleaning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-neon-cyan" />}
             Cleanup Duplicates
           </button>
-          <button className="bg-emerald-500 text-black px-6 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-colors flex items-center gap-2">
+          <button className="bg-neon-cyan text-black px-6 py-3 rounded-full font-black uppercase tracking-tight hover:bg-white transition-colors flex items-center gap-2">
             <Plus className="w-5 h-5" />
             New Category
           </button>
@@ -113,10 +113,10 @@ export default function AdminCategoriesPage() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {categories.map((cat) => (
-          <div key={cat.id} className="glass p-8 rounded-3xl space-y-6 border border-white/5 hover:border-emerald-500/30 transition-all group">
+          <div key={cat.id} className="glass p-8 rounded-3xl space-y-6 border border-white/5 hover:border-neon-cyan/30 transition-all group">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center group-hover:bg-emerald-500 transition-colors">
-                <Layers className="w-6 h-6 text-emerald-500 group-hover:text-black transition-colors" />
+              <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center group-hover:bg-neon-cyan transition-colors">
+                <Layers className="w-6 h-6 text-neon-cyan group-hover:text-black transition-colors" />
               </div>
               <div className="flex gap-2">
                 <button className="p-2 glass rounded-lg hover:bg-white/10 transition-colors">
@@ -135,10 +135,10 @@ export default function AdminCategoriesPage() {
 
             <div className="pt-6 border-t border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Gamepad2 className="w-4 h-4 text-emerald-500" />
+                <Gamepad2 className="w-4 h-4 text-neon-cyan" />
                 <span className="text-xs font-bold">{cat._count.games} Games</span>
               </div>
-              <Link href={`/${cat.slug}`} target="_blank" className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-emerald-500 transition-colors">
+              <Link href={`/${cat.slug}`} target="_blank" className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-neon-cyan transition-colors">
                 View Page
               </Link>
             </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { GameCard } from './GameCard';
 import { History, X, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 const RECENTLY_PLAYED_KEY = 'playz_recently_played';
 const FAVORITES_KEY = 'playz_favorites';
@@ -12,33 +13,46 @@ const MAX_RECENT = 24;
 export function Favorites() {
   const [favoriteGames, setFavoriteGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
     const fetchFavorites = async () => {
-      const stored = localStorage.getItem(FAVORITES_KEY);
-      if (stored) {
-        try {
-          const ids = JSON.parse(stored);
-          if (ids.length > 0) {
-            // We need to fetch the game data for these IDs
-            // For now, we'll just show a message or fetch them if we had a bulk API
-            // But since we want to keep it simple and fast, we'll store the basic game data in favorites too
-            // OR we can fetch them from the API. Let's try to fetch them.
-            const res = await fetch(`/api/games/bulk?ids=${ids.join(',')}`);
-            const data = await res.json();
-            if (data.success) {
-              setFavoriteGames(data.games);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Fetch from Supabase
+        const { data, error } = await supabase
+          .from('UserFavorite')
+          .select('*, Game(*, Category(*))')
+          .eq('userId', session.user.id)
+          .order('createdAt', { ascending: false });
+        
+        if (data) {
+          setFavoriteGames(data.map(f => f.Game));
+        }
+      } else {
+        // Fallback to localStorage
+        const stored = localStorage.getItem(FAVORITES_KEY);
+        if (stored) {
+          try {
+            const ids = JSON.parse(stored);
+            if (ids.length > 0) {
+              const res = await fetch(`/api/games/bulk?ids=${ids.join(',')}`);
+              const data = await res.json();
+              if (data.success) {
+                setFavoriteGames(data.games);
+              }
             }
+          } catch (e) {
+            console.error('Failed to parse favorites', e);
           }
-        } catch (e) {
-          console.error('Failed to parse favorites', e);
         }
       }
       setLoading(false);
     };
 
     fetchFavorites();
-  }, []);
+  }, [supabase]);
 
   if (!loading && favoriteGames.length === 0) return null;
 
@@ -62,17 +76,39 @@ export function Favorites() {
 
 export function RecentlyPlayed() {
   const [recentGames, setRecentGames] = useState<any[]>([]);
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
-    const stored = localStorage.getItem(RECENTLY_PLAYED_KEY);
-    if (stored) {
-      try {
-        setRecentGames(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse recently played', e);
+    const fetchHistory = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Fetch from Supabase
+        const { data, error } = await supabase
+          .from('UserHistory')
+          .select('*, Game(*, Category(*))')
+          .eq('userId', session.user.id)
+          .order('lastPlayedAt', { ascending: false })
+          .limit(MAX_RECENT);
+        
+        if (data) {
+          setRecentGames(data.map(h => h.Game));
+        }
+      } else {
+        // Fallback to localStorage
+        const stored = localStorage.getItem(RECENTLY_PLAYED_KEY);
+        if (stored) {
+          try {
+            setRecentGames(JSON.parse(stored));
+          } catch (e) {
+            console.error('Failed to parse recently played', e);
+          }
+        }
       }
-    }
-  }, []);
+    };
+
+    fetchHistory();
+  }, [supabase]);
 
   const clearRecent = () => {
     localStorage.removeItem(RECENTLY_PLAYED_KEY);
@@ -121,6 +157,22 @@ export function trackPlay(game: any) {
   if (typeof window === 'undefined') return;
   console.log('[RecentlyPlayed] Tracking play for:', game.title);
 
+  const supabase = createClientComponentClient();
+
+  const updateCloudHistory = async (userId: string) => {
+    try {
+      await supabase
+        .from('UserHistory')
+        .upsert({ 
+          userId, 
+          gameId: game.id, 
+          lastPlayedAt: new Date().toISOString() 
+        }, { onConflict: 'userId,gameId' });
+    } catch (e) {
+      console.error('Failed to sync history to cloud', e);
+    }
+  };
+
   const stored = localStorage.getItem(RECENTLY_PLAYED_KEY);
   let recent: any[] = [];
   
@@ -158,4 +210,11 @@ export function trackPlay(game: any) {
   }
   history = [game.id, ...history.filter(id => id !== game.id)].slice(0, 30);
   localStorage.setItem('playz_history', JSON.stringify(history));
+
+  // Sync to cloud if logged in
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) {
+      updateCloudHistory(session.user.id);
+    }
+  });
 }

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { trackPlay } from './RecentlyPlayed';
 import { Maximize2, Heart, Share2 } from 'lucide-react';
+import { ShareButtons } from './ShareButtons';
 
 interface GameActionsProps {
   game: any;
@@ -10,6 +11,7 @@ interface GameActionsProps {
 
 export function GameActions({ game }: GameActionsProps) {
   const [isLiked, setIsLiked] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -54,8 +56,7 @@ export function GameActions({ game }: GameActionsProps) {
         url: window.location.href,
       });
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+      setShowShare(!showShare);
     }
   };
 
@@ -75,13 +76,20 @@ export function GameActions({ game }: GameActionsProps) {
             <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
             <span>{game.playCount > 1000 ? "1.2k" : "842"}</span>
           </button>
-          <button 
-            onClick={handleShare}
-            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-neon-cyan transition-colors"
-          >
-            <Share2 className="w-4 h-4" />
-            <span>Sync</span>
-          </button>
+          <div className="relative">
+            <button 
+              onClick={handleShare}
+              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-neon-cyan transition-colors"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Sync</span>
+            </button>
+            {showShare && (
+              <div className="absolute bottom-full left-0 mb-4 glass p-4 rounded-xl border border-white/10 z-50 min-w-[200px]">
+                <ShareButtons title={game.title} url={typeof window !== 'undefined' ? window.location.href : ''} />
+              </div>
+            )}
+          </div>
           <button 
             onClick={handleFullscreen}
             className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-neon-cyan transition-colors"

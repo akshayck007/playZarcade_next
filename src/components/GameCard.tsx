@@ -4,6 +4,7 @@ import { Play } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
+import { FavoriteButton } from "./FavoriteButton";
 
 interface GameCardProps {
   game: any;
@@ -11,11 +12,11 @@ interface GameCardProps {
 
 export function GameCard({ game }: GameCardProps) {
   return (
-    <Link 
-      href={`/game/${game.slug}`} 
-      className="group relative flex flex-col gap-3"
-    >
-      <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-dark-surface border border-white/5 group-hover:border-neon-cyan/50 transition-all duration-300 shadow-lg group-hover:shadow-neon-cyan/20">
+    <div className="group relative flex flex-col gap-3">
+      <Link 
+        href={`/game/${game.slug}`} 
+        className="relative aspect-[4/3] rounded-xl overflow-hidden bg-dark-surface border border-white/5 group-hover:border-neon-cyan/50 transition-all duration-300 shadow-lg group-hover:shadow-neon-cyan/20"
+      >
         <Image 
           src={game.thumbnail} 
           alt={game.title}
@@ -37,9 +38,13 @@ export function GameCard({ game }: GameCardProps) {
           </motion.div>
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neon-cyan cyber-text-glow">Access Protocol</span>
         </div>
+      </Link>
+
+      <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <FavoriteButton gameId={game.id} />
       </div>
 
-      <div className="px-1">
+      <Link href={`/game/${game.slug}`} className="px-1">
         <h3 className="text-xs font-black truncate group-hover:text-neon-cyan transition-colors uppercase tracking-widest text-white/90 font-mono">
           {game.title}
         </h3>
@@ -51,7 +56,7 @@ export function GameCard({ game }: GameCardProps) {
             {(game.playCount || 0).toLocaleString()} USERS
           </span>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

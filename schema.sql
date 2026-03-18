@@ -95,3 +95,36 @@ CREATE POLICY "Allow all access for anon on Settings" ON public."Settings" FOR A
 CREATE POLICY "Allow all access for anon on Section" ON public."Section" FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access for anon on SectionItem" ON public."SectionItem" FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access for anon on BlogPost" ON public."BlogPost" FOR ALL USING (true) WITH CHECK (true);
+
+-- 7. User Favorites Table
+CREATE TABLE IF NOT EXISTS public."UserFavorite" (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    "userId" UUID NOT NULL, -- References auth.users(id)
+    "gameId" UUID REFERENCES public."Game"(id) ON DELETE CASCADE,
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE("userId", "gameId")
+);
+
+-- 8. User History Table (Cloud Sync)
+CREATE TABLE IF NOT EXISTS public."UserHistory" (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    "userId" UUID NOT NULL, -- References auth.users(id)
+    "gameId" UUID REFERENCES public."Game"(id) ON DELETE CASCADE,
+    "lastPlayedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE("userId", "gameId")
+);
+
+-- Enable RLS for new tables
+ALTER TABLE public."UserFavorite" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."UserHistory" ENABLE ROW LEVEL SECURITY;
+
+-- Policies for UserFavorite (Owner only)
+CREATE POLICY "Users can view their own favorites" ON public."UserFavorite" FOR SELECT USING (auth.uid() = "userId");
+CREATE POLICY "Users can insert their own favorites" ON public."UserFavorite" FOR INSERT WITH CHECK (auth.uid() = "userId");
+CREATE POLICY "Users can delete their own favorites" ON public."UserFavorite" FOR DELETE USING (auth.uid() = "userId");
+
+-- Policies for UserHistory (Owner only)
+CREATE POLICY "Users can view their own history" ON public."UserHistory" FOR SELECT USING (auth.uid() = "userId");
+CREATE POLICY "Users can insert their own history" ON public."UserHistory" FOR INSERT WITH CHECK (auth.uid() = "userId");
+CREATE POLICY "Users can update their own history" ON public."UserHistory" FOR UPDATE USING (auth.uid() = "userId");
+CREATE POLICY "Users can delete their own history" ON public."UserHistory" FOR DELETE USING (auth.uid() = "userId");

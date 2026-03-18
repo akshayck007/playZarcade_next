@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { Navbar } from "@/components/Navbar";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { SyncManager } from "@/components/SyncManager";
+import { PwaHandler } from "@/components/PwaHandler";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -46,6 +48,12 @@ export default async function RootLayout({
   return (
     <html lang="en" className={cn(inter.variable, jetbrainsMono.variable)}>
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#050505" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="PlayZ Arcade" />
+        <link rel="apple-touch-icon" href="https://picsum.photos/seed/arcade-icon/192/192" />
         {settings?.googleVerification && (
           <meta name="google-site-verification" content={settings.googleVerification} />
         )}
@@ -64,6 +72,8 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider>
+          <SyncManager />
+          <PwaHandler />
           <Navbar categories={categories} />
 
           <main className="max-w-7xl mx-auto px-6 py-8 relative z-10">
