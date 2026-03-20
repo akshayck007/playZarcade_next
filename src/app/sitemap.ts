@@ -4,12 +4,13 @@ import { supabase } from '@/lib/supabase';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://playzarcade.com';
 
-  // Fetch games - increasing limit to 40,000 to stay under the 50k sitemap limit
+  // Fetch games - limiting to 5,000 most recent to improve response time
   const { data: games } = await supabase
     .from('Game')
     .select('slug, updated_at')
     .eq('isPublished', true)
-    .limit(40000);
+    .order('updated_at', { ascending: false })
+    .limit(5000);
 
   // Fetch all categories
   const { data: categories } = await supabase

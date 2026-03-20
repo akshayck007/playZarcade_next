@@ -48,10 +48,10 @@ export default async function Home() {
             The Ultimate Arcade for Free Browser Games
           </h2>
           <p className="text-white/60 leading-relaxed text-lg">
-            Welcome to PlayZ Arcade, your premier destination for the ultimate collection of free online games. Whether you&apos;re looking for action-packed shooters like <span className="text-neon-cyan font-bold">Metal Gear Solid</span>, brain-teasing puzzles, or high-speed racing games, we have the best browser games for every player. Our platform is optimized for speed, ensuring you can play your favorite free games instantly on any device with no downloads required.
+            Welcome to PlayZ Arcade, your premier destination for the ultimate collection of free online games. Whether you&apos;re looking for action-packed shooters, brain-teasing puzzles, or high-speed racing games, we have the best browser games for every player. Our platform is optimized for speed, ensuring you can play your favorite free games instantly on any device with no downloads required.
           </p>
           <p className="text-white/40 leading-relaxed text-sm">
-            Explore our <span className="text-neon-magenta">trending blog genres</span> and stay updated with the latest <span className="text-neon-lime">intel reports</span>. From <span className="text-neon-cyan">Funko Fusion</span> crossovers to tactical espionage in <span className="text-neon-magenta font-bold">Gear Solid</span>, our <span className="text-neon-lime">playzarcade home trending</span> section keeps you in the loop with the hottest gaming themes and news.
+            Explore our <span className="text-neon-magenta">trending blog genres</span> and stay updated with the latest <span className="text-neon-lime">intel reports</span>. Our <span className="text-neon-lime">playzarcade home trending</span> section keeps you in the loop with the hottest gaming themes and news across all genres.
           </p>
         </div>
 

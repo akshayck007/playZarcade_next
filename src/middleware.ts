@@ -4,6 +4,16 @@ import type { NextRequest } from 'next/server';
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
+  const url = req.nextUrl.clone();
+  const host = req.headers.get('host');
+
+  // Redirect www to non-www
+  if (host?.startsWith('www.')) {
+    const newHost = host.replace('www.', '');
+    url.host = newHost;
+    return NextResponse.redirect(url, 301);
+  }
+
   const supabase = createMiddlewareClient({ req, res });
 
   // Refresh session if expired - required for Server Components

@@ -31,16 +31,27 @@ export async function generateMetadata(): Promise<Metadata> {
     .maybeSingle();
 
   return {
-    title: "PlayZ Arcade | Free Browser Games Online - Metal Gear Solid & Funko Fusion",
-    description: "Play thousands of free browser games instantly on PlayZ Arcade. From Metal Gear Solid tactical espionage to Funko Fusion crossovers, we offer the best high-performance gaming with no downloads. Read our latest intel reports on trending blog genres and gaming themes.",
+    title: "PlayZ Arcade | Best Free Browser Games Online - No Downloads Required",
+    description: "Play thousands of free browser games instantly on PlayZ Arcade. From action-packed shooters to brain-teasing puzzles, we offer the best high-performance gaming with no downloads. Stay updated with our latest intel reports and trending gaming themes.",
     manifest: "/manifest.json",
     alternates: {
-      canonical: "https://playzarcade-next.pages.dev",
+      canonical: "https://playzarcade.com",
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
     openGraph: {
-      title: "PlayZ Arcade | Free Browser Games Online - Metal Gear Solid & Funko Fusion",
-      description: "Play thousands of free browser games instantly on PlayZ Arcade. Featuring Metal Gear Solid, Funko Fusion, and more high-performance browser games.",
-      url: "https://playzarcade-next.pages.dev",
+      title: "PlayZ Arcade | Best Free Browser Games Online - No Downloads Required",
+      description: "Play thousands of free browser games instantly on PlayZ Arcade. High-performance browser games with no downloads required.",
+      url: "https://playzarcade.com",
       siteName: "PlayZ Arcade",
       images: [
         {
@@ -55,8 +66,8 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: "PlayZ Arcade | Free Browser Games Online - Metal Gear Solid & Funko Fusion",
-      description: "Play thousands of free browser games instantly on PlayZ Arcade. Featuring Metal Gear Solid, Funko Fusion, and more.",
+      title: "PlayZ Arcade | Best Free Browser Games Online - No Downloads Required",
+      description: "Play thousands of free browser games instantly on PlayZ Arcade. High-performance gaming on any device.",
       images: ["/icon-512.png"],
     },
     appleWebApp: {
@@ -90,21 +101,61 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { data: categoriesRaw } = await supabase
-    .from("Category")
-    .select("*")
-    .order("name", { ascending: true });
-  
-  const { data: settings } = await supabase
-    .from("Settings")
-    .select("*")
-    .eq("id", "global")
-    .maybeSingle();
-  
-  const categories = categoriesRaw || [];
+  // Parallelize queries for better performance
+  const [categoriesResult, settingsResult] = await Promise.all([
+    supabase
+      .from("Category")
+      .select("*")
+      .order("name", { ascending: true }),
+    supabase
+      .from("Settings")
+      .select("*")
+      .eq("id", "global")
+      .maybeSingle()
+  ]);
+
+  const categories = categoriesResult.data || [];
+  const settings = settingsResult.data;
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "PlayZ Arcade",
+    "url": "https://playzarcade.com",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://playzarcade.com/search?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  };
+
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "PlayZ Arcade",
+    "url": "https://playzarcade.com",
+    "logo": "https://playzarcade.com/icon-512.png",
+    "sameAs": [
+      "https://twitter.com/playzarcade",
+      "https://facebook.com/playzarcade",
+      "https://instagram.com/playzarcade",
+      "https://linkedin.com/company/playzarcade",
+      "https://youtube.com/playzarcade"
+    ]
+  };
 
   return (
     <html lang="en" className={cn(inter.variable, jetbrainsMono.variable)}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+      </head>
       <body className="min-h-screen bg-background">
         {settings?.adsenseId && (
           <Script 
@@ -126,40 +177,6 @@ export default async function RootLayout({
           <SyncManager />
           <PwaHandler />
           <Navbar categories={categories} />
-
-          <Script id="schema-org" type="application/ld+json" strategy="afterInteractive">
-            {`
-              {
-                "@context": "https://schema.org",
-                "@type": "WebSite",
-                "name": "PlayZ Arcade",
-                "url": "https://playzarcade-next.pages.dev",
-                "potentialAction": {
-                  "@type": "SearchAction",
-                  "target": "https://playzarcade-next.pages.dev/search?q={search_term_string}",
-                  "query-input": "required name=search_term_string"
-                }
-              }
-            `}
-          </Script>
-          <Script id="organization-schema" type="application/ld+json" strategy="afterInteractive">
-            {`
-              {
-                "@context": "https://schema.org",
-                "@type": "Organization",
-                "name": "PlayZ Arcade",
-                "url": "https://playzarcade-next.pages.dev",
-                "logo": "https://playzarcade-next.pages.dev/icon-512.png",
-                "sameAs": [
-                  "https://twitter.com/playzarcade",
-                  "https://facebook.com/playzarcade",
-                  "https://instagram.com/playzarcade",
-                  "https://linkedin.com/company/playzarcade",
-                  "https://youtube.com/playzarcade"
-                ]
-              }
-            `}
-          </Script>
 
           <main className="max-w-7xl mx-auto px-6 py-8 relative z-10">
             {children}
