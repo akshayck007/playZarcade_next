@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, Gamepad2, Layers, TrendingUp, Settings, Search, Users, FileText, RefreshCw, LogOut, Star, Layout, Terminal } from "lucide-react";
+import { LayoutDashboard, Gamepad2, Layers, TrendingUp, Settings, Search, Users, FileText, RefreshCw, LogOut, Star, Layout, Terminal, Sparkles } from "lucide-react";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -26,6 +26,7 @@ export default async function DevAdminLayout({
     { icon: LayoutDashboard, label: "Dev Dashboard", href: "/dev-admin" },
     { icon: Gamepad2, label: "Games", href: "/admin/games" },
     { icon: Layers, label: "Categories", href: "/dev-admin/categories" },
+    { icon: Sparkles, label: "Icon Generator", href: "/dev-admin/generate-icon" },
     { icon: TrendingUp, label: "Trends", href: "/admin/trends" },
     { icon: Settings, label: "Settings", href: "/admin/settings" },
   ];

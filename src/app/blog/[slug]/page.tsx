@@ -6,9 +6,28 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Markdown from '@/components/Markdown';
 import { Calendar, Tag, ChevronLeft, Share2, Clock, Gamepad2 } from 'lucide-react';
+import type { Metadata } from 'next';
 
 export const runtime = "edge";
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = createServerComponentClient({ cookies });
+  
+  const { data: post } = await supabase
+    .from('BlogPost')
+    .select('title, excerpt')
+    .eq('slug', slug)
+    .single();
+
+  if (!post) return {};
+
+  return {
+    title: `${post.title} | PlayZ Arcade Blog`,
+    description: post.excerpt,
+  };
+}
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

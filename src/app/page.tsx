@@ -27,9 +27,9 @@ export default async function Home() {
       {/* SEO Content Section */}
       <section className="prose prose-invert max-w-none border-t border-neon-cyan/10 pt-20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
-          <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter m-0 cyber-text-glow text-neon-cyan">
+          <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter m-0 cyber-text-glow text-neon-cyan">
             The Best Free <span className="text-white">Browser Games</span> Online
-          </h2>
+          </h1>
           <div className="flex items-center gap-4">
             <div className="px-4 py-2 bg-neon-cyan/5 border border-neon-cyan/20 rounded-lg text-[10px] font-black uppercase tracking-widest text-neon-cyan">
               NO DOWNLOADS
@@ -41,7 +41,7 @@ export default async function Home() {
         </div>
         
         <p className="text-white/60 leading-relaxed text-lg max-w-4xl font-mono">
-          [SYSTEM_LOG]: Welcome to PlayZ Arcade. Initializing high-performance gaming protocols. Whether you&apos;re looking for action-packed shooters, brain-teasing puzzles, or high-speed racing games, we have something for everyone. Our platform is optimized for performance, ensuring you can play your favorite games instantly on any device without downloads.
+          [SYSTEM_LOG]: Welcome to PlayZ Arcade. Accessing the ultimate collection of free online games. Whether you&apos;re looking for action-packed shooters, brain-teasing puzzles, or high-speed racing games, we have the best browser games for every player. Our platform is optimized for speed, ensuring you can play your favorite free games instantly on any device with no downloads required.
         </p>
         
         <div className="grid md:grid-cols-3 gap-8 mt-16">

@@ -4,9 +4,15 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, Tag, ChevronRight, Newspaper } from 'lucide-react';
+import type { Metadata } from 'next';
 
 export const runtime = "edge";
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: "Arcade Chronicles | PlayZ Arcade Blog",
+  description: "Latest gaming news, trends, and insights from the world of browser gaming.",
+};
 
 export default async function BlogPage() {
   const supabase = createServerComponentClient({ cookies });

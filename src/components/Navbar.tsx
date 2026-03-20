@@ -161,7 +161,7 @@ export function Navbar({ categories }: NavbarProps) {
               </button>
               <input 
                 type="text" 
-                placeholder="SEARCH PROTOCOL..." 
+                placeholder="SEARCH GAMES..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
@@ -177,7 +177,7 @@ export function Navbar({ categories }: NavbarProps) {
                   {suggestions.length > 0 ? (
                     <>
                       <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/20 border-b border-white/5 mb-1">
-                        Matching Protocols
+                        Matching Games
                       </div>
                       {suggestions.map((game) => (
                         <Link
@@ -222,7 +222,7 @@ export function Navbar({ categories }: NavbarProps) {
                   ) : (
                     <div className="p-8 flex flex-col items-center gap-3">
                       <Loader2 className="w-6 h-6 text-neon-cyan animate-spin" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Accessing Database...</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Loading Games...</span>
                     </div>
                   )}
                 </div>
@@ -330,7 +330,7 @@ export function Navbar({ categories }: NavbarProps) {
                 </button>
                 <input 
                   type="text" 
-                  placeholder="SEARCH PROTOCOL..." 
+                  placeholder="SEARCH GAMES..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-sm w-full focus:outline-none focus:border-neon-cyan/50 transition-all font-mono"

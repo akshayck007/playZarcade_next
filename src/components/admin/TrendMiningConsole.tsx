@@ -25,10 +25,21 @@ export function TrendMiningConsole() {
     setIsRefining(true);
     setError(null);
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+      // 1. Ensure API Key is selected if using platform dialog
+      if (window.aistudio) {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+          await window.aistudio.openSelectKey();
+        }
+      }
+
+      const apiKey = 
+        (process.env as any).API_KEY || 
+        process.env.NEXT_PUBLIC_GEMINI_API_KEY || 
+        (process.env as any).NEXT_PUBLIC_MY_GEMINI_API_KEY;
       
       if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
-        throw new Error("Gemini API Key is missing or invalid. Please set NEXT_PUBLIC_GEMINI_API_KEY in your environment variables or Secrets panel.");
+        throw new Error("Gemini API Key is missing. Please select an API key or set NEXT_PUBLIC_GEMINI_API_KEY in your Secrets.");
       }
 
       const ai = new GoogleGenAI({ apiKey });
