@@ -18,32 +18,43 @@ export default async function Home() {
 
   return (
     <div className="space-y-16 pb-20">
+      {/* Compact Top Header - SEO friendly but user focused */}
+      <section className="pt-4 px-6 md:px-0">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tighter m-0 cyber-text-glow text-neon-cyan leading-none">
+            Free <span className="text-white">Browser Games</span> Online
+          </h1>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="px-3 py-1 bg-neon-cyan/5 border border-neon-cyan/20 rounded text-[9px] font-black uppercase tracking-widest text-neon-cyan">
+              NO DOWNLOADS
+            </div>
+            <div className="px-3 py-1 bg-neon-magenta/5 border border-neon-magenta/20 rounded text-[9px] font-black uppercase tracking-widest text-neon-magenta">
+              FREE TO PLAY
+            </div>
+          </div>
+        </div>
+      </section>
+
       <HomeTabsSection />
       
       <TrendingSection />
 
       <BlogSection />
 
-      {/* SEO Content Section */}
-      <section className="prose prose-invert max-w-none border-t border-neon-cyan/10 pt-20">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
-          <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter m-0 cyber-text-glow text-neon-cyan">
-            The Best Free <span className="text-white">Browser Games</span> Online
-          </h1>
-          <div className="flex items-center gap-4">
-            <div className="px-4 py-2 bg-neon-cyan/5 border border-neon-cyan/20 rounded-lg text-[10px] font-black uppercase tracking-widest text-neon-cyan">
-              NO DOWNLOADS
-            </div>
-            <div className="px-4 py-2 bg-neon-magenta/5 border border-neon-magenta/20 rounded-lg text-[10px] font-black uppercase tracking-widest text-neon-magenta">
-              FREE TO PLAY
-            </div>
-          </div>
+      {/* SEO Content & Features Section moved to bottom */}
+      <section className="prose prose-invert max-w-none border-t border-white/5 pt-20">
+        <div className="max-w-4xl space-y-6">
+          <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-neon-cyan">
+            The Ultimate Arcade for Free Browser Games
+          </h2>
+          <p className="text-white/60 leading-relaxed text-lg">
+            Welcome to PlayZ Arcade, your premier destination for the ultimate collection of free online games. Whether you&apos;re looking for action-packed shooters like <span className="text-neon-cyan font-bold">Metal Gear Solid</span>, brain-teasing puzzles, or high-speed racing games, we have the best browser games for every player. Our platform is optimized for speed, ensuring you can play your favorite free games instantly on any device with no downloads required.
+          </p>
+          <p className="text-white/40 leading-relaxed text-sm">
+            Explore our <span className="text-neon-magenta">trending blog genres</span> and stay updated with the latest <span className="text-neon-lime">intel reports</span>. From <span className="text-neon-cyan">Funko Fusion</span> crossovers to tactical espionage in <span className="text-neon-magenta font-bold">Gear Solid</span>, our <span className="text-neon-lime">playzarcade home trending</span> section keeps you in the loop with the hottest gaming themes and news.
+          </p>
         </div>
-        
-        <p className="text-white/60 leading-relaxed text-lg max-w-4xl font-mono">
-          [SYSTEM_LOG]: Welcome to PlayZ Arcade. Accessing the ultimate collection of free online games. Whether you&apos;re looking for action-packed shooters, brain-teasing puzzles, or high-speed racing games, we have the best browser games for every player. Our platform is optimized for speed, ensuring you can play your favorite free games instantly on any device with no downloads required.
-        </p>
-        
+
         <div className="grid md:grid-cols-3 gap-8 mt-16">
           <div className="glass p-8 rounded-none border border-white/5 hover:border-neon-cyan/30 transition-all group skew-x-[-2deg]">
             <div className="w-12 h-12 bg-neon-cyan/10 rounded-none flex items-center justify-center mb-6 group-hover:bg-neon-cyan transition-colors shadow-[0_0_15px_rgba(0,243,255,0.2)]">

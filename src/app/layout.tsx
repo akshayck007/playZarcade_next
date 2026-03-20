@@ -31,15 +31,15 @@ export async function generateMetadata(): Promise<Metadata> {
     .maybeSingle();
 
   return {
-    title: "PlayZ Arcade | High-Performance Free Browser Games Online",
-    description: "Play thousands of free browser games instantly on PlayZ Arcade. No downloads, no lag, just high-performance gaming. The ultimate arcade platform for web and mobile.",
+    title: "PlayZ Arcade | Free Browser Games Online - Metal Gear Solid & Funko Fusion",
+    description: "Play thousands of free browser games instantly on PlayZ Arcade. From Metal Gear Solid tactical espionage to Funko Fusion crossovers, we offer the best high-performance gaming with no downloads. Read our latest intel reports on trending blog genres and gaming themes.",
     manifest: "/manifest.json",
     alternates: {
       canonical: "https://playzarcade-next.pages.dev",
     },
     openGraph: {
-      title: "PlayZ Arcade | High-Performance Free Browser Games Online",
-      description: "Play thousands of free browser games instantly on PlayZ Arcade. No downloads, no lag, just high-performance gaming.",
+      title: "PlayZ Arcade | Free Browser Games Online - Metal Gear Solid & Funko Fusion",
+      description: "Play thousands of free browser games instantly on PlayZ Arcade. Featuring Metal Gear Solid, Funko Fusion, and more high-performance browser games.",
       url: "https://playzarcade-next.pages.dev",
       siteName: "PlayZ Arcade",
       images: [
@@ -55,8 +55,8 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: "PlayZ Arcade | High-Performance Free Browser Games Online",
-      description: "Play thousands of free browser games instantly on PlayZ Arcade. No downloads, no lag, just high-performance gaming.",
+      title: "PlayZ Arcade | Free Browser Games Online - Metal Gear Solid & Funko Fusion",
+      description: "Play thousands of free browser games instantly on PlayZ Arcade. Featuring Metal Gear Solid, Funko Fusion, and more.",
       images: ["/icon-512.png"],
     },
     appleWebApp: {
