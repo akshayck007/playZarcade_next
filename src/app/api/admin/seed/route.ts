@@ -52,6 +52,7 @@ export async function GET() {
       await supabase
         .from("Game")
         .upsert({
+          id: crypto.randomUUID(),
           title: "2048",
           slug: "2048",
           description: "A classic puzzle game where you slide numbered tiles on a grid to combine them and create a tile with the number 2048.",

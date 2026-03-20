@@ -50,13 +50,33 @@ export async function POST(req: Request) {
       settings = newSettings;
     }
 
+    // Fetch existing keywords to get their IDs for upsert
+    const { data: existingKeywords } = await supabase
+      .from("TrendingKeyword")
+      .select("id, keyword");
+    
+    const keywordToId = new Map(existingKeywords?.map(k => [k.keyword, k.id]) || []);
+
     // Prepare bulk upsert for TrendingKeyword
-    const upsertData = trends.map(trend => ({
-      keyword: trend.keyword,
-      searchVolume: trend.volume,
-      status: "detected",
-      lastUpdated: new Date().toISOString()
-    }));
+    const upsertData = trends.map(trend => {
+      const item: any = {
+        keyword: trend.keyword,
+        searchVolume: trend.volume,
+        status: "detected",
+        lastUpdated: new Date().toISOString()
+      };
+      
+      // If we have an existing ID, include it to ensure update instead of insert
+      if (keywordToId.has(trend.keyword)) {
+        item.id = keywordToId.get(trend.keyword);
+      } else {
+        // Generate a UUID for new items just in case the DB is missing a default
+        // This assumes the ID column is a UUID type.
+        item.id = crypto.randomUUID();
+      }
+      
+      return item;
+    });
 
     const { error: upsertError } = await supabase
       .from("TrendingKeyword")
@@ -269,13 +289,32 @@ export async function GET(req: Request) {
       settings = newSettings;
     }
 
+    // Fetch existing keywords to get their IDs for upsert
+    const { data: existingKeywords } = await supabase
+      .from("TrendingKeyword")
+      .select("id, keyword");
+    
+    const keywordToId = new Map(existingKeywords?.map(k => [k.keyword, k.id]) || []);
+
     // Prepare bulk upsert for TrendingKeyword
-    const upsertData = uniqueTrends.map(trend => ({
-      keyword: trend.keyword,
-      searchVolume: trend.volume,
-      status: "detected",
-      lastUpdated: new Date().toISOString()
-    }));
+    const upsertData = uniqueTrends.map(trend => {
+      const item: any = {
+        keyword: trend.keyword,
+        searchVolume: trend.volume,
+        status: "detected",
+        lastUpdated: new Date().toISOString()
+      };
+      
+      // If we have an existing ID, include it to ensure update instead of insert
+      if (keywordToId.has(trend.keyword)) {
+        item.id = keywordToId.get(trend.keyword);
+      } else {
+        // Generate a UUID for new items just in case the DB is missing a default
+        item.id = crypto.randomUUID();
+      }
+      
+      return item;
+    });
 
     const { error: upsertError } = await supabase
       .from("TrendingKeyword")
