@@ -46,17 +46,17 @@ export function TrendMiningConsole() {
       
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Analyze these raw search trends and identify potential NEW or RISING web/browser games.
+        contents: `Analyze these raw search trends and identify specific WEB or BROWSER games.
         
         Raw Trends:
         ${previewData.map(t => `${t.keyword} (${t.source})`).join('\n')}
         
         Rules:
         1. Extract specific game titles (e.g., "Bloxd.io", "Voxiom", "Slope").
-        2. Focus on "rising" or "trending" titles that are likely to be popular web games.
+        2. Focus on "rising" or "trending" titles that are likely to be popular web/browser games.
         3. Ignore generic terms like "unblocked games" or "io games" unless they are part of a specific search (e.g., "unblocked games 76").
-        4. Filter out non-game trends (weather, news, politics, etc.).
-        5. Use Google Search to verify if a term is a real game if you are unsure.
+        4. Filter out non-game trends (weather, news, politics, sports teams, celebrities, etc.).
+        5. If a term is a specific game title, keep it. If it's a general topic (like "basketball"), discard it unless it's a specific game like "Retro Bowl".
         
         Return the result as a JSON array of strings containing ONLY the kept game titles.`,
         config: {
@@ -110,42 +110,53 @@ export function TrendMiningConsole() {
     }
   };
 
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const handleMine = async () => {
+    console.log('[TrendMiningConsole] Starting mining process. Status:', status, 'PreviewData length:', previewData?.length);
     setIsLoading(true);
     setError(null);
+    setSuccessMessage(null);
     setStatus('mining');
     try {
       // If we have preview data, we send it via POST to save exactly what we see
       if (previewData && previewData.length > 0) {
+        console.log('[TrendMiningConsole] Sending POST request with preview data');
         const res = await fetch('/api/admin/trends/mine', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ trends: previewData })
         });
         const data = await res.json();
+        console.log('[TrendMiningConsole] POST response:', data);
         if (data.success) {
+          setSuccessMessage(data.message);
           setStatus('complete');
           setTimeout(() => {
             window.location.reload();
-          }, 2000);
+          }, 2500);
         } else {
           setError(data.error || "Mining failed");
         }
       } else {
         // Otherwise trigger full auto-mine
+        console.log('[TrendMiningConsole] Triggering full auto-mine via GET');
         const res = await fetch('/api/admin/trends/mine');
         const data = await res.json();
+        console.log('[TrendMiningConsole] GET response:', data);
         if (data.success) {
+          setSuccessMessage(data.message);
           setStatus('complete');
           setTimeout(() => {
             window.location.reload();
-          }, 2000);
+          }, 2500);
         } else {
           setError(data.error || "Mining failed");
         }
       }
-    } catch (err) {
-      setError("Network error during mining");
+    } catch (err: any) {
+      console.error("[TrendMiningConsole] Mining Error:", err);
+      setError(`Network error: ${err.message || 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
@@ -208,7 +219,17 @@ export function TrendMiningConsole() {
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto p-8 space-y-6">
+              <div className="flex-1 overflow-y-auto p-8 space-y-6 relative">
+                {isLoading && status === 'mining' && (
+                  <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
+                    <RefreshCw className="w-12 h-12 text-emerald-500 animate-spin" />
+                    <div className="text-center">
+                      <p className="text-lg font-black uppercase tracking-tighter text-white">Mining in Progress</p>
+                      <p className="text-xs font-bold text-white/40 uppercase tracking-widest mt-1">Syncing trends with database & boosting scores...</p>
+                    </div>
+                  </div>
+                )}
+
                 {isLoading && status === 'previewing' ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <RefreshCw className="w-12 h-12 text-emerald-500 animate-spin" />
@@ -232,6 +253,7 @@ export function TrendMiningConsole() {
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <CheckCircle2 className="w-16 h-16 text-emerald-500" />
                     <h3 className="text-2xl font-black uppercase tracking-tighter">Mining Successful</h3>
+                    {successMessage && <p className="text-emerald-500/80 font-bold text-sm uppercase tracking-widest">{successMessage}</p>}
                     <p className="text-sm font-bold text-white/40 uppercase tracking-widest">Refreshing library in 2 seconds...</p>
                   </div>
                 ) : previewData ? (

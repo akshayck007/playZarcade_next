@@ -50,60 +50,63 @@ export async function POST(req: Request) {
       settings = newSettings;
     }
 
-    let newTrendsCount = 0;
-    for (const trend of trends) {
-      const { data: existing } = await supabase
-        .from("TrendingKeyword")
-        .select("*")
-        .eq("keyword", trend.keyword)
-        .single();
+    // Prepare bulk upsert for TrendingKeyword
+    const upsertData = trends.map(trend => ({
+      keyword: trend.keyword,
+      searchVolume: trend.volume,
+      status: "detected",
+      lastUpdated: new Date().toISOString()
+    }));
 
-      if (!existing) {
-        await supabase
-          .from("TrendingKeyword")
-          .insert({
-            keyword: trend.keyword,
-            searchVolume: trend.volume,
-            status: "detected"
-          });
-        newTrendsCount++;
-      } else {
-        await supabase
-          .from("TrendingKeyword")
-          .update({
-            searchVolume: trend.volume,
-            lastUpdated: new Date().toISOString()
-          })
-          .eq("id", existing.id);
-      }
+    const { error: upsertError } = await supabase
+      .from("TrendingKeyword")
+      .upsert(upsertData, { onConflict: 'keyword' });
 
-      // Auto-boost game trend scores if setting is enabled
-      if (settings?.autoBoostTrending) {
-        const words = trend.keyword.split(' ').filter(w => w.length > 3);
-        if (words.length > 0) {
-          const { data: matchingGames } = await supabase
-            .from("Game")
-            .select("*")
-            .or(words.map(word => `title.ilike.%${word}%`).join(','));
+    if (upsertError) throw upsertError;
 
-          if (matchingGames) {
+    // Auto-boost game trend scores if setting is enabled
+    if (settings?.autoBoostTrending) {
+      console.log('[TREND MINE] Auto-boosting games based on trends');
+      
+      // Collect all potential game words from trends
+      const allWords = Array.from(new Set(trends.flatMap(t => t.keyword.split(' ').filter(w => w.length > 3))));
+      
+      if (allWords.length > 0) {
+        // Find ALL games that might match ANY of these words
+        const { data: matchingGames } = await supabase
+          .from("Game")
+          .select("id, title, trendScore")
+          .or(allWords.map(word => `title.ilike.%${word}%`).join(','));
+
+        if (matchingGames && matchingGames.length > 0) {
+          // Create a map for faster lookup
+          const gameUpdates: { [id: string]: number } = {};
+          
+          for (const trend of trends) {
+            const trendWords = trend.keyword.split(' ').filter(w => w.length > 3);
+            const boost = trend.volume / 1000;
+            
             for (const game of matchingGames) {
-              const boost = trend.volume / 1000;
-              await supabase
-                .from("Game")
-                .update({
-                  trendScore: (game.trendScore || 0) + boost
-                })
-                .eq("id", game.id);
+              const matches = trendWords.some(word => game.title.toLowerCase().includes(word.toLowerCase()));
+              if (matches) {
+                gameUpdates[game.id] = (gameUpdates[game.id] || game.trendScore || 0) + boost;
+              }
             }
           }
+
+          // Apply updates in parallel (still individual calls but fewer if we deduplicate)
+          const updatePromises = Object.entries(gameUpdates).map(([id, newScore]) => 
+            supabase.from("Game").update({ trendScore: newScore }).eq("id", id)
+          );
+          
+          await Promise.all(updatePromises);
         }
       }
     }
 
     return NextResponse.json({ 
       success: true, 
-      message: `Saved ${trends.length} trends. Found ${newTrendsCount} new ones.`
+      message: `Saved ${trends.length} trends.`
     });
   } catch (error: any) {
     console.error("[TREND SAVE ERROR]", error);
@@ -121,7 +124,7 @@ export async function GET(req: Request) {
     try {
       const rssUrls = [
         'https://trends.google.com/trending/rss?geo=US',
-        'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=all',
+        'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=g', // Games category
         'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=e', // Entertainment
         'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=t'  // Sci/Tech
       ];
@@ -266,62 +269,63 @@ export async function GET(req: Request) {
       settings = newSettings;
     }
 
-    let newTrendsCount = 0;
-    for (const trend of uniqueTrends) {
-      const { data: existing } = await supabase
-        .from("TrendingKeyword")
-        .select("*")
-        .eq("keyword", trend.keyword)
-        .single();
+    // Prepare bulk upsert for TrendingKeyword
+    const upsertData = uniqueTrends.map(trend => ({
+      keyword: trend.keyword,
+      searchVolume: trend.volume,
+      status: "detected",
+      lastUpdated: new Date().toISOString()
+    }));
 
-      if (!existing) {
-        await supabase
-          .from("TrendingKeyword")
-          .insert({
-            keyword: trend.keyword,
-            searchVolume: trend.volume,
-            status: "detected"
-          });
-        newTrendsCount++;
-      } else {
-        await supabase
-          .from("TrendingKeyword")
-          .update({
-            searchVolume: trend.volume,
-            lastUpdated: new Date().toISOString()
-          })
-          .eq("id", existing.id);
-      }
+    const { error: upsertError } = await supabase
+      .from("TrendingKeyword")
+      .upsert(upsertData, { onConflict: 'keyword' });
 
-      // Auto-boost game trend scores if setting is enabled
-      if (settings?.autoBoostTrending) {
-        const words = trend.keyword.split(' ').filter(w => w.length > 3);
-        if (words.length > 0) {
-          // Find games matching the trend
-          const { data: matchingGames } = await supabase
-            .from("Game")
-            .select("*")
-            .or(words.map(word => `title.ilike.%${word}%`).join(','));
+    if (upsertError) throw upsertError;
 
-          if (matchingGames) {
+    // Auto-boost game trend scores if setting is enabled
+    if (settings?.autoBoostTrending) {
+      console.log('[TREND MINE] Auto-boosting games based on trends');
+      
+      // Collect all potential game words from trends
+      const allWords = Array.from(new Set(uniqueTrends.flatMap(t => t.keyword.split(' ').filter(w => w.length > 3))));
+      
+      if (allWords.length > 0) {
+        // Find ALL games that might match ANY of these words
+        const { data: matchingGames } = await supabase
+          .from("Game")
+          .select("id, title, trendScore")
+          .or(allWords.map(word => `title.ilike.%${word}%`).join(','));
+
+        if (matchingGames && matchingGames.length > 0) {
+          // Create a map for faster lookup
+          const gameUpdates: { [id: string]: number } = {};
+          
+          for (const trend of uniqueTrends) {
+            const trendWords = trend.keyword.split(' ').filter(w => w.length > 3);
+            const boost = trend.volume / 1000;
+            
             for (const game of matchingGames) {
-              // Boost score based on volume (normalized)
-              const boost = trend.volume / 1000;
-              await supabase
-                .from("Game")
-                .update({
-                  trendScore: (game.trendScore || 0) + boost
-                })
-                .eq("id", game.id);
+              const matches = trendWords.some(word => game.title.toLowerCase().includes(word.toLowerCase()));
+              if (matches) {
+                gameUpdates[game.id] = (gameUpdates[game.id] || game.trendScore || 0) + boost;
+              }
             }
           }
+
+          // Apply updates in parallel (still individual calls but fewer if we deduplicate)
+          const updatePromises = Object.entries(gameUpdates).map(([id, newScore]) => 
+            supabase.from("Game").update({ trendScore: newScore }).eq("id", id)
+          );
+          
+          await Promise.all(updatePromises);
         }
       }
     }
 
     return NextResponse.json({ 
       success: true, 
-      message: `Trend mining complete. Found ${newTrendsCount} new trends.`,
+      message: `Trend mining complete. Found ${uniqueTrends.length} trends.`,
       totalTrends: uniqueTrends.length,
       source: "Google Trends RSS + Autocomplete"
     });
