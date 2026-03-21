@@ -283,7 +283,14 @@ export function TrendMiningConsole() {
                               <Trash2 className="w-4 h-4" />
                             </button>
                             <div className="flex flex-col">
-                              <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{item.keyword}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{item.keyword}</span>
+                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${
+                                  item.source.includes('Rising') ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' : 'bg-white/5 text-white/40 border-white/10'
+                                }`}>
+                                  {item.source.includes('Rising') ? 'Rising' : 'Top'}
+                                </span>
+                              </div>
                               <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">{item.source}</span>
                             </div>
                           </div>

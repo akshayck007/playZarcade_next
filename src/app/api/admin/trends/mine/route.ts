@@ -63,15 +63,13 @@ export async function POST(req: Request) {
         keyword: trend.keyword,
         searchVolume: trend.volume,
         status: "detected",
+        type: trend.source.includes('Rising') ? 'rising' : 'top',
         lastUpdated: new Date().toISOString()
       };
       
-      // If we have an existing ID, include it to ensure update instead of insert
       if (keywordToId.has(trend.keyword)) {
         item.id = keywordToId.get(trend.keyword);
       } else {
-        // Generate a UUID for new items just in case the DB is missing a default
-        // This assumes the ID column is a UUID type.
         item.id = crypto.randomUUID();
       }
       
@@ -192,7 +190,10 @@ export async function GET(req: Request) {
       "trending games on tiktok ",
       "viral web games ",
       "games like roblox ",
-      "games like minecraft "
+      "games like minecraft ",
+      "browser game play games online rising ",
+      "top browser games past 24 hours ",
+      "newly released browser games this week "
     ];
     for (const prefix of prefixes) {
       try {
@@ -208,7 +209,7 @@ export async function GET(req: Request) {
             trends.push({ 
               keyword: suggestion.toLowerCase(), 
               volume: Math.floor(Math.random() * 10000) + 5000, // Mock volume for suggestions
-              source: `Autocomplete (${prefix})`
+              source: prefix.includes('rising') || prefix.includes('new') ? 'Rising Autocomplete' : `Autocomplete (${prefix})`
             });
           });
         }
@@ -302,14 +303,13 @@ export async function GET(req: Request) {
         keyword: trend.keyword,
         searchVolume: trend.volume,
         status: "detected",
+        type: trend.source.includes('Rising') ? 'rising' : 'top',
         lastUpdated: new Date().toISOString()
       };
       
-      // If we have an existing ID, include it to ensure update instead of insert
       if (keywordToId.has(trend.keyword)) {
         item.id = keywordToId.get(trend.keyword);
       } else {
-        // Generate a UUID for new items just in case the DB is missing a default
         item.id = crypto.randomUUID();
       }
       

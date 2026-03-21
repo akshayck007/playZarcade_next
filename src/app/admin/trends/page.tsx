@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
-import { TrendingUp, Search, ArrowUpRight, Plus } from "lucide-react";
+import { TrendingUp, Search, Plus } from "lucide-react";
 import { TrendMiningConsole } from "@/components/admin/TrendMiningConsole";
-import { GenerateSeoButton } from "@/components/admin/GenerateSeoButton";
+import { TrendTable } from "@/components/admin/TrendTable";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -67,66 +67,7 @@ export default async function AdminTrendsPage() {
       </div>
 
       {/* Trends Table */}
-      <div className="glass rounded-3xl overflow-hidden border border-white/5">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-white/10 bg-white/5">
-              <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Keyword</th>
-              <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Volume</th>
-              <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Status</th>
-              <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Last Updated</th>
-              <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {trends.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="p-20 text-center">
-                  <div className="flex flex-col items-center gap-4">
-                    <TrendingUp className="w-12 h-12 text-white/10" />
-                    <p className="text-sm font-bold text-white/20 uppercase tracking-widest">No trends detected yet. Click refresh to start mining.</p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              trends.map((trend) => (
-                <tr key={trend.id} className="hover:bg-white/5 transition-colors group">
-                  <td className="p-6">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{trend.keyword}</span>
-                      <ArrowUpRight className="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </td>
-                  <td className="p-6">
-                    <span className="text-xs font-bold text-white/60">{trend.searchVolume.toLocaleString()}</span>
-                  </td>
-                  <td className="p-6">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                      trend.status === 'game_live' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
-                      trend.status === 'content_ready' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' :
-                      'bg-white/5 text-white/40 border-white/10'
-                    }`}>
-                      {trend.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="p-6">
-                    <span className="text-xs text-white/40">{new Date(trend.lastUpdated).toLocaleDateString()}</span>
-                  </td>
-                  <td className="p-6 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <GenerateSeoButton 
-                        trendId={trend.id} 
-                        status={trend.status} 
-                        keyword={trend.keyword} 
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <TrendTable initialTrends={trends} />
     </div>
   );
 }
