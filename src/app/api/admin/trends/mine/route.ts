@@ -269,7 +269,6 @@ export async function GET(req: Request) {
       const kw = trend.keyword.toLowerCase();
       
       // 0. Filter out past years (e.g., 2024, 2025 if current year is 2026)
-      const currentYear = new Date().getFullYear();
       for (let year = 2000; year < currentYear; year++) {
         if (kw.includes(year.toString())) return false;
       }
@@ -354,7 +353,6 @@ export async function GET(req: Request) {
     if (upsertError) throw upsertError;
 
     // Cleanup: Remove any keywords that contain past years (e.g., 2024, 2025 if current year is 2026)
-    const currentYear = new Date().getFullYear();
     const pastYears = [];
     for (let year = 2000; year < currentYear; year++) {
       pastYears.push(`keyword.ilike.%${year}%`);
