@@ -91,6 +91,52 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
     }
   };
 
+  const handleBulkGenerate = async (type: 'game' | 'article') => {
+    if (selectedIds.size === 0) return;
+    
+    setIsLoading('bulk');
+    setError(null);
+    setSuccess(null);
+    
+    const selectedTrends = trends.filter(t => selectedIds.has(t.id));
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const trend of selectedTrends) {
+      try {
+        const res = await fetch('/api/admin/trends/shadow-page', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trendId: trend.id, keyword: trend.keyword, type })
+        });
+        const data = await res.json();
+        if (data.success) {
+          successCount++;
+          // Update local state for this trend
+          setTrends(prev => prev.map(t => t.id === trend.id ? { 
+            ...t, 
+            status: 'shadow_page_live', 
+            shadowTitle: data.data.title, 
+            shadowSlug: data.data.slug 
+          } : t));
+        } else {
+          failCount++;
+        }
+      } catch (err) {
+        failCount++;
+      }
+    }
+
+    if (successCount > 0) {
+      setSuccess(`Successfully generated ${successCount} ${type === 'article' ? 'articles' : 'shadow pages'}.${failCount > 0 ? ` (${failCount} failed)` : ''}`);
+      setSelectedIds(new Set());
+    } else if (failCount > 0) {
+      setError(`Failed to generate ${failCount} ${type === 'article' ? 'articles' : 'shadow pages'}.`);
+    }
+    
+    setIsLoading(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Bulk Actions Bar */}
@@ -104,6 +150,29 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
           >
             <div className="flex items-center gap-4">
               <span className="text-xs font-black uppercase tracking-widest text-emerald-500">{selectedIds.size} Selected</span>
+              
+              <div className="h-4 w-px bg-white/10 mx-2" />
+
+              <button 
+                onClick={() => handleBulkGenerate('game')}
+                disabled={isLoading !== null}
+                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-400 transition-colors disabled:opacity-50"
+              >
+                {isLoading === 'bulk' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                Bulk Shadow Page
+              </button>
+
+              <button 
+                onClick={() => handleBulkGenerate('article')}
+                disabled={isLoading !== null}
+                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-orange-500 hover:text-orange-400 transition-colors disabled:opacity-50"
+              >
+                {isLoading === 'bulk' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
+                Bulk Article
+              </button>
+
+              <div className="h-4 w-px bg-white/10 mx-2" />
+
               <button 
                 onClick={handleDeleteSelected}
                 disabled={isLoading === 'deleting'}

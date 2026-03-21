@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS public."Settings" (
     "siteName" TEXT DEFAULT 'PlayZ Arcade',
     "defaultTheme" TEXT DEFAULT 'dark',
     "trendingMode" TEXT DEFAULT 'trending',
+    "autoBoostTrending" BOOLEAN DEFAULT true,
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -114,9 +115,25 @@ CREATE TABLE IF NOT EXISTS public."UserHistory" (
     UNIQUE("userId", "gameId")
 );
 
+-- 9. Trending Keywords Table
+CREATE TABLE IF NOT EXISTS public."TrendingKeyword" (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    keyword TEXT NOT NULL UNIQUE,
+    "searchVolume" INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'detected', -- detected, shadow_page_live, archived
+    type TEXT DEFAULT 'top', -- top, rising
+    "lastUpdated" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    "shadowTitle" TEXT,
+    "shadowContent" TEXT,
+    "shadowSlug" TEXT,
+    "shadowSeoDescription" TEXT,
+    "shadowType" TEXT DEFAULT 'game' -- game, article
+);
+
 -- Enable RLS for new tables
 ALTER TABLE public."UserFavorite" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."UserHistory" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."TrendingKeyword" ENABLE ROW LEVEL SECURITY;
 
 -- Policies for UserFavorite (Owner only)
 CREATE POLICY "Users can view their own favorites" ON public."UserFavorite" FOR SELECT USING (auth.uid() = "userId");
@@ -128,3 +145,7 @@ CREATE POLICY "Users can view their own history" ON public."UserHistory" FOR SEL
 CREATE POLICY "Users can insert their own history" ON public."UserHistory" FOR INSERT WITH CHECK (auth.uid() = "userId");
 CREATE POLICY "Users can update their own history" ON public."UserHistory" FOR UPDATE USING (auth.uid() = "userId");
 CREATE POLICY "Users can delete their own history" ON public."UserHistory" FOR DELETE USING (auth.uid() = "userId");
+
+-- Policies for TrendingKeyword (Public read, Admin write)
+CREATE POLICY "Allow public read access on TrendingKeyword" ON public."TrendingKeyword" FOR SELECT USING (true);
+CREATE POLICY "Allow all access for anon on TrendingKeyword" ON public."TrendingKeyword" FOR ALL USING (true) WITH CHECK (true);

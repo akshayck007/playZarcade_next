@@ -240,30 +240,40 @@ export async function GET(req: Request) {
     // Filter for game-related keywords or remove obviously non-game ones
     const GAME_MARKERS = [
       'game', 'play', 'online', 'unblocked', 'io', 'sim', 'free', 'multiplayer', 'rpg', 'fps', 'puzzle', 'arcade', 'web', 'browser', 'flash', 'html5', 'poki', 'crazy', 'retro', 'clicker', 'simulator', 'mod', 'cheat', 'hack', 'codes', 'guide', 'walkthrough',
-      'apk', 'mod', 'mobile', 'steam', 'epic', 'xbox', 'ps5', 'nintendo', 'switch'
+      'apk', 'mod', 'mobile', 'steam', 'epic', 'xbox', 'ps5', 'nintendo', 'switch', 'friv', 'kizi', 'y8', 'roblox', 'minecraft', 'fortnite', 'among us'
     ];
     const NOISE_MARKERS = [
       'weather', 'news', 'politics', 'election', 'stock', 'market', 'price', 'death', 'accident', 'crash', 'satellite', 'nasa', 'court', 'trial', 'protest', 'war', 'strike', 'missing', 'found', 'dead', 'arrested', 'shooting', 'fire', 'storm', 'flood', 'earthquake', 'hurricane', 'tornado', 'vaccine', 'covid', 'pandemic', 'hospital', 'doctor', 'police', 'shooting', 'murder', 'crime', 'victim', 'suspect', 'investigation', 'lawsuit', 'verdict', 'sentence', 'prison', 'jail',
-      'lyrics', 'meaning', 'definition', 'near me', 'how to', 'why', 'what is', 'job', 'salary', 'career', 'university', 'college', 'school', 'class'
+      'lyrics', 'meaning', 'definition', 'near me', 'how to', 'why', 'what is', 'job', 'salary', 'career', 'university', 'college', 'school', 'class',
+      'lawyer', 'attorney', 'insurance', 'loan', 'credit', 'mortgage', 'bank', 'crypto', 'trading', 'investment', 'divorce', 'injury', 'accident', 'claim',
+      'actor', 'actress', 'movie', 'film', 'series', 'episode', 'season', 'trailer', 'cast', 'director', 'producer', 'singer', 'album', 'song', 'concert', 'tour',
+      'amazon', 'netflix', 'hulu', 'disney+', 'hbo', 'streaming', 'delivery', 'shopping', 'store', 'sale', 'deal', 'coupon'
     ];
 
     uniqueTrends = uniqueTrends.filter(trend => {
       const kw = trend.keyword.toLowerCase();
       
-      // If it contains a game marker, it's likely relevant
-      const hasGameMarker = GAME_MARKERS.some(m => kw.includes(m));
-      
-      // If it contains a noise marker, it's likely irrelevant
+      // 1. If it has a noise marker, it's almost certainly out
       const hasNoiseMarker = NOISE_MARKERS.some(m => kw.includes(m));
+      if (hasNoiseMarker) return false;
 
-      // Heuristic: Keep if it has a game marker OR doesn't have a noise marker
-      // We want to be more inclusive for Google Trends to catch rising names
-      if (trend.source.includes('Google Trends')) {
-        // Keep if it has a game marker OR is a short phrase (likely a title) that doesn't have noise
-        return hasGameMarker || (kw.split(' ').length <= 3 && !hasNoiseMarker);
+      // 2. If it has a game marker, it's almost certainly in
+      const hasGameMarker = GAME_MARKERS.some(m => kw.includes(m));
+      if (hasGameMarker) return true;
+
+      // 3. For everything else (generic names), we only keep it if it's from a gaming-specific source
+      // or if it's very likely a game title (short, no common noise)
+      if (trend.source.includes('Google Trends Real-time')) {
+        // Real-time trends are often news/celebs, so we require a game marker or very high confidence
+        return hasGameMarker;
       }
       
-      return !hasNoiseMarker || hasGameMarker;
+      // For Autocomplete, we are a bit more lenient as the prefixes were already gaming-focused
+      if (trend.source.includes('Autocomplete')) {
+        return true;
+      }
+
+      return hasGameMarker;
     });
 
     if (isPreview) {
