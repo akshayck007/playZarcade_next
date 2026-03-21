@@ -82,6 +82,20 @@ export async function POST(req: Request) {
 
     if (upsertError) throw upsertError;
 
+    // Cleanup: Remove any keywords that contain past years (e.g., 2024, 2025 if current year is 2026)
+    const currentYear = new Date().getFullYear();
+    const pastYears = [];
+    for (let year = 2000; year < currentYear; year++) {
+      pastYears.push(`keyword.ilike.%${year}%`);
+    }
+    
+    if (pastYears.length > 0) {
+      await supabase
+        .from("TrendingKeyword")
+        .delete()
+        .or(pastYears.join(','));
+    }
+
     // Auto-boost game trend scores if setting is enabled
     if (settings?.autoBoostTrending) {
       console.log('[TREND MINE] Auto-boosting games based on trends');
@@ -179,12 +193,13 @@ export async function GET(req: Request) {
     }
 
     // 2. Fetch from Google Autocomplete (Discovery Intent)
+    const currentYear = new Date().getFullYear();
     const prefixes = [
       "new unblocked games ", 
       "trending io games ", 
       "rising web games ", 
       "popular games right now ",
-      "best new games 2026 ",
+      `best new games ${currentYear} `,
       "upcoming web games ",
       "new browser games ",
       "trending games on tiktok ",
@@ -253,6 +268,12 @@ export async function GET(req: Request) {
     uniqueTrends = uniqueTrends.filter(trend => {
       const kw = trend.keyword.toLowerCase();
       
+      // 0. Filter out past years (e.g., 2024, 2025 if current year is 2026)
+      const currentYear = new Date().getFullYear();
+      for (let year = 2000; year < currentYear; year++) {
+        if (kw.includes(year.toString())) return false;
+      }
+
       // 1. If it has a noise marker, it's almost certainly out
       const hasNoiseMarker = NOISE_MARKERS.some(m => kw.includes(m));
       if (hasNoiseMarker) return false;
@@ -331,6 +352,20 @@ export async function GET(req: Request) {
       .upsert(upsertData, { onConflict: 'keyword' });
 
     if (upsertError) throw upsertError;
+
+    // Cleanup: Remove any keywords that contain past years (e.g., 2024, 2025 if current year is 2026)
+    const currentYear = new Date().getFullYear();
+    const pastYears = [];
+    for (let year = 2000; year < currentYear; year++) {
+      pastYears.push(`keyword.ilike.%${year}%`);
+    }
+    
+    if (pastYears.length > 0) {
+      await supabase
+        .from("TrendingKeyword")
+        .delete()
+        .or(pastYears.join(','));
+    }
 
     // Auto-boost game trend scores if setting is enabled
     if (settings?.autoBoostTrending) {
