@@ -18,6 +18,36 @@ export function TrendMiningConsole() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'previewing' | 'mining' | 'complete'>('idle');
   const [isRefining, setIsRefining] = useState(false);
+  const [discoveryPrompt, setDiscoveryPrompt] = useState("");
+  const [isDiscovering, setIsDiscovering] = useState(false);
+
+  const handleDiscover = async () => {
+    if (!discoveryPrompt.trim()) return;
+    
+    setIsDiscovering(true);
+    setError(null);
+    setPreviewData(null);
+    setStatus('previewing');
+    setIsOpen(true);
+    try {
+      const res = await fetch('/api/admin/trends/discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: discoveryPrompt })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPreviewData(data.trends);
+        setDiscoveryPrompt("");
+      } else {
+        setError(data.error || "Discovery failed");
+      }
+    } catch (err) {
+      setError("Network error during discovery");
+    } finally {
+      setIsDiscovering(false);
+    }
+  };
 
   const handleAIRefine = async () => {
     if (!previewData || previewData.length === 0) return;
@@ -165,6 +195,26 @@ export function TrendMiningConsole() {
   return (
     <>
       <div className="flex items-center gap-3">
+        <div className="relative group">
+          <input 
+            type="text"
+            value={discoveryPrompt}
+            onChange={(e) => setDiscoveryPrompt(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleDiscover()}
+            placeholder="Suggest search terms..."
+            className="bg-white/5 border border-white/10 rounded-full px-6 py-3 text-sm font-bold w-64 focus:w-80 focus:bg-white/10 focus:border-emerald-500/50 transition-all outline-none placeholder:text-white/20"
+          />
+          <button 
+            onClick={handleDiscover}
+            disabled={isDiscovering || !discoveryPrompt.trim()}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-emerald-500 rounded-full text-black hover:bg-emerald-400 transition-colors disabled:opacity-0 disabled:scale-0 transition-all duration-300"
+          >
+            <Sparkles className={`w-4 h-4 ${isDiscovering ? 'animate-pulse' : ''}`} />
+          </button>
+        </div>
+
+        <div className="h-6 w-px bg-white/10 mx-2" />
+
         <button 
           onClick={handlePreview}
           className="bg-white/5 text-white/60 px-6 py-3 rounded-full font-bold uppercase tracking-tight hover:bg-white/10 transition-colors flex items-center gap-2 border border-white/5"

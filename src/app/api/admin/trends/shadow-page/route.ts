@@ -24,21 +24,33 @@ export async function POST(req: Request) {
 
     const ai = new GoogleGenAI({ apiKey });
     
+    const currentYear = new Date().getFullYear();
+    const currentDate = new Date().toLocaleDateString();
+    
     // 2. Generate Content based on type
     const prompt = type === 'article' 
-      ? `Write a trending SEO-optimized article about "${keyword}". 
-         Focus on why it's trending in the browser gaming world. 
-         Include a catchy title, introduction, 3 main points, and a conclusion.
+      ? `Write a trending SEO-optimized article about "${keyword}" for the year ${currentYear}. 
+         Today's date is ${currentDate}.
+         Research and include the most recent developments, news, and community trends from the past 24 hours to 1 week.
+         Focus on why it's trending in the browser gaming world right now. 
+         Include a catchy title (must include ${currentYear}), a brief introduction, 3 main points with subheadings that reference recent events, and a conclusion.
+         Use proper markdown formatting with headers (##), bold text, and bullet points. 
+         Ensure there are double newlines between paragraphs for readability.
          Format as JSON with fields: title, content (markdown), slug.`
-      : `Create a "Shadow Page" for a trending game called "${keyword}". 
+      : `Create a "Shadow Page" for a trending game called "${keyword}" for ${currentYear}. 
+         Today's date is ${currentDate}.
+         Research the latest info from the past week about this game's availability, updates, or community hype.
          This is a landing page for a game that people are searching for but might not be on our site yet.
-         Include a catchy title, a detailed description (300 words), how to play (if known or predicted), and SEO tags.
+         Include a catchy title (must include ${currentYear}), a detailed description (at least 300 words) referencing recent news, how to play (if known or predicted), and SEO tags.
+         Use proper markdown formatting with headers (##), bold text, and bullet points.
+         Ensure there are double newlines between paragraphs for readability.
          Format as JSON with fields: title, content (markdown), slug, seoDescription.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
+        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,

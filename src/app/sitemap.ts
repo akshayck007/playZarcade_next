@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { supabase } from '@/lib/supabase';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://playzarcade.com';
+  const baseUrl = process.env.APP_URL?.replace(/\/$/, '') || 'https://playzarcade.com';
 
   // Fetch games - limiting to 5,000 most recent to improve response time
   const { data: games } = await supabase
@@ -21,6 +21,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: seoPages } = await supabase
     .from('SeoPage')
     .select('slug');
+
+  // Fetch all Trending/Shadow pages
+  const { data: trendingPages } = await supabase
+    .from('TrendingKeyword')
+    .select('shadowSlug, lastUpdated')
+    .eq('status', 'shadow_page_live');
 
   const staticPages = [
     { url: '', priority: 1.0, changeFrequency: 'daily' as const },
@@ -52,6 +58,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  const trendingUrls = (trendingPages || []).map((page) => ({
+    url: `${baseUrl}/trending/${page.shadowSlug}`,
+    lastModified: page.lastUpdated || new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
+  }));
+
   const categoryUrls = (categories || []).map((category) => ({
     url: `${baseUrl}/${category.slug}`,
     lastModified: new Date(),
@@ -64,5 +77,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...categoryUrls,
     ...gameUrls,
     ...seoUrls,
+    ...trendingUrls,
   ];
 }

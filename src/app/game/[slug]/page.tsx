@@ -19,6 +19,8 @@ interface GamePageProps {
 
 export async function generateMetadata({ params }: GamePageProps) {
   const { slug } = await params;
+  const baseUrl = process.env.APP_URL?.replace(/\/$/, '') || 'https://playzarcade.com';
+  
   const { data: game } = await supabase
     .from("Game")
     .select("*")
@@ -27,12 +29,23 @@ export async function generateMetadata({ params }: GamePageProps) {
 
   if (!game) return { title: "Game Not Found" };
 
+  const title = `Play ${game.title} Online | Free Browser Game`;
+  const description = game.description;
+
   return {
-    title: `Play ${game.title} Online | Free Browser Game`,
-    description: game.description,
+    title,
+    description,
     openGraph: {
-      title: game.title,
-      description: game.description,
+      title,
+      description,
+      url: `${baseUrl}/game/${game.slug}`,
+      images: [game.thumbnail],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
       images: [game.thumbnail],
     },
   };
@@ -40,6 +53,7 @@ export async function generateMetadata({ params }: GamePageProps) {
 
 export default async function GamePage({ params }: GamePageProps) {
   const { slug } = await params;
+  const baseUrl = process.env.APP_URL?.replace(/\/$/, '') || 'https://playzarcade.com';
   
   const { data: game, error } = await supabase
     .from("Game")
@@ -69,7 +83,7 @@ export default async function GamePage({ params }: GamePageProps) {
     "playMode": "SinglePlayer",
     "applicationCategory": "Game",
     "operatingSystem": "Web Browser",
-    "url": `https://playzarcade.com/game/${game.slug}`,
+    "url": `${baseUrl}/game/${game.slug}`,
   };
 
   const isShadowPage = !game.iframeUrl;

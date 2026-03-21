@@ -7,6 +7,37 @@ import Link from "next/link";
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const { data: trend } = await supabase
+    .from("TrendingKeyword")
+    .select("*")
+    .eq("shadowSlug", slug)
+    .maybeSingle();
+
+  if (!trend) return { title: "Trend Not Found" };
+
+  const title = trend.shadowTitle || `${trend.keyword} | Trending Gaming News`;
+  const description = trend.shadowSeoDescription || `Explore the latest insights and news about ${trend.keyword} on PlayZ Arcade.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: ['https://picsum.photos/seed/gaming/1200/630'],
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['https://picsum.photos/seed/gaming/1200/630'],
+    },
+  };
+}
+
 export default async function ShadowPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
@@ -20,8 +51,28 @@ export default async function ShadowPage({ params }: { params: Promise<{ slug: s
     notFound();
   }
 
+  const baseUrl = process.env.APP_URL?.replace(/\/$/, '') || 'https://playzarcade.com';
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": trend.shadowTitle || trend.keyword,
+    "description": trend.shadowSeoDescription || `Everything you need to know about the rising trend: ${trend.keyword}`,
+    "image": "https://picsum.photos/seed/gaming/1200/630",
+    "datePublished": trend.lastUpdated,
+    "dateModified": trend.lastUpdated,
+    "author": {
+      "@type": "Organization",
+      "name": "PlayZ Arcade",
+      "url": baseUrl
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#050505] text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Hero Section */}
       <div className="relative h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/20 to-transparent opacity-50" />

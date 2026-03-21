@@ -24,18 +24,25 @@ const jetbrainsMono = JetBrains_Mono({
 export const revalidate = 3600; // Revalidate every hour
 
 export async function generateMetadata(): Promise<Metadata> {
+  const baseUrl = process.env.APP_URL?.replace(/\/$/, '') || 'https://playzarcade.com';
+  
   const { data: settings } = await supabase
     .from("Settings")
     .select("*")
     .eq("id", "global")
     .maybeSingle();
 
+  const title = "PlayZ Arcade | Best Free Browser Games Online - No Downloads Required";
+  const description = "Play thousands of free browser games instantly on PlayZ Arcade. From action-packed shooters to brain-teasing puzzles, we offer the best high-performance gaming with no downloads. Stay updated with our latest intel reports and trending gaming themes.";
+  const ogImage = `${baseUrl}/icon-512.png`;
+
   return {
-    title: "PlayZ Arcade | Best Free Browser Games Online - No Downloads Required",
-    description: "Play thousands of free browser games instantly on PlayZ Arcade. From action-packed shooters to brain-teasing puzzles, we offer the best high-performance gaming with no downloads. Stay updated with our latest intel reports and trending gaming themes.",
+    title,
+    description,
+    metadataBase: new URL(baseUrl),
     manifest: "/manifest.json",
     alternates: {
-      canonical: "https://playzarcade.com",
+      canonical: "/",
     },
     robots: {
       index: true,
@@ -49,13 +56,13 @@ export async function generateMetadata(): Promise<Metadata> {
       },
     },
     openGraph: {
-      title: "PlayZ Arcade | Best Free Browser Games Online - No Downloads Required",
-      description: "Play thousands of free browser games instantly on PlayZ Arcade. High-performance browser games with no downloads required.",
-      url: "https://playzarcade.com",
+      title,
+      description,
+      url: baseUrl,
       siteName: "PlayZ Arcade",
       images: [
         {
-          url: "/icon-512.png",
+          url: ogImage,
           width: 512,
           height: 512,
           alt: "PlayZ Arcade Logo",
@@ -66,9 +73,11 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: "PlayZ Arcade | Best Free Browser Games Online - No Downloads Required",
-      description: "Play thousands of free browser games instantly on PlayZ Arcade. High-performance gaming on any device.",
-      images: ["/icon-512.png"],
+      title,
+      description,
+      images: [ogImage],
+      site: "@playzarcade",
+      creator: "@playzarcade",
     },
     appleWebApp: {
       capable: true,
@@ -117,14 +126,16 @@ export default async function RootLayout({
   const categories = categoriesResult.data || [];
   const settings = settingsResult.data;
 
+  const baseUrl = process.env.APP_URL?.replace(/\/$/, '') || 'https://playzarcade.com';
+
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "PlayZ Arcade",
-    "url": "https://playzarcade.com",
+    "url": baseUrl,
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://playzarcade.com/search?q={search_term_string}",
+      "target": `${baseUrl}/search?q={search_term_string}`,
       "query-input": "required name=search_term_string"
     }
   };
@@ -133,8 +144,8 @@ export default async function RootLayout({
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "PlayZ Arcade",
-    "url": "https://playzarcade.com",
-    "logo": "https://playzarcade.com/icon-512.png",
+    "url": baseUrl,
+    "logo": `${baseUrl}/icon-512.png`,
     "sameAs": [
       "https://twitter.com/playzarcade",
       "https://facebook.com/playzarcade",
