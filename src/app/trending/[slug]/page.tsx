@@ -1,14 +1,14 @@
 import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
-import Markdown from "react-markdown";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { Sparkles, Gamepad2, Share2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
-export default async function ShadowPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function ShadowPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   const { data: trend } = await supabase
     .from("TrendingKeyword")
@@ -58,9 +58,7 @@ export default async function ShadowPage({ params }: { params: { slug: string } 
       <main className="max-w-4xl mx-auto px-6 py-20">
         <div className="glass p-10 md:p-20 rounded-[3rem] border border-white/5 space-y-12">
           <div className="prose prose-invert prose-emerald max-w-none">
-            <div className="markdown-body">
-              <Markdown>{trend.shadowContent || "Content coming soon..."}</Markdown>
-            </div>
+            <MarkdownRenderer content={trend.shadowContent || "Content coming soon..."} />
           </div>
 
           {/* Call to Action */}
