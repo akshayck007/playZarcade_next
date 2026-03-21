@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { trackPlay } from './RecentlyPlayed';
-import { Maximize2, Heart, Share2 } from 'lucide-react';
+import { Maximize2, Heart, Share2, Swords } from 'lucide-react';
 import { ShareButtons } from './ShareButtons';
 
 interface GameActionsProps {
@@ -12,6 +12,7 @@ interface GameActionsProps {
 export function GameActions({ game }: GameActionsProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showChallenge, setShowChallenge] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -22,6 +23,23 @@ export function GameActions({ game }: GameActionsProps) {
     const likedGames = JSON.parse(localStorage.getItem('playz_favorites') || '[]');
     setIsLiked(likedGames.includes(game.id));
   }, [game]);
+
+  const handleChallenge = () => {
+    const challengeUrl = `${window.location.href}?challenge=true`;
+    const text = `I challenge you to play ${game.title} on PlayZ Arcade! Can you beat my score?`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `Challenge: ${game.title}`,
+        text: text,
+        url: challengeUrl,
+      });
+    } else {
+      // Copy to clipboard
+      navigator.clipboard.writeText(`${text} ${challengeUrl}`);
+      alert('Challenge link copied to clipboard!');
+    }
+  };
 
   const toggleLike = () => {
     const likedGames = JSON.parse(localStorage.getItem('playz_favorites') || '[]');
@@ -75,6 +93,13 @@ export function GameActions({ game }: GameActionsProps) {
           >
             <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
             <span>{game.playCount > 1000 ? "1.2k" : "842"}</span>
+          </button>
+          <button 
+            onClick={handleChallenge}
+            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-400 transition-colors"
+          >
+            <Swords className="w-4 h-4" />
+            <span>Challenge</span>
           </button>
           <div className="relative">
             <button 

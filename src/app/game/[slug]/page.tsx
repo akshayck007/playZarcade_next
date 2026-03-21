@@ -6,7 +6,7 @@ import { GameCard } from "@/components/GameCard";
 import { GameActions } from "@/components/GameActions";
 import { GamePlayer } from "@/components/GamePlayer";
 import { AdSlot } from "@/components/AdSlot";
-import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle, TrendingUp } from "lucide-react";
+import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle, TrendingUp, Swords } from "lucide-react";
 import Markdown from "@/components/Markdown";
 
 // Using Edge Runtime for Cloudflare Pages
@@ -15,6 +15,7 @@ export const revalidate = 3600; // Revalidate every hour
 
 interface GamePageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ challenge?: string }>;
 }
 
 export async function generateMetadata({ params }: GamePageProps) {
@@ -51,8 +52,10 @@ export async function generateMetadata({ params }: GamePageProps) {
   };
 }
 
-export default async function GamePage({ params }: GamePageProps) {
+export default async function GamePage({ params, searchParams }: GamePageProps) {
   const { slug } = await params;
+  const { challenge } = await searchParams;
+  const isChallenge = challenge === 'true';
   const baseUrl = process.env.APP_URL?.replace(/\/$/, '') || 'https://playzarcade.com';
   
   const { data: game, error } = await supabase
@@ -71,6 +74,21 @@ export default async function GamePage({ params }: GamePageProps) {
     .eq("isPublished", true)
     .order("playCount", { ascending: false })
     .limit(12);
+
+  // 3. Find relevant trending topics for internal linking
+  const gameWords = game.title.split(' ').filter((w: string) => w.length > 3);
+  let relevantTrends: any[] = [];
+  
+  if (gameWords.length > 0) {
+    const { data: trends } = await supabase
+      .from("TrendingKeyword")
+      .select("id, keyword, shadowSlug, shadowTitle")
+      .eq("status", "shadow_page_live")
+      .or(gameWords.map((word: string) => `keyword.ilike.%${word}%`).join(','))
+      .limit(3);
+    
+    relevantTrends = trends || [];
+  }
 
   // Structured Data (JSON-LD)
   const jsonLd = {
@@ -103,6 +121,24 @@ export default async function GamePage({ params }: GamePageProps) {
         <span>/</span>
         <span className="text-white/60">{game.title}</span>
       </nav>
+
+      {/* Challenge Notification */}
+      {isChallenge && (
+        <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl flex items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-black">
+              <Swords className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black uppercase tracking-tighter">Challenge Accepted!</h3>
+              <p className="text-white/40 text-sm">A friend has challenged you to beat their score in {game.title}. Prove your skills!</p>
+            </div>
+          </div>
+          <div className="hidden sm:block">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">Good Luck, Player</span>
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-[1fr_320px] gap-8">
         {/* Main Content */}
@@ -219,6 +255,30 @@ export default async function GamePage({ params }: GamePageProps) {
 
         {/* Sidebar - Ads & Related */}
         <aside className="space-y-8">
+          {/* Trending Topics (Internal Linking) */}
+          {relevantTrends.length > 0 && (
+            <div className="glass p-6 rounded-3xl border border-emerald-500/10 space-y-4">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Trending Now
+              </h3>
+              <div className="space-y-3">
+                {relevantTrends.map((trend: any) => (
+                  <Link 
+                    key={trend.id}
+                    href={`/trending/${trend.shadowSlug}`}
+                    className="block p-3 rounded-xl bg-white/5 border border-white/5 hover:border-emerald-500/30 transition-all group"
+                  >
+                    <p className="text-xs font-bold text-white/80 group-hover:text-emerald-500 transition-colors">
+                      {trend.shadowTitle || trend.keyword}
+                    </p>
+                    <span className="text-[10px] text-white/20 uppercase font-black">Read More →</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Ad Slot */}
           <AdSlot id="game-page-sidebar" type="skyscraper" className="mx-auto" />
 

@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { ThemeToggle } from './ThemeToggle';
+import { UserLevelBadge } from './UserLevelBadge';
 import { isAdmin } from '@/lib/auth';
 
 interface Category {
@@ -231,6 +232,7 @@ export function Navbar({ categories }: NavbarProps) {
           </div>
           
           <ThemeToggle />
+          <UserLevelBadge />
 
           {user ? (
             <div className="relative" ref={profileRef}>

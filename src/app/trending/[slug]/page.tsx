@@ -1,7 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
-import { Sparkles, Gamepad2, Share2, ArrowLeft } from "lucide-react";
+import { Sparkles, Gamepad2, Share2, ArrowLeft, TrendingUp } from "lucide-react";
+import { GameCard } from "@/components/GameCard";
 import Link from "next/link";
 
 export const runtime = "edge";
@@ -49,6 +50,15 @@ export default async function ShadowPage({ params }: { params: Promise<{ slug: s
 
   if (!trend) {
     notFound();
+  }
+
+  let relevantGames: any[] = [];
+  if (trend.relevantGameIds && trend.relevantGameIds.length > 0) {
+    const { data: games } = await supabase
+      .from("Game")
+      .select("*")
+      .in("id", trend.relevantGameIds);
+    relevantGames = games || [];
   }
 
   const baseUrl = process.env.APP_URL?.replace(/\/$/, '') || 'https://playzarcade.com';
@@ -111,6 +121,23 @@ export default async function ShadowPage({ params }: { params: Promise<{ slug: s
           <div className="prose prose-invert prose-emerald max-w-none">
             <MarkdownRenderer content={trend.shadowContent || "Content coming soon..."} />
           </div>
+
+          {/* Relevant Games Section */}
+          {relevantGames.length > 0 && (
+            <div className="pt-20 border-t border-white/5 space-y-10">
+              <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-black uppercase tracking-tight flex items-center gap-3">
+                  <span className="w-2 h-10 bg-emerald-500 rounded-full"></span>
+                  Play Games Like {trend.keyword}
+                </h2>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                {relevantGames.map((game: any) => (
+                  <GameCard key={game.id} game={game} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Call to Action */}
           <div className="pt-20 border-t border-white/5">

@@ -67,7 +67,23 @@ export async function POST(req: Request) {
 
     const shadowData = JSON.parse(response.text || "{}");
 
-    // 3. Save to database (Update TrendingKeyword)
+    // 3. Find relevant games for internal linking
+    const trendWords = keyword.split(' ').filter((w: string) => w.length > 3);
+    let relevantGameIds: string[] = [];
+    
+    if (trendWords.length > 0) {
+      const { data: matchingGames } = await supabase
+        .from("Game")
+        .select("id, title")
+        .or(trendWords.map((word: string) => `title.ilike.%${word}%`).join(','))
+        .limit(6);
+      
+      if (matchingGames) {
+        relevantGameIds = matchingGames.map(g => g.id);
+      }
+    }
+
+    // 4. Save to database (Update TrendingKeyword)
     const { error: updateError } = await supabase
       .from("TrendingKeyword")
       .update({
@@ -77,6 +93,7 @@ export async function POST(req: Request) {
         shadowSlug: shadowData.slug,
         shadowSeoDescription: shadowData.seoDescription || "",
         shadowType: type || 'game',
+        relevantGameIds: relevantGameIds,
         lastUpdated: new Date().toISOString()
       })
       .eq("id", trendId);

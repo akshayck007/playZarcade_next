@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { Navbar } from "@/components/Navbar";
+import { LiveActivityTicker } from "@/components/LiveActivityTicker";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SyncManager } from "@/components/SyncManager";
@@ -188,6 +189,7 @@ export default async function RootLayout({
           <SyncManager />
           <PwaHandler />
           <Navbar categories={categories} />
+          <LiveActivityTicker />
 
           <main className="max-w-7xl mx-auto px-6 py-8 relative z-10">
             {children}
