@@ -54,6 +54,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.wp.com',
       },
+      {
+        protocol: 'https',
+        hostname: '**.poki.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.crazygames.com',
+      },
     ],
   },
   // Security headers

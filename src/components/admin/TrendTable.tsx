@@ -10,9 +10,14 @@ interface Trend {
   searchVolume: number;
   status: string;
   type?: string;
+  source?: string;
+  unifiedScore?: number;
   lastUpdated: string;
   shadowTitle?: string;
   shadowSlug?: string;
+  shadowType?: string;
+  shadowIframeUrl?: string;
+  shadowThumbnailUrl?: string;
 }
 
 export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
@@ -231,6 +236,8 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
                 />
               </th>
               <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Keyword</th>
+              <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Source</th>
+              <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Score</th>
               <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Volume</th>
               <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Type</th>
               <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Status</th>
@@ -260,12 +267,36 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
                   </td>
                   <td className="p-6">
                     <div className="flex items-center gap-3">
+                      {trend.shadowThumbnailUrl && (
+                        <div className="w-8 h-8 rounded bg-white/5 border border-white/10 overflow-hidden flex-shrink-0">
+                          <img src={trend.shadowThumbnailUrl} alt={trend.keyword} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        </div>
+                      )}
                       <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{trend.keyword}</span>
                       {trend.shadowSlug && (
                         <a href={`/trending/${trend.shadowSlug}`} target="_blank" className="text-emerald-500/60 hover:text-emerald-500">
                           <ArrowUpRight className="w-4 h-4" />
                         </a>
                       )}
+                    </div>
+                  </td>
+                  <td className="p-6">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/40 px-2 py-1 bg-white/5 rounded border border-white/10">
+                      {trend.source || 'Google'}
+                    </span>
+                  </td>
+                  <td className="p-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-12 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full ${
+                            (trend.unifiedScore || 0) > 100 ? 'bg-emerald-500' : 
+                            (trend.unifiedScore || 0) > 70 ? 'bg-orange-500' : 'bg-white/20'
+                          }`}
+                          style={{ width: `${Math.min(100, (trend.unifiedScore || 0) / 1.5)}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-black text-white/60">{trend.unifiedScore || 0}</span>
                     </div>
                   </td>
                   <td className="p-6">

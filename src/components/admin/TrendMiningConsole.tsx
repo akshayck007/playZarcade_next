@@ -9,6 +9,9 @@ interface RawTrend {
   keyword: string;
   volume: number;
   source: string;
+  unifiedScore?: number;
+  thumbnailUrl?: string;
+  iframeUrl?: string;
 }
 
 export function TrendMiningConsole() {
@@ -225,10 +228,16 @@ export function TrendMiningConsole() {
         <button 
           onClick={handleMine}
           disabled={isLoading}
-          className="bg-emerald-500 text-black px-8 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-colors flex items-center gap-2 disabled:opacity-50"
+          className="bg-emerald-500 text-black px-8 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-all flex flex-col items-center justify-center gap-0 disabled:opacity-50 relative overflow-hidden group"
         >
-          <RefreshCw className={`w-5 h-5 ${isLoading && status === 'mining' ? 'animate-spin' : ''}`} />
-          {isLoading && status === 'mining' ? 'Mining...' : 'Mine Trends'}
+          <div className="flex items-center gap-2">
+            <RefreshCw className={`w-4 h-4 ${isLoading && status === 'mining' ? 'animate-spin' : ''}`} />
+            <span className="text-sm">{isLoading && status === 'mining' ? 'Mining...' : 'Mine Trends'}</span>
+          </div>
+          <span className="text-[8px] font-black opacity-50 tracking-[0.2em] -mt-1">AI-ENHANCED</span>
+          
+          {/* Shine effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shine" />
         </button>
       </div>
 
@@ -332,6 +341,11 @@ export function TrendMiningConsole() {
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
+                            {item.thumbnailUrl && (
+                              <div className="w-12 h-12 rounded-lg overflow-hidden border border-white/10 flex-shrink-0">
+                                <img src={item.thumbnailUrl} alt={item.keyword} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              </div>
+                            )}
                             <div className="flex flex-col">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{item.keyword}</span>
@@ -344,8 +358,22 @@ export function TrendMiningConsole() {
                               <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">{item.source}</span>
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right flex flex-col items-end gap-1">
                             <span className="text-xs font-mono text-white/40">{item.volume.toLocaleString()} vol</span>
+                            {item.unifiedScore !== undefined && (
+                              <div className="flex items-center gap-2">
+                                <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-full rounded-full ${
+                                      item.unifiedScore > 100 ? 'bg-emerald-500' : 
+                                      item.unifiedScore > 70 ? 'bg-orange-500' : 'bg-white/20'
+                                    }`}
+                                    style={{ width: `${Math.min(100, item.unifiedScore / 1.5)}%` }}
+                                  />
+                                </div>
+                                <span className="text-[8px] font-black text-white/40">{item.unifiedScore}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}

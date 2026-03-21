@@ -122,11 +122,15 @@ CREATE TABLE IF NOT EXISTS public."TrendingKeyword" (
     "searchVolume" INTEGER DEFAULT 0,
     status TEXT DEFAULT 'detected', -- detected, shadow_page_live, archived
     type TEXT DEFAULT 'top', -- top, rising
+    source TEXT DEFAULT 'Google Trends',
+    "unifiedScore" INTEGER DEFAULT 0,
     "lastUpdated" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     "shadowTitle" TEXT,
     "shadowContent" TEXT,
     "shadowSlug" TEXT,
     "shadowSeoDescription" TEXT,
+    "shadowIframeUrl" TEXT,
+    "shadowThumbnailUrl" TEXT,
     "shadowType" TEXT DEFAULT 'game' -- game, article
 );
 

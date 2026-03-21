@@ -3,7 +3,7 @@ import { Search, Filter, MoreVertical, Edit, Trash2, ExternalLink, Plus } from "
 import Link from "next/link";
 import Image from "next/image";
 import { GameStatusBadge } from "@/components/admin/GameStatusBadge";
-import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
+import { SectionToggle } from "@/components/admin/SectionToggle";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -15,6 +15,19 @@ export default async function AdminGamesPage() {
     .order("createdAt", { ascending: false });
 
   const games = (gamesRaw || []).map(g => ({ ...g, category: g.Category }));
+
+  // Fetch all section items to determine which games are in which sections
+  const { data: sectionItems } = await supabase
+    .from("SectionItem")
+    .select("gameId, Section(slug)");
+
+  const gameSectionsMap = new Map<string, Set<string>>();
+  sectionItems?.forEach((item: any) => {
+    if (!gameSectionsMap.has(item.gameId)) {
+      gameSectionsMap.set(item.gameId, new Set());
+    }
+    gameSectionsMap.get(item.gameId)?.add(item.Section.slug);
+  });
 
   return (
     <div className="space-y-10">
@@ -59,70 +72,82 @@ export default async function AdminGamesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {games.map((game) => (
-              <tr key={game.id} className="hover:bg-white/5 transition-colors group">
-                <td className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/5 relative">
-                      <Image 
-                        src={game.thumbnail} 
-                        alt="" 
-                        fill 
-                        className="object-cover"
-                        referrerPolicy="no-referrer"
-                      />
+            {games.map((game) => {
+              const gameSections = gameSectionsMap.get(game.id) || new Set();
+              return (
+                <tr key={game.id} className="hover:bg-white/5 transition-colors group">
+                  <td className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/5 relative">
+                        <Image 
+                          src={game.thumbnail} 
+                          alt="" 
+                          fill 
+                          className="object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{game.title}</span>
+                        <span className="text-[10px] text-white/30 font-mono">{game.slug}</span>
+                      </div>
                     </div>
+                  </td>
+                  <td className="p-6">
+                    <span className="bg-white/5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white/60 border border-white/10">
+                      {game.category?.name || "Uncategorized"}
+                    </span>
+                  </td>
+                  <td className="p-6">
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{game.title}</span>
-                      <span className="text-[10px] text-white/30 font-mono">{game.slug}</span>
+                      <span className="text-xs font-bold text-emerald-500">{(game.playCount || 0).toLocaleString()} Plays</span>
+                      <span className="text-[10px] text-white/30 uppercase tracking-widest">Trend: {(game.trendScore || 0).toFixed(1)}</span>
                     </div>
-                  </div>
-                </td>
-                <td className="p-6">
-                  <span className="bg-white/5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white/60 border border-white/10">
-                    {game.category?.name || "Uncategorized"}
-                  </span>
-                </td>
-                <td className="p-6">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-emerald-500">{(game.playCount || 0).toLocaleString()} Plays</span>
-                    <span className="text-[10px] text-white/30 uppercase tracking-widest">Trend: {(game.trendScore || 0).toFixed(1)}</span>
-                  </div>
-                </td>
-                <td className="p-6">
-                  <div className="flex items-center gap-2">
-                    <div className="w-12 h-2 bg-white/5 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-emerald-500" 
-                        style={{ width: `${(game.qualityScore || 0) * 100}%` }}
+                  </td>
+                  <td className="p-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-12 h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-emerald-500" 
+                          style={{ width: `${(game.qualityScore || 0) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-black text-white/60">{(game.qualityScore || 0).toFixed(2)}</span>
+                    </div>
+                  </td>
+                  <td className="p-6">
+                    <GameStatusBadge 
+                      gameId={game.id} 
+                      isPublished={game.isPublished} 
+                      iframeUrl={game.iframeUrl} 
+                    />
+                  </td>
+                  <td className="p-6 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <SectionToggle 
+                        gameId={game.id} 
+                        sectionSlug="editors-choice" 
+                        initialInSection={gameSections.has('editors-choice')} 
                       />
+                      <SectionToggle 
+                        gameId={game.id} 
+                        sectionSlug="featured" 
+                        initialInSection={gameSections.has('featured')} 
+                      />
+                      <Link href={`/game/${game.slug}`} target="_blank" className="p-2 glass rounded-lg hover:bg-white/10 transition-colors">
+                        <ExternalLink className="w-4 h-4 text-white/40" />
+                      </Link>
+                      <button className="p-2 glass rounded-lg hover:bg-white/10 transition-colors">
+                        <Edit className="w-4 h-4 text-white/40" />
+                      </button>
+                      <button className="p-2 glass rounded-lg hover:bg-red-500/20 transition-colors group/del">
+                        <Trash2 className="w-4 h-4 text-white/40 group-hover/del:text-red-500" />
+                      </button>
                     </div>
-                    <span className="text-[10px] font-black text-white/60">{(game.qualityScore || 0).toFixed(2)}</span>
-                  </div>
-                </td>
-                <td className="p-6">
-                  <GameStatusBadge 
-                    gameId={game.id} 
-                    isPublished={game.isPublished} 
-                    iframeUrl={game.iframeUrl} 
-                  />
-                </td>
-                <td className="p-6 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <FeaturedToggle gameId={game.id} isFeatured={game.isFeatured} />
-                    <Link href={`/game/${game.slug}`} target="_blank" className="p-2 glass rounded-lg hover:bg-white/10 transition-colors">
-                      <ExternalLink className="w-4 h-4 text-white/40" />
-                    </Link>
-                    <button className="p-2 glass rounded-lg hover:bg-white/10 transition-colors">
-                      <Edit className="w-4 h-4 text-white/40" />
-                    </button>
-                    <button className="p-2 glass rounded-lg hover:bg-red-500/20 transition-colors group/del">
-                      <Trash2 className="w-4 h-4 text-white/40 group-hover/del:text-red-500" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

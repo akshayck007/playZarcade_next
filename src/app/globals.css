@@ -111,3 +111,12 @@
   0% { bottom: 100%; }
   100% { bottom: -100px; }
 }
+
+@keyframes shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shine {
+  animation: shine 1.5s infinite;
+}
