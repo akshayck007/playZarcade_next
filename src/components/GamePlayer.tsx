@@ -52,7 +52,7 @@ export function GamePlayer({ iframeUrl, title }: GamePlayerProps) {
 
     const { data: stats } = await supabase
       .from('UserStats')
-      .select('xp, level')
+      .select('xp, level, totalPlayTime')
       .eq('id', user.id)
       .maybeSingle();
 
