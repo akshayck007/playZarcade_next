@@ -52,6 +52,7 @@ export async function GET(request: Request) {
         const { data: newCat } = await supabase
           .from("Category")
           .insert({
+            id: crypto.randomUUID(),
             name: categoryName,
             slug: categorySlug
           })

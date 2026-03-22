@@ -51,6 +51,7 @@ export async function POST(req: Request) {
       const { error: insertError } = await supabase
         .from("SectionItem")
         .insert({
+          id: crypto.randomUUID(),
           sectionId: section.id,
           gameId,
           order: nextOrder

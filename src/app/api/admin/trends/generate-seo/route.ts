@@ -82,6 +82,7 @@ export async function POST(request: Request) {
       const { data: newGame } = await supabase
         .from("Game")
         .insert({
+          id: crypto.randomUUID(),
           title: gameData?.title || trend.keyword,
           slug: slug,
           description: gameData?.description || `Play ${trend.keyword} online for free.`,
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
     await supabase
       .from("SeoPage")
       .upsert({
+        id: crypto.randomUUID(),
         slug: seoSlug,
         gameId: matchingGame.id,
         modifier: trend.keyword.includes('unblocked') ? 'unblocked' : 'online',

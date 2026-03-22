@@ -32,6 +32,7 @@ export async function POST(request: Request) {
         await supabase
           .from("SeoPage")
           .insert({
+            id: crypto.randomUUID(),
             gameId: game.id,
             slug: seoSlug,
             modifier: modifier,

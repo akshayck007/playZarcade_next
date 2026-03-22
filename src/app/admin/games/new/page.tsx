@@ -45,7 +45,15 @@ export default function NewGamePage() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from("Game").insert([formData]);
+      // Clean up data before sending to Supabase
+      const submissionData: any = {
+        ...formData,
+        id: crypto.randomUUID(), // Explicitly generate ID to avoid "null value" errors if DB default fails
+        categoryId: formData.categoryId === "" ? null : formData.categoryId,
+        thumbnailUrl: formData.thumbnail, // Ensure both thumbnail fields are populated for compatibility
+      };
+
+      const { error } = await supabase.from("Game").insert([submissionData]);
       if (error) throw error;
       router.push("/admin/games");
       router.refresh();
