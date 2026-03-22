@@ -16,16 +16,47 @@ interface Section {
 export function HomeTabsSection() {
   const supabase = createClientComponentClient();
   const [activeTab, setActiveTab] = useState<string>('featured');
+  const [tabs, setTabs] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
+  const [loadingTabs, setLoadingTabs] = useState(true);
   const [loadingGames, setLoadingGames] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const tabs = [
-    { id: 'featured', label: 'Featured', icon: <Sparkles className="w-4 h-4" /> },
-    { id: 'continue-playing', label: 'Continue Playing', icon: <History className="w-4 h-4" /> },
-    { id: 'new-releases', label: 'New Releases', icon: <Clock className="w-4 h-4" /> },
-    { id: 'editors-choice', label: "Editor's Choice", icon: <Star className="w-4 h-4" /> },
-  ];
+  const getIcon = (slug: string) => {
+    switch (slug) {
+      case 'featured': return <Sparkles className="w-4 h-4" />;
+      case 'continue-playing': return <History className="w-4 h-4" />;
+      case 'new-releases': return <Clock className="w-4 h-4" />;
+      case 'editors-choice': return <Star className="w-4 h-4" />;
+      case 'top-games': return <TrendingUp className="w-4 h-4" />;
+      default: return <Sparkles className="w-4 h-4" />;
+    }
+  };
+
+  useEffect(() => {
+    const fetchTabs = async () => {
+      setLoadingTabs(true);
+      try {
+        const { data } = await supabase
+          .from("Section")
+          .select("*")
+          .order("order", { ascending: true });
+        
+        if (data && data.length > 0) {
+          setTabs(data);
+          // Only set active tab if not already set or if current active tab is not in new tabs
+          if (!data.find(t => t.slug === activeTab)) {
+            setActiveTab(data[0].slug);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch tabs', e);
+      } finally {
+        setLoadingTabs(false);
+      }
+    };
+    fetchTabs();
+  }, [supabase]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -150,21 +181,28 @@ export function HomeTabsSection() {
       {/* Tabs Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-x-auto scrollbar-hide">
         <div className="flex items-center gap-2 p-1 bg-white/5 rounded-2xl border border-white/5">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap
-                ${activeTab === tab.id 
-                  ? 'bg-neon-cyan text-black shadow-[0_0_20px_rgba(0,243,255,0.3)]' 
-                  : 'text-white/40 hover:text-white hover:bg-white/5'}
-              `}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
+          {loadingTabs ? (
+            <div className="flex items-center gap-4 px-6 py-3">
+              <Loader2 className="w-4 h-4 animate-spin text-white/20" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Loading Tabs...</span>
+            </div>
+          ) : (
+            tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.slug)}
+                className={`
+                  flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap
+                  ${activeTab === tab.slug 
+                    ? 'bg-neon-cyan text-black shadow-[0_0_20px_rgba(0,243,255,0.3)]' 
+                    : 'text-white/40 hover:text-white hover:bg-white/5'}
+                `}
+              >
+                {getIcon(tab.slug)}
+                {tab.name}
+              </button>
+            ))
+          )}
         </div>
       </div>
 

@@ -10,7 +10,10 @@ import {
   Loader2, 
   Star,
   ExternalLink,
-  Trash2
+  Trash2,
+  Plus,
+  Search,
+  X
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -22,6 +25,11 @@ export default function SectionOrderPage({ params }: { params: Promise<{ slug: s
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [allGames, setAllGames] = useState<any[]>([]);
+  const [gameSearchQuery, setGameSearchQuery] = useState('');
+  const [loadingGames, setLoadingGames] = useState(false);
+  const [sectionId, setSectionId] = useState<string | null>(null);
 
   const fetchSectionItems = React.useCallback(async () => {
     setLoading(true);
@@ -31,15 +39,16 @@ export default function SectionOrderPage({ params }: { params: Promise<{ slug: s
         .select("id, name")
         .eq("slug", slug)
         .single();
-
+ 
       if (section) {
+        setSectionId(section.id);
         setSectionName(section.name);
         const { data, error } = await supabase
           .from("SectionItem")
           .select("*, Game(*)")
           .eq("sectionId", section.id)
           .order("order", { ascending: true });
-
+ 
         if (error) throw error;
         setItems(data || []);
       }
@@ -49,6 +58,63 @@ export default function SectionOrderPage({ params }: { params: Promise<{ slug: s
       setLoading(false);
     }
   }, [slug]);
+
+  const fetchAllGames = async () => {
+    setLoadingGames(true);
+    try {
+      const { data } = await supabase
+        .from("Game")
+        .select("*")
+        .eq("isPublished", true)
+        .order("title");
+      setAllGames(data || []);
+    } catch (error) {
+      console.error("Failed to fetch games", error);
+    } finally {
+      setLoadingGames(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showAddModal && allGames.length === 0) {
+      fetchAllGames();
+    }
+  }, [showAddModal, allGames.length]);
+
+  const addItem = async (game: any) => {
+    if (!sectionId) return;
+
+    // Check if already in section
+    if (items.find(i => i.gameId === game.id)) {
+      alert("Game is already in this section");
+      return;
+    }
+
+    try {
+      const newOrder = items.length;
+      const { data, error } = await supabase
+        .from("SectionItem")
+        .insert([{
+          sectionId,
+          gameId: game.id,
+          order: newOrder
+        }])
+        .select("*, Game(*)")
+        .single();
+
+      if (error) throw error;
+
+      // If it's the featured section, also update the Game table flag
+      if (slug === 'featured') {
+        await supabase.from("Game").update({ isFeatured: true }).eq("id", game.id);
+      }
+
+      setItems([...items, data]);
+      setShowAddModal(false);
+    } catch (error) {
+      alert("Failed to add game to section");
+    }
+  };
 
   useEffect(() => {
     fetchSectionItems();
@@ -134,17 +200,97 @@ export default function SectionOrderPage({ params }: { params: Promise<{ slug: s
           </p>
         </div>
         
-        {hasChanges && (
+        <div className="flex items-center gap-4">
           <button 
-            onClick={saveOrder}
-            disabled={saving}
-            className="bg-emerald-500 text-black px-8 py-4 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-all flex items-center gap-2 shadow-xl shadow-emerald-500/20"
+            onClick={() => setShowAddModal(true)}
+            className="bg-white/5 text-white px-6 py-4 rounded-full font-black uppercase tracking-tight hover:bg-white/10 transition-all flex items-center gap-2 border border-white/5"
           >
-            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-            Save Changes
+            <Plus className="w-5 h-5" />
+            Add Game
           </button>
-        )}
+          
+          {hasChanges && (
+            <button 
+              onClick={saveOrder}
+              disabled={saving}
+              className="bg-emerald-500 text-black px-8 py-4 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-all flex items-center gap-2 shadow-xl shadow-emerald-500/20"
+            >
+              {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              Save Changes
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Add Game Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+          <div className="glass w-full max-w-2xl rounded-[2.5rem] border border-white/10 overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-8 border-b border-white/10 flex items-center justify-between">
+              <h2 className="text-2xl font-black uppercase tracking-tighter">Add Game to {sectionName}</h2>
+              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-8 space-y-6 flex-1 overflow-hidden flex flex-col">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
+                <input 
+                  type="text"
+                  value={gameSearchQuery}
+                  onChange={(e) => setGameSearchQuery(e.target.value)}
+                  placeholder="Search games by title..."
+                  className="w-full glass py-4 pl-12 pr-6 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                {loadingGames ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Fetching Games...</span>
+                  </div>
+                ) : allGames.filter(g => g.title.toLowerCase().includes(gameSearchQuery.toLowerCase())).length === 0 ? (
+                  <div className="text-center py-20">
+                    <p className="text-white/20 font-black uppercase tracking-widest text-sm">No games found</p>
+                  </div>
+                ) : (
+                  allGames
+                    .filter(g => g.title.toLowerCase().includes(gameSearchQuery.toLowerCase()))
+                    .map(game => {
+                      const isInSection = items.find(i => i.gameId === game.id);
+                      return (
+                        <div key={game.id} className="flex items-center justify-between p-4 glass rounded-2xl border border-white/5 hover:border-white/10 transition-all group">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl overflow-hidden relative bg-white/5">
+                              <Image src={game.thumbnail} alt="" fill className="object-cover" referrerPolicy="no-referrer" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm">{game.title}</p>
+                              <p className="text-[10px] font-mono text-white/20">{game.slug}</p>
+                            </div>
+                          </div>
+                          <button 
+                            disabled={!!isInSection}
+                            onClick={() => addItem(game)}
+                            className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                              isInSection 
+                                ? 'bg-white/5 text-white/20 cursor-not-allowed' 
+                                : 'bg-emerald-500 text-black hover:bg-emerald-400'
+                            }`}
+                          >
+                            {isInSection ? 'Added' : 'Add to Section'}
+                          </button>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="glass rounded-[2.5rem] p-20 flex flex-col items-center justify-center text-center space-y-6 border border-white/5">

@@ -42,11 +42,11 @@ export function LiveActivityTicker() {
         .select('title')
         .eq('isPublished', true);
 
-      const validTitles = new Set(games?.map(g => g.title) || []);
+      const validTitles = new Set(games?.map(g => g.title.trim().toLowerCase()) || []);
 
       // 3. Filter and take top 5
       const filtered = rawActivities
-        .filter(a => validTitles.has(a.gameTitle))
+        .filter(a => a.gameTitle && validTitles.has(a.gameTitle.trim().toLowerCase()))
         .slice(0, 5);
 
       setActivities(filtered);
@@ -68,7 +68,7 @@ export function LiveActivityTicker() {
         const { data: gameExists } = await supabase
           .from('Game')
           .select('id')
-          .eq('title', newActivity.gameTitle)
+          .ilike('title', newActivity.gameTitle.trim())
           .eq('isPublished', true)
           .single();
 
@@ -96,7 +96,7 @@ export function LiveActivityTicker() {
         {/* Close Button */}
         <button 
           onClick={handleDismiss}
-          className="absolute top-3 right-3 p-1 rounded-full hover:bg-white/10 text-white/20 hover:text-white/60 transition-all opacity-0 group-hover:opacity-100"
+          className="absolute top-3 right-3 p-1 rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 transition-all"
         >
           <X className="w-3 h-3" />
         </button>

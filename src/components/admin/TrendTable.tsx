@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from "react";
-import { Trash2, FileText, Sparkles, CheckCircle2, AlertCircle, RefreshCw, ArrowUpRight, Plus } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Trash2, FileText, Sparkles, CheckCircle2, AlertCircle, RefreshCw, ArrowUpRight, Plus, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface Trend {
@@ -21,17 +21,29 @@ interface Trend {
 }
 
 export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
+  const [searchQuery, setSearchQuery] = useState('');
   const [trends, setTrends] = useState<Trend[]>(initialTrends);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const filteredTrends = useMemo(() => {
+    return trends.filter(trend => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        trend.keyword.toLowerCase().includes(searchLower) ||
+        trend.source?.toLowerCase().includes(searchLower) ||
+        trend.status.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [trends, searchQuery]);
+
   const toggleSelectAll = () => {
-    if (selectedIds.size === trends.length) {
+    if (selectedIds.size === filteredTrends.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(trends.map(t => t.id)));
+      setSelectedIds(new Set(filteredTrends.map(t => t.id)));
     }
   };
 
@@ -247,6 +259,18 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
         )}
       </AnimatePresence>
 
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
+        <input 
+          type="text" 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search keywords or sources..." 
+          className="w-full glass py-4 pl-16 pr-8 rounded-2xl text-sm font-bold placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+        />
+      </div>
+
       <div className="glass rounded-3xl overflow-hidden border border-white/5">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -254,7 +278,7 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
               <th className="p-6 w-10">
                 <input 
                   type="checkbox" 
-                  checked={selectedIds.size === trends.length && trends.length > 0}
+                  checked={selectedIds.size === filteredTrends.length && filteredTrends.length > 0}
                   onChange={toggleSelectAll}
                   className="w-4 h-4 rounded border-white/10 bg-white/5 text-emerald-500 focus:ring-emerald-500"
                 />
@@ -269,17 +293,17 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {trends.length === 0 ? (
+            {filteredTrends.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-20 text-center">
+                <td colSpan={8} className="p-20 text-center">
                   <div className="flex flex-col items-center gap-4">
                     <RefreshCw className="w-12 h-12 text-white/10" />
-                    <p className="text-sm font-bold text-white/20 uppercase tracking-widest">No trends detected yet. Click refresh to start mining.</p>
+                    <p className="text-sm font-bold text-white/20 uppercase tracking-widest">No trends found.</p>
                   </div>
                 </td>
               </tr>
             ) : (
-              trends.map((trend) => (
+              filteredTrends.map((trend) => (
                 <tr key={trend.id} className={`hover:bg-white/5 transition-colors group ${selectedIds.has(trend.id) ? 'bg-emerald-500/5' : ''}`}>
                   <td className="p-6">
                     <input 

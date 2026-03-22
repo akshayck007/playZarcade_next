@@ -10,11 +10,14 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboard() {
   const { count: gameCount } = await supabase.from("Game").select("*", { count: "exact", head: true });
   const { count: userCount } = await supabase.from("User").select("*", { count: "exact", head: true });
+  const { data: playData } = await supabase.from("Game").select("playCount");
+  
+  const totalPlays = playData?.reduce((acc, game) => acc + (game.playCount || 0), 0) || 0;
 
   const stats = [
-    { label: "Total Games", value: gameCount || 0, icon: Gamepad2, trend: "+12%", isPositive: true },
-    { label: "Total Users", value: userCount || 0, icon: Users, trend: "+5%", isPositive: true },
-    { label: "Daily Plays", value: "124,502", icon: Play, trend: "-2%", isPositive: false },
+    { label: "Total Games", value: (gameCount || 0).toLocaleString(), icon: Gamepad2, trend: "+12%", isPositive: true },
+    { label: "Total Users", value: (userCount || 0).toLocaleString(), icon: Users, trend: "+5%", isPositive: true },
+    { label: "Total Plays", value: totalPlays.toLocaleString(), icon: Play, trend: "+8%", isPositive: true },
     { label: "Trend Score", value: "84.2", icon: TrendingUp, trend: "+18%", isPositive: true },
   ];
 

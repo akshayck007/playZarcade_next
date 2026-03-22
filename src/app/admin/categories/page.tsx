@@ -13,6 +13,10 @@ export default function AdminCategoriesPage() {
   const [recategorizing, setRecategorizing] = useState(false);
   const router = useRouter();
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [categoryForm, setCategoryForm] = useState({ name: "", slug: "" });
+
   const fetchCategories = async () => {
     setLoading(true);
     const { data: categoriesRaw } = await supabase
@@ -31,6 +35,60 @@ export default function AdminCategoriesPage() {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  const handleOpenModal = (category: any = null) => {
+    if (category) {
+      setEditingCategory(category);
+      setCategoryForm({ name: category.name, slug: category.slug });
+    } else {
+      setEditingCategory(null);
+      setCategoryForm({ name: "", slug: "" });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.value;
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    setCategoryForm({ name, slug });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (editingCategory) {
+        const { error } = await supabase
+          .from("Category")
+          .update(categoryForm)
+          .eq("id", editingCategory.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("Category")
+          .insert([{ ...categoryForm, id: crypto.randomUUID() }]);
+        if (error) throw error;
+      }
+      setIsModalOpen(false);
+      fetchCategories();
+    } catch (err: any) {
+      alert(err.message || "Failed to save category");
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+    try {
+      const { error } = await supabase.from("Category").delete().eq("id", id);
+      if (error) throw error;
+      fetchCategories();
+    } catch (err: any) {
+      alert(err.message || "Failed to delete category");
+    }
+  };
 
   const handleCleanup = async () => {
     if (!confirm("This will merge duplicate categories (Action, Puzzle, etc.) and remove empty ones. Continue?")) return;
@@ -104,7 +162,10 @@ export default function AdminCategoriesPage() {
             {cleaning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-emerald-500" />}
             Cleanup Duplicates
           </button>
-          <button className="bg-emerald-500 text-black px-6 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-colors flex items-center gap-2">
+          <button 
+            onClick={() => handleOpenModal()}
+            className="bg-emerald-500 text-black px-6 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-colors flex items-center gap-2"
+          >
             <Plus className="w-5 h-5" />
             New Category
           </button>
@@ -119,10 +180,16 @@ export default function AdminCategoriesPage() {
                 <Layers className="w-6 h-6 text-emerald-500 group-hover:text-black transition-colors" />
               </div>
               <div className="flex gap-2">
-                <button className="p-2 glass rounded-lg hover:bg-white/10 transition-colors">
+                <button 
+                  onClick={() => handleOpenModal(cat)}
+                  className="p-2 glass rounded-lg hover:bg-white/10 transition-colors"
+                >
                   <Edit className="w-4 h-4 text-white/40" />
                 </button>
-                <button className="p-2 glass rounded-lg hover:bg-red-500/20 transition-colors group/del">
+                <button 
+                  onClick={() => handleDelete(cat.id, cat.name)}
+                  className="p-2 glass rounded-lg hover:bg-red-500/20 transition-colors group/del"
+                >
                   <Trash2 className="w-4 h-4 text-white/40 group-hover/del:text-red-500" />
                 </button>
               </div>
@@ -145,6 +212,56 @@ export default function AdminCategoriesPage() {
           </div>
         ))}
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="glass p-8 rounded-3xl max-w-md w-full space-y-6 border border-white/10">
+            <h2 className="text-2xl font-black uppercase tracking-tighter">
+              {editingCategory ? "Edit Category" : "New Category"}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Category Name</label>
+                <input 
+                  required
+                  type="text" 
+                  value={categoryForm.name}
+                  onChange={handleNameChange}
+                  placeholder="e.g. Action"
+                  className="w-full glass p-4 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Slug</label>
+                <input 
+                  required
+                  type="text" 
+                  value={categoryForm.slug}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, slug: e.target.value })}
+                  placeholder="action"
+                  className="w-full glass p-4 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 glass py-4 rounded-xl font-black uppercase tracking-tight hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 bg-emerald-500 text-black py-4 rounded-xl font-black uppercase tracking-tight hover:bg-emerald-400 transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

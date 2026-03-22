@@ -36,7 +36,7 @@ export default async function AdminLayout({
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
     { icon: Gamepad2, label: "Games", href: "/admin/games" },
-    { icon: Star, label: "Featured Order", href: "/admin/featured" },
+    { icon: Star, label: "Featured Order", href: "/admin/sections/featured" },
     { icon: Layout, label: "Home Tabs", href: "/admin/sections" },
     { icon: RefreshCw, label: "GamePix Sync", href: "/admin/games/sync" },
     { icon: Layers, label: "Categories", href: "/admin/categories" },
