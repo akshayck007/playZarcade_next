@@ -72,6 +72,30 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
     }
   };
 
+  const handleImportGame = async (trendId: string) => {
+    setIsLoading(trendId);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch('/api/admin/trends/import-game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trendId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTrends(trends.map(t => t.id === trendId ? { ...t, status: 'imported' } : t));
+        setSuccess(data.message);
+      } else {
+        setError(data.error || "Game import failed");
+      }
+    } catch (err) {
+      setError("Network error during game import");
+    } finally {
+      setIsLoading(null);
+    }
+  };
+
   const handleCreateShadowPage = async (trend: Trend, type: 'game' | 'article') => {
     setIsLoading(trend.id);
     setError(null);
@@ -320,6 +344,19 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
                   </td>
                   <td className="p-6 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => handleImportGame(trend.id)}
+                        disabled={isLoading === trend.id || trend.status === 'imported'}
+                        className={`p-2 rounded-lg transition-all group/btn relative ${
+                          trend.status === 'imported' 
+                            ? 'bg-emerald-500/20 text-emerald-500 cursor-not-allowed' 
+                            : 'bg-white/5 hover:bg-emerald-500/10 text-white/40 hover:text-emerald-500'
+                        }`}
+                        title="Quick Import as Game"
+                      >
+                        {isLoading === trend.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                        <span className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-black text-[8px] font-black uppercase tracking-widest rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap z-10">Quick Import</span>
+                      </button>
                       <button 
                         onClick={() => handleCreateShadowPage(trend, 'game')}
                         disabled={isLoading === trend.id}

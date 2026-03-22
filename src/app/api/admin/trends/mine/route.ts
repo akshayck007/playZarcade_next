@@ -10,23 +10,29 @@ const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
 // AI Filtering and Categorization
 async function processTrendsWithAI(trends: { keyword: string; volume: number; source: string; thumbnailUrl?: string; gameUrl?: string }[]) {
   try {
+    // Pre-filter obviously non-gaming trends to save tokens and improve quality
+    const filteredTrends = trends.filter(t => {
+      const k = t.keyword.toLowerCase();
+      // Discard common noise (celebrities, sports teams, news)
+      const noise = ['vs', 'schedule', 'live stream', 'weather', 'election', 'news', 'death', 'died', 'arrested', 'court', 'trial', 'concert', 'tour'];
+      if (noise.some(n => k.includes(n))) return false;
+      if (k.length < 3) return false;
+      return true;
+    });
+
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Analyze these potential gaming search trends from multiple sources:
-      ${JSON.stringify(trends.slice(0, 50))} 
+      contents: `You are a gaming trend analyst. Analyze these potential search trends:
+      ${JSON.stringify(filteredTrends.slice(0, 60))} 
       
-      For each keyword:
-      1. Identify if it's a valid browser/web game or high-intent gaming query.
-      2. Assign a 'unifiedScore' (0-150) based on these weights:
-         - Google Trends: +50 points
-         - On Poki/CrazyGames/GamePix: +30 points
-         - Hot on Reddit: +20 points
-         - Viral on TikTok: +40 points
-      3. Provide category, SEO title, and description.
-      4. If it's a specific game, use Google Search to find its official embeddable iframe URL (e.g., from itch.io, game distribution networks, or the developer's site).
-      5. If a thumbnailUrl is provided in the input, keep it or suggest a better one.
+      CRITICAL INSTRUCTIONS:
+      1. DISCARD anything that is not a video game, browser game, or high-intent gaming query (e.g., celebrities, sports teams, news, movies are NOT allowed).
+      2. For valid games, assign a 'unifiedScore' (0-150) based on viral potential and search intent.
+      3. Categorize into: Action, Puzzle, Adventure, Strategy, Sports (Games), Simulation, Arcade, or Racing.
+      4. Find a direct 'iframeUrl' for embedding if it's a known web game.
+      5. Provide a short SEO description.
       
-      Return as a JSON array of objects.`,
+      Return ONLY a JSON array of objects.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -40,10 +46,10 @@ async function processTrendsWithAI(trends: { keyword: string; volume: number; so
               seoTitle: { type: Type.STRING },
               seoDescription: { type: Type.STRING },
               source: { type: Type.STRING },
-              iframeUrl: { type: Type.STRING, description: "The direct URL to embed the game in an iframe" },
-              thumbnailUrl: { type: Type.STRING, description: "The URL of the game's thumbnail image" }
+              iframeUrl: { type: Type.STRING },
+              thumbnailUrl: { type: Type.STRING }
             },
-            required: ["keyword", "category", "unifiedScore", "seoTitle", "seoDescription", "source"]
+            required: ["keyword", "category", "unifiedScore", "seoTitle", "seoDescription"]
           }
         },
         tools: [{ googleSearch: {} }]
@@ -94,41 +100,27 @@ async function fetchCompetitorTrends() {
   for (const comp of competitors) {
     try {
       const res = await fetch(comp.url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
       });
       if (res.ok) {
         const html = await res.text();
         
-        // More robust extraction using regex for game cards
-        // This is a heuristic approach since we don't have a full DOM parser in Edge runtime
-        const gameRegex = /<a[^>]+href="([^"]+)"[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"[^>]*>[\s\S]*?(?:<div[^>]*>)?([^<]+)(?:<\/div>)?/g;
-        let match;
-        let count = 0;
-        while ((match = gameRegex.exec(html)) !== null && count < 15) {
-          const [_, href, src, title] = match;
-          const cleanTitle = title.trim();
-          if (cleanTitle && cleanTitle.length > 2 && !cleanTitle.includes('<')) {
-            compTrends.push({
-              keyword: cleanTitle,
-              volume: 15000,
-              source: comp.name,
-              thumbnailUrl: src.startsWith('http') ? src : (comp.name === 'Poki' ? `https://poki.com${src}` : src),
-              gameUrl: href.startsWith('http') ? href : (comp.name === 'Poki' ? `https://poki.com${href}` : href)
-            });
-            count++;
-          }
-        }
-
-        // Fallback to title regex if card regex fails
-        if (compTrends.length === 0) {
-          const titles = html.match(/title="([^"]+)"/g)?.map(m => m.replace('title="', '').replace('"', '')) || [];
-          titles.slice(0, 10).forEach(title => {
+        // Improved regex for Poki/CrazyGames
+        // Looks for titles in alt tags or data attributes which are more reliable
+        const titleMatches = html.matchAll(/alt="([^"]+)"/g);
+        const seen = new Set();
+        
+        for (const match of titleMatches) {
+          const title = match[1].trim();
+          if (title.length > 3 && !seen.has(title) && !['Poki', 'CrazyGames', 'Logo', 'Popular Games'].includes(title)) {
             compTrends.push({
               keyword: title,
-              volume: 15000,
+              volume: 20000,
               source: comp.name
             });
-          });
+            seen.add(title);
+            if (seen.size > 15) break;
+          }
         }
       }
     } catch (e) {
@@ -238,13 +230,15 @@ export async function POST(req: Request) {
       const item: any = {
         keyword: trend.keyword,
         searchVolume: trend.volume,
-        status: (trend.volume > 15000 || velocity > 0.5 || unifiedScore > 80) ? "shadow_page_live" : "detected",
+        status: (trend.volume > 15000 || velocity > 0.5 || (trend.unifiedScore || 0) > 80) ? "shadow_page_live" : "detected",
         type: (trend.source || '').includes('Rising') ? 'rising' : 'top',
         source: trend.source || 'Google Trends',
-        unifiedScore: unifiedScore,
+        unifiedScore: trend.unifiedScore || 0,
         lastUpdated: new Date().toISOString(),
         shadowSlug: trend.keyword.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-        shadowType: 'game'
+        shadowType: 'game',
+        shadowIframeUrl: trend.iframeUrl || "",
+        shadowThumbnailUrl: trend.thumbnailUrl || ""
       };
       
       if (keywordToId.has(trend.keyword)) {
@@ -336,7 +330,8 @@ export async function GET(req: Request) {
     try {
       const rssUrls = [
         'https://trends.google.com/trending/rss?geo=US',
-        'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=g'
+        'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=e', // Entertainment
+        'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=t'  // Sci/Tech
       ];
 
       for (const url of rssUrls) {
@@ -456,8 +451,12 @@ export async function GET(req: Request) {
         };
       }).filter(t => t.unifiedScore > 40); // Keep reasonably scored trends
     } else {
-      // Fallback logic omitted for brevity in multi_edit, but we should keep a basic filter
-      uniqueTrends = uniqueTrends.slice(0, 20); 
+      // If AI fails, apply a strict keyword filter to raw trends
+      const gamingKeywords = ['game', 'play', 'online', 'unblocked', 'io', 'simulator', 'mod', 'apk', 'multiplayer', 'free', 'browser', 'web', 'arcade'];
+      uniqueTrends = uniqueTrends.filter(t => 
+        gamingKeywords.some(gk => t.keyword.toLowerCase().includes(gk)) || 
+        ['Poki', 'CrazyGames', 'Reddit (r/webgames)'].includes(t.source)
+      ).slice(0, 20); 
     }
 
     if (isPreview) {

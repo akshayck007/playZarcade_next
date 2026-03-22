@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public."Game" (
     title TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     description TEXT,
+    "contentBody" TEXT,
     "categoryId" UUID REFERENCES public."Category"(id) ON DELETE SET NULL,
     "trendScore" INTEGER DEFAULT 0,
     "playCount" INTEGER DEFAULT 0,
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public."Game" (
     controls JSONB DEFAULT '{}'::jsonb,
     faq JSONB DEFAULT '[]'::jsonb,
     "qualityScore" FLOAT DEFAULT 0,
+    tags TEXT[] DEFAULT '{}'::text[],
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -37,6 +39,7 @@ CREATE TABLE IF NOT EXISTS public."Settings" (
     "defaultTheme" TEXT DEFAULT 'dark',
     "trendingMode" TEXT DEFAULT 'trending',
     "autoBoostTrending" BOOLEAN DEFAULT true,
+    "autoCreateShadowGames" BOOLEAN DEFAULT false,
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -131,7 +134,8 @@ CREATE TABLE IF NOT EXISTS public."TrendingKeyword" (
     "shadowSeoDescription" TEXT,
     "shadowIframeUrl" TEXT,
     "shadowThumbnailUrl" TEXT,
-    "shadowType" TEXT DEFAULT 'game' -- game, article
+    "shadowType" TEXT DEFAULT 'game', -- game, article
+    "relevantGameIds" UUID[] DEFAULT '{}'::UUID[]
 );
 
 -- Enable RLS for new tables
@@ -153,3 +157,18 @@ CREATE POLICY "Users can delete their own history" ON public."UserHistory" FOR D
 -- Policies for TrendingKeyword (Public read, Admin write)
 CREATE POLICY "Allow public read access on TrendingKeyword" ON public."TrendingKeyword" FOR SELECT USING (true);
 CREATE POLICY "Allow all access for anon on TrendingKeyword" ON public."TrendingKeyword" FOR ALL USING (true) WITH CHECK (true);
+
+-- 11. SEO Pages Table
+CREATE TABLE IF NOT EXISTS public."SeoPage" (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    "gameId" UUID REFERENCES public."Game"(id) ON DELETE CASCADE,
+    modifier TEXT,
+    "customTitle" TEXT,
+    "customDescription" TEXT,
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public."SeoPage" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access on SeoPage" ON public."SeoPage" FOR SELECT USING (true);
+CREATE POLICY "Allow all access for anon on SeoPage" ON public."SeoPage" FOR ALL USING (true) WITH CHECK (true);
