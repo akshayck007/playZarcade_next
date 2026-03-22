@@ -84,6 +84,7 @@ export default async function SeoPlayPage({ params }: SeoPageProps) {
     .from("Game")
     .select("*, Category(*)")
     .eq("slug", parsed.gameSlug)
+    .eq("isPublished", true)
     .maybeSingle();
 
   if (!game) notFound();

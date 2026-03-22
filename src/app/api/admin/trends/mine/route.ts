@@ -13,24 +13,34 @@ async function processTrendsWithAI(trends: { keyword: string; volume: number; so
     // Pre-filter obviously non-gaming trends to save tokens and improve quality
     const filteredTrends = trends.filter(t => {
       const k = t.keyword.toLowerCase();
-      // Discard common noise (celebrities, sports teams, news)
-      const noise = ['vs', 'schedule', 'live stream', 'weather', 'election', 'news', 'death', 'died', 'arrested', 'court', 'trial', 'concert', 'tour'];
+      // Discard common noise (celebrities, sports teams, news, industry drama)
+      const noise = [
+        'vs', 'schedule', 'live stream', 'weather', 'election', 'news', 'death', 'died', 'arrested', 'court', 'trial', 'concert', 'tour', 'result', 'score',
+        'translation', 'layoff', 'restructuring', 'investment', 'megathread', 'opinion', 'looking for', 'review', 'integration', 'transform', 'invest', 'restructure',
+        'update', 'patch notes', 'leak', 'rumor', 'trailer', 'announcement', 'delay', 'canceled', 'cancelled'
+      ];
       if (noise.some(n => k.includes(n))) return false;
       if (k.length < 3) return false;
+      // Filter out titles that look like sentences (likely news or discussions)
+      if (k.split(' ').length > 8) return false;
       return true;
     });
 
+    if (filteredTrends.length === 0) return [];
+
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `You are a gaming trend analyst. Analyze these potential search trends:
-      ${JSON.stringify(filteredTrends.slice(0, 60))} 
+      contents: `You are a gaming trend analyst for a web arcade. Analyze these potential search trends:
+      ${JSON.stringify(filteredTrends.slice(0, 50))} 
       
       CRITICAL INSTRUCTIONS:
-      1. DISCARD anything that is not a video game, browser game, or high-intent gaming query (e.g., celebrities, sports teams, news, movies are NOT allowed).
-      2. For valid games, assign a 'unifiedScore' (0-150) based on viral potential and search intent.
-      3. Categorize into: Action, Puzzle, Adventure, Strategy, Sports (Games), Simulation, Arcade, or Racing.
-      4. Find a direct 'iframeUrl' for embedding if it's a known web game.
-      5. Provide a short SEO description.
+      1. DISCARD anything that is not a specific video game title (e.g. "Slope", "2048", "Among Us").
+      2. DISCARD news, reviews, opinions, layoffs, or general industry discussions.
+      3. DISCARD "megathreads", "find-a-game" requests, or "looking for" posts.
+      4. ONLY keep actual game titles or very specific "play [game name]" queries.
+      5. For valid games, assign a 'unifiedScore' (0-150) based on viral potential.
+      6. Categorize into: Action, Puzzle, Adventure, Strategy, Sports, Simulation, Arcade, or Racing.
+      7. Suggest a 'thumbnailUrl' if possible (use placeholder if unknown).
       
       Return ONLY a JSON array of objects.`,
       config: {
@@ -46,13 +56,11 @@ async function processTrendsWithAI(trends: { keyword: string; volume: number; so
               seoTitle: { type: Type.STRING },
               seoDescription: { type: Type.STRING },
               source: { type: Type.STRING },
-              iframeUrl: { type: Type.STRING },
               thumbnailUrl: { type: Type.STRING }
             },
             required: ["keyword", "category", "unifiedScore", "seoTitle", "seoDescription"]
           }
-        },
-        tools: [{ googleSearch: {} }]
+        }
       }
     });
 
@@ -100,26 +108,45 @@ async function fetchCompetitorTrends() {
   for (const comp of competitors) {
     try {
       const res = await fetch(comp.url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+        headers: { 
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9'
+        }
       });
       if (res.ok) {
         const html = await res.text();
         
-        // Improved regex for Poki/CrazyGames
-        // Looks for titles in alt tags or data attributes which are more reliable
-        const titleMatches = html.matchAll(/alt="([^"]+)"/g);
+        // More specific regex for game titles in common patterns
         const seen = new Set();
         
-        for (const match of titleMatches) {
+        // Pattern 1: alt tags (usually on game thumbnails)
+        const altMatches = html.matchAll(/alt="([^"]+)"/g);
+        for (const match of altMatches) {
           const title = match[1].trim();
-          if (title.length > 3 && !seen.has(title) && !['Poki', 'CrazyGames', 'Logo', 'Popular Games'].includes(title)) {
+          if (title.length > 3 && title.length < 40 && !seen.has(title.toLowerCase())) {
+            if (!['poki', 'crazygames', 'logo', 'popular', 'games', 'play', 'online'].includes(title.toLowerCase())) {
+              compTrends.push({
+                keyword: title,
+                volume: 25000,
+                source: comp.name
+              });
+              seen.add(title.toLowerCase());
+            }
+          }
+        }
+
+        // Pattern 2: data-title or aria-label
+        const labelMatches = html.matchAll(/(?:aria-label|data-title)="([^"]+)"/g);
+        for (const match of labelMatches) {
+          const title = match[1].trim();
+          if (title.length > 3 && title.length < 40 && !seen.has(title.toLowerCase())) {
             compTrends.push({
               keyword: title,
-              volume: 20000,
+              volume: 25000,
               source: comp.name
             });
-            seen.add(title);
-            if (seen.size > 15) break;
+            seen.add(title.toLowerCase());
           }
         }
       }
@@ -329,7 +356,7 @@ export async function GET(req: Request) {
     // 1. Fetch from Google Trends RSS (Daily and Real-time)
     try {
       const rssUrls = [
-        'https://trends.google.com/trending/rss?geo=US',
+        'https://trends.google.com/trends/trendingsearches/daily/rss?geo=US',
         'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=e', // Entertainment
         'https://trends.google.com/trends/trendingsearches/realtime/rss?geo=US&category=t'  // Sci/Tech
       ];
@@ -338,7 +365,8 @@ export async function GET(req: Request) {
         try {
           const response = await fetch(url, {
             headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+              'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8'
             }
           });
           
@@ -346,17 +374,26 @@ export async function GET(req: Request) {
             const xml = await response.text();
             const parsedItems = parseTrendsRss(xml);
             
-            parsedItems.forEach(item => {
-              trends.push({ 
-                keyword: item.title.toLowerCase(), 
-                volume: parseInt(item.traffic.replace(/[^0-9]/g, '') || '5000'),
-                source: 'Google Trends'
+            if (parsedItems.length > 0) {
+              console.log(`[TREND MINE] Fetched ${parsedItems.length} items from Google Trends: ${url}`);
+              parsedItems.forEach(item => {
+                trends.push({ 
+                  keyword: item.title.toLowerCase(), 
+                  volume: parseInt(item.traffic.replace(/[^0-9]/g, '') || '5000'),
+                  source: 'Google Trends'
+                });
               });
-            });
+            }
+          } else {
+            console.warn(`[TREND MINE] Google Trends RSS failed (${response.status}): ${url}`);
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error(`[TREND MINE] Google Trends RSS error for ${url}:`, e);
+        }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error(`[TREND MINE] Google Trends main loop error:`, e);
+    }
 
     // 2. Fetch from Reddit
     const redditTrends = await fetchRedditTrends();

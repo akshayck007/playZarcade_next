@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, Gamepad2 } from 'lucide-react';
+import { Users, Gamepad2, X } from 'lucide-react';
 
 interface Activity {
   id: string;
@@ -14,16 +14,42 @@ interface Activity {
 
 export function LiveActivityTicker() {
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [isDismissed, setIsDismissed] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    // Check if user has dismissed the ticker
+    const dismissed = localStorage.getItem('playz_live_activity_dismissed');
+    if (dismissed === 'true') {
+      setIsDismissed(true);
+    }
+    setIsLoaded(true);
+
     // Initial fetch
     async function fetchActivities() {
-      const { data } = await supabase
+      // 1. Fetch more than we need to allow for filtering
+      const { data: rawActivities } = await supabase
         .from('LiveActivity')
         .select('*')
         .order('timestamp', { ascending: false })
-        .limit(5);
-      if (data) setActivities(data);
+        .limit(50);
+
+      if (!rawActivities) return;
+
+      // 2. Fetch all published game titles to verify existence
+      const { data: games } = await supabase
+        .from('Game')
+        .select('title')
+        .eq('isPublished', true);
+
+      const validTitles = new Set(games?.map(g => g.title) || []);
+
+      // 3. Filter and take top 5
+      const filtered = rawActivities
+        .filter(a => validTitles.has(a.gameTitle))
+        .slice(0, 5);
+
+      setActivities(filtered);
     }
 
     fetchActivities();
@@ -35,8 +61,20 @@ export function LiveActivityTicker() {
         event: 'INSERT', 
         schema: 'public', 
         table: 'LiveActivity' 
-      }, (payload) => {
-        setActivities(prev => [payload.new as Activity, ...prev.slice(0, 4)]);
+      }, async (payload) => {
+        const newActivity = payload.new as Activity;
+        
+        // Verify game exists before adding
+        const { data: gameExists } = await supabase
+          .from('Game')
+          .select('id')
+          .eq('title', newActivity.gameTitle)
+          .eq('isPublished', true)
+          .single();
+
+        if (gameExists) {
+          setActivities(prev => [newActivity, ...prev.slice(0, 4)]);
+        }
       })
       .subscribe();
 
@@ -45,17 +83,30 @@ export function LiveActivityTicker() {
     };
   }, []);
 
-  if (activities.length === 0) return null;
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    localStorage.setItem('playz_live_activity_dismissed', 'true');
+  };
+
+  if (!isLoaded || isDismissed || activities.length === 0) return null;
 
   return (
     <div className="fixed bottom-6 left-6 z-40 hidden md:block">
-      <div className="glass p-4 rounded-2xl border border-white/5 shadow-2xl space-y-3 w-64 overflow-hidden">
+      <div className="glass p-4 rounded-2xl border border-white/5 shadow-2xl space-y-3 w-64 overflow-hidden relative group">
+        {/* Close Button */}
+        <button 
+          onClick={handleDismiss}
+          className="absolute top-3 right-3 p-1 rounded-full hover:bg-white/10 text-white/20 hover:text-white/60 transition-all opacity-0 group-hover:opacity-100"
+        >
+          <X className="w-3 h-3" />
+        </button>
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500">
             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
             Live Activity
           </div>
-          <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/20">
+          <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/20 pr-6">
             <Users className="w-3 h-3" />
             {Math.floor(Math.random() * 500) + 1200} Online
           </div>

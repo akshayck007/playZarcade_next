@@ -62,6 +62,7 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
     .from("Game")
     .select("*, Category(*), MediaAsset(*)")
     .eq("slug", slug)
+    .eq("isPublished", true)
     .maybeSingle();
 
   if (!game || error) notFound();
