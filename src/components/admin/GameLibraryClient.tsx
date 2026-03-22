@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Search, Filter, Edit, Trash2, ExternalLink, X } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Search, Filter, Edit, Trash2, ExternalLink, X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { GameStatusBadge } from '@/components/admin/GameStatusBadge';
@@ -17,6 +17,54 @@ export function GameLibraryClient({ initialGames, gameSectionsMap }: GameLibrary
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [games, setGames] = useState(initialGames);
+  const [isSearchingDB, setIsSearchingDB] = useState(false);
+
+  // Sync state when props change
+  useEffect(() => {
+    setGames(initialGames);
+  }, [initialGames]);
+
+  // Server-side search fallback
+  useEffect(() => {
+    const searchDB = async () => {
+      const searchLower = searchQuery.toLowerCase().trim();
+      if (searchLower.length < 2) return;
+
+      // If we have local results, don't bother searching DB unless it's a very specific query
+      const localMatches = initialGames.filter(game => 
+        (game.title?.toLowerCase() || '').includes(searchLower) ||
+        (game.slug?.toLowerCase() || '').includes(searchLower)
+      );
+
+      if (localMatches.length > 0) return;
+
+      setIsSearchingDB(true);
+      try {
+        const { data, error } = await supabase
+          .from('Game')
+          .select('*, Category(*)')
+          .or(`title.ilike.%${searchLower}%,slug.ilike.%${searchLower}%`)
+          .limit(50);
+
+        if (!error && data && data.length > 0) {
+          const newGames = data.map(g => ({ ...g, category: g.Category }));
+          // Merge with current games to avoid losing them, but prioritize search results
+          setGames(prev => {
+            const existingIds = new Set(prev.map(g => g.id));
+            const uniqueNew = newGames.filter(g => !existingIds.has(g.id));
+            return [...uniqueNew, ...prev];
+          });
+        }
+      } catch (err) {
+        console.error("Search DB error:", err);
+      } finally {
+        setIsSearchingDB(false);
+      }
+    };
+
+    const timer = setTimeout(searchDB, 600);
+    return () => clearTimeout(timer);
+  }, [searchQuery, initialGames]);
 
   const categories = useMemo(() => {
     const cats = new Set(initialGames.map(g => g.category?.name).filter(Boolean));
@@ -55,7 +103,11 @@ export function GameLibraryClient({ initialGames, gameSectionsMap }: GameLibrary
       {/* Search & Filter Bar */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
+          {isSearchingDB ? (
+            <Loader2 className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500 animate-spin" />
+          ) : (
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
+          )}
           <input 
             type="text" 
             value={searchQuery}

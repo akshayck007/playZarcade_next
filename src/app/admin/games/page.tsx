@@ -10,14 +10,16 @@ export default async function AdminGamesPage() {
   const { data: gamesRaw } = await supabase
     .from("Game")
     .select("*, Category(*)")
-    .order("createdAt", { ascending: false });
+    .order("createdAt", { ascending: false })
+    .limit(5000);
 
   const games = (gamesRaw || []).map(g => ({ ...g, category: g.Category }));
 
   // Fetch all section items to determine which games are in which sections
   const { data: sectionItems } = await supabase
     .from("SectionItem")
-    .select("gameId, Section(slug)");
+    .select("gameId, Section(slug)")
+    .limit(5000);
 
   const gameSectionsMap: Record<string, string[]> = {};
   sectionItems?.forEach((item: any) => {
