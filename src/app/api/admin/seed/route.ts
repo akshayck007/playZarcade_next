@@ -51,18 +51,28 @@ export async function GET() {
         .upsert(section, { onConflict: 'slug' });
     }
 
-    // Optional: Reset order of any other sections that might exist
+    // Reset order of all sections to match the desired sequence
     const { data: allSections } = await supabase
       .from("Section")
       .select("*")
       .order("order", { ascending: true });
     
     if (allSections) {
-      for (let i = 0; i < allSections.length; i++) {
+      // Sort allSections to prioritize our defaults
+      const sorted = [...allSections].sort((a, b) => {
+        const aIdx = sections.findIndex(s => s.slug === a.slug);
+        const bIdx = sections.findIndex(s => s.slug === b.slug);
+        if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+        if (aIdx !== -1) return -1;
+        if (bIdx !== -1) return 1;
+        return a.order - b.order;
+      });
+
+      for (let i = 0; i < sorted.length; i++) {
         await supabase
           .from("Section")
           .update({ order: i })
-          .eq("id", allSections[i].id);
+          .eq("id", sorted[i].id);
       }
     }
 

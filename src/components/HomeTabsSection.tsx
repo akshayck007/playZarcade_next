@@ -47,21 +47,22 @@ export function HomeTabsSection() {
           const recent = localStorage.getItem('playz_recently_played');
           let hasHistory = history.length > 0 || (recent && JSON.parse(recent).length > 0);
           
-          // Also check cloud history if logged in
+          // Fast check cloud history if logged in
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user && !hasHistory) {
-            const { count } = await supabase
+            const { data: historyData } = await supabase
               .from('UserHistory')
-              .select('*', { count: 'exact', head: true })
-              .eq('userId', session.user.id);
-            if (count && count > 0) hasHistory = true;
+              .select('id')
+              .eq('userId', session.user.id)
+              .limit(1);
+            if (historyData && historyData.length > 0) hasHistory = true;
           }
           
           const filteredTabs = data.filter(t => t.slug !== 'continue-playing' || hasHistory);
           setTabs(filteredTabs);
           
-          // Only set active tab if not already set or if current active tab is not in new tabs
-          if (!filteredTabs.find(t => t.slug === activeTab)) {
+          // Set initial active tab if not set
+          if (!activeTab || !filteredTabs.find(t => t.slug === activeTab)) {
             setActiveTab(filteredTabs[0].slug);
           }
         }
@@ -72,7 +73,8 @@ export function HomeTabsSection() {
       }
     };
     fetchTabs();
-  }, [supabase, activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -166,11 +168,10 @@ export function HomeTabsSection() {
           }
           
           if (activeTab === 'featured') {
-            // Fetch automatic featured games
+            // Fetch automatic featured games (top quality)
             const { data: autoGames } = await supabase
               .from("Game")
               .select("*, Category(name, slug)")
-              .eq("isFeatured", true)
               .eq("isPublished", true)
               .order("qualityScore", { ascending: false })
               .limit(30);
