@@ -8,7 +8,8 @@ import {
   Save, 
   Loader2, 
   Layout,
-  Star
+  Star,
+  Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -82,6 +83,51 @@ export default function HomeSectionsPage() {
     }
   };
 
+  const addSection = async () => {
+    const name = window.prompt("Enter section name:");
+    if (!name) return;
+    const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("Section")
+        .insert({
+          name,
+          slug,
+          order: sections.length
+        });
+
+      if (error) throw error;
+      await fetchSections();
+      alert("Section added successfully!");
+    } catch (error: any) {
+      alert("Failed to add section: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteSection = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${name}"? This will also remove any manual game assignments for this section.`)) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("Section")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      await fetchSections();
+      alert("Section deleted successfully!");
+    } catch (error: any) {
+      alert("Failed to delete section: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const syncDefaults = async () => {
     if (!window.confirm("This will ensure all default sections exist. Continue?")) return;
     setLoading(true);
@@ -121,6 +167,12 @@ export default function HomeSectionsPage() {
         </div>
         
         <div className="flex items-center gap-4">
+          <button 
+            onClick={addSection}
+            className="text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-400 transition-colors"
+          >
+            Add Section
+          </button>
           <button 
             onClick={syncDefaults}
             className="text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white transition-colors"
@@ -191,6 +243,13 @@ export default function HomeSectionsPage() {
               <div className="px-6 py-3 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/20">
                 Order: {section.order}
               </div>
+              <button 
+                onClick={() => deleteSection(section.id, section.name)}
+                className="p-3 hover:bg-red-500/10 rounded-xl text-white/20 hover:text-red-500 transition-all"
+                title="Delete Section"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
             </div>
           </div>
         ))}

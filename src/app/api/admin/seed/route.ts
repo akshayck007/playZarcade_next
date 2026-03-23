@@ -37,10 +37,33 @@ export async function GET() {
       { name: "Continue Playing", slug: "continue-playing", order: 3 },
     ];
 
+    // Clean up redundant sections if they exist
+    const redundantSlugs = ['top-games', 'trending-now', 'trending'];
+    await supabase
+      .from("Section")
+      .delete()
+      .in("slug", redundantSlugs);
+
+    // Upsert defaults and ensure their order is correct
     for (const section of sections) {
       await supabase
         .from("Section")
         .upsert(section, { onConflict: 'slug' });
+    }
+
+    // Optional: Reset order of any other sections that might exist
+    const { data: allSections } = await supabase
+      .from("Section")
+      .select("*")
+      .order("order", { ascending: true });
+    
+    if (allSections) {
+      for (let i = 0; i < allSections.length; i++) {
+        await supabase
+          .from("Section")
+          .update({ order: i })
+          .eq("id", allSections[i].id);
+      }
     }
 
     // Seed Games
