@@ -4,6 +4,7 @@ import { RefreshCw, Eye, X, Terminal, CheckCircle2, AlertCircle, Sparkles, Trash
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { GoogleGenAI, Type } from "@google/genai";
+import Image from "next/image";
 
 interface RawTrend {
   keyword: string;
@@ -342,8 +343,14 @@ export function TrendMiningConsole() {
                               <Trash2 className="w-4 h-4" />
                             </button>
                             {item.thumbnailUrl && (
-                              <div className="w-12 h-12 rounded-lg overflow-hidden border border-white/10 flex-shrink-0">
-                                <img src={item.thumbnailUrl} alt={item.keyword} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              <div className="w-12 h-12 rounded-lg overflow-hidden border border-white/10 flex-shrink-0 relative">
+                                <Image 
+                                  src={item.thumbnailUrl} 
+                                  alt={item.keyword} 
+                                  fill
+                                  className="object-cover" 
+                                  referrerPolicy="no-referrer" 
+                                />
                               </div>
                             )}
                             <div className="flex flex-col">

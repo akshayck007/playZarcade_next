@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Trash2, FileText, Sparkles, CheckCircle2, AlertCircle, RefreshCw, ArrowUpRight, Plus, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import Image from "next/image";
 
 interface Trend {
   id: string;
@@ -316,8 +317,14 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
                   <td className="p-6">
                     <div className="flex items-center gap-3">
                       {trend.shadowThumbnailUrl && (
-                        <div className="w-8 h-8 rounded bg-white/5 border border-white/10 overflow-hidden flex-shrink-0">
-                          <img src={trend.shadowThumbnailUrl} alt={trend.keyword} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <div className="w-8 h-8 rounded bg-white/5 border border-white/10 overflow-hidden flex-shrink-0 relative">
+                          <Image 
+                            src={trend.shadowThumbnailUrl} 
+                            alt={trend.keyword} 
+                            fill
+                            className="object-cover" 
+                            referrerPolicy="no-referrer" 
+                          />
                         </div>
                       )}
                       <span className="text-sm font-bold group-hover:text-emerald-500 transition-colors">{trend.keyword}</span>

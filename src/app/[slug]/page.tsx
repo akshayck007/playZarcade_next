@@ -8,6 +8,38 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+
+  const { data: category } = await supabase
+    .from("Category")
+    .select("name, description, seoTitle, seoDescription")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (category) {
+    return {
+      title: category.seoTitle || `${category.name} Games - Play Online for Free | PlayZ Arcade`,
+      description: category.seoDescription || `Play the best ${category.name} games online for free on PlayZ Arcade. No download required. Discover top-rated ${category.name} titles and start playing now!`,
+      openGraph: {
+        title: category.seoTitle || `${category.name} Games - PlayZ Arcade`,
+        description: category.seoDescription || `Play the best ${category.name} games online for free on PlayZ Arcade.`,
+      }
+    };
+  }
+
+  if (slug === 'trending') {
+    return {
+      title: "Trending Games - Most Popular Right Now | PlayZ Arcade",
+      description: "Discover the most popular and trending games on PlayZ Arcade. See what everyone is playing and join the action with real-time player data.",
+    };
+  }
+
+  return {
+    title: "Category Not Found | PlayZ Arcade",
+  };
+}
+
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 

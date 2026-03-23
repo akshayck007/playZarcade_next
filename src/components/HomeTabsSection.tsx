@@ -28,7 +28,6 @@ export function HomeTabsSection() {
       case 'continue-playing': return <History className="w-4 h-4" />;
       case 'new-releases': return <Clock className="w-4 h-4" />;
       case 'editors-choice': return <Star className="w-4 h-4" />;
-      case 'top-games': return <TrendingUp className="w-4 h-4" />;
       default: return <Sparkles className="w-4 h-4" />;
     }
   };
@@ -43,10 +42,27 @@ export function HomeTabsSection() {
           .order("order", { ascending: true });
         
         if (data && data.length > 0) {
-          setTabs(data);
+          // Check if we should show continue-playing
+          const history = JSON.parse(localStorage.getItem('playz_history') || '[]');
+          const recent = localStorage.getItem('playz_recently_played');
+          let hasHistory = history.length > 0 || (recent && JSON.parse(recent).length > 0);
+          
+          // Also check cloud history if logged in
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user && !hasHistory) {
+            const { count } = await supabase
+              .from('UserHistory')
+              .select('*', { count: 'exact', head: true })
+              .eq('userId', session.user.id);
+            if (count && count > 0) hasHistory = true;
+          }
+          
+          const filteredTabs = data.filter(t => t.slug !== 'continue-playing' || hasHistory);
+          setTabs(filteredTabs);
+          
           // Only set active tab if not already set or if current active tab is not in new tabs
-          if (!data.find(t => t.slug === activeTab)) {
-            setActiveTab(data[0].slug);
+          if (!filteredTabs.find(t => t.slug === activeTab)) {
+            setActiveTab(filteredTabs[0].slug);
           }
         }
       } catch (e) {
@@ -56,7 +72,7 @@ export function HomeTabsSection() {
       }
     };
     fetchTabs();
-  }, [supabase]);
+  }, [supabase, activeTab]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -80,32 +96,41 @@ export function HomeTabsSection() {
         let fetchedGames: any[] = [];
 
         if (activeTab === 'continue-playing') {
-          let history = JSON.parse(localStorage.getItem('playz_history') || '[]');
-          
-          // Fallback to playz_recently_played if history is empty (migration)
-          if (history.length === 0) {
-            const stored = localStorage.getItem('playz_recently_played');
-            if (stored) {
-              try {
-                const recent = JSON.parse(stored);
-                history = recent.map((g: any) => g.id).filter(Boolean);
-                if (history.length > 0) {
-                  localStorage.setItem('playz_history', JSON.stringify(history));
-                }
-              } catch (e) {}
-            }
+          const { data: { session } } = await supabase.auth.getSession();
+          let history: string[] = [];
+
+          if (session?.user) {
+            const { data } = await supabase
+              .from('UserHistory')
+              .select('gameId')
+              .eq('userId', session.user.id)
+              .order('lastPlayedAt', { ascending: false })
+              .limit(30);
+            if (data) history = data.map(h => h.gameId);
           }
 
-          if (history.length > 0) {
+          // Merge with local history if cloud is empty or to complement
+          const localHistory = JSON.parse(localStorage.getItem('playz_history') || '[]');
+          const recentStored = localStorage.getItem('playz_recently_played');
+          let recent: string[] = [];
+          if (recentStored) {
+            try {
+              recent = JSON.parse(recentStored).map((g: any) => g.id).filter(Boolean);
+            } catch (e) {}
+          }
+          
+          const combined = [...new Set([...history, ...localHistory, ...recent])].slice(0, 30);
+
+          if (combined.length > 0) {
             const { data } = await supabase
               .from("Game")
               .select("*, Category(name, slug)")
-              .in("id", history.slice(0, 30))
+              .in("id", combined)
               .eq("isPublished", true);
             
             // Reorder to match history
             if (data) {
-              fetchedGames = history
+              fetchedGames = combined
                 .map((id: string) => data.find(g => g.id === id))
                 .filter(Boolean);
             }

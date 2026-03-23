@@ -29,6 +29,7 @@ export function Navbar({ categories }: NavbarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [categorySuggestions, setCategorySuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -76,6 +77,7 @@ export function Navbar({ categories }: NavbarProps) {
         const data = await res.json();
         if (data.success) {
           setSuggestions(data.games);
+          setCategorySuggestions(data.categories || []);
         }
       } catch (err) {
         console.error('Search error:', err);
@@ -175,12 +177,44 @@ export function Navbar({ categories }: NavbarProps) {
                 className="absolute top-full right-0 mt-2 w-[400px] bg-dark-surface border border-neon-cyan/20 rounded-xl overflow-hidden shadow-[0_0_50px_rgba(0,243,255,0.15)] z-[60]"
               >
                 <div className="p-2 space-y-1">
-                  {suggestions.length > 0 ? (
+                  {(suggestions.length > 0 || categorySuggestions.length > 0) ? (
                     <>
-                      <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/20 border-b border-white/5 mb-1">
-                        Matching Games
-                      </div>
-                      {suggestions.map((game) => (
+                      {categorySuggestions.length > 0 && (
+                        <>
+                          <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/20 border-b border-white/5 mb-1">
+                            Matching Categories
+                          </div>
+                          {categorySuggestions.map((cat) => (
+                            <Link
+                              key={cat.id}
+                              href={`/${cat.slug}`}
+                              onClick={() => setShowSuggestions(false)}
+                              className="flex items-center gap-3 p-2 hover:bg-neon-cyan/10 rounded-lg group transition-colors"
+                            >
+                              <div className="w-12 h-12 rounded-lg bg-neon-cyan/5 border border-white/10 flex items-center justify-center shrink-0">
+                                <Search className="w-5 h-5 text-neon-cyan/40 group-hover:text-neon-cyan transition-colors" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-black uppercase tracking-tight text-white group-hover:text-neon-cyan transition-colors truncate">
+                                  {cat.name} Games
+                                </div>
+                                <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                                  Category Page
+                                </div>
+                              </div>
+                              <Play className="w-4 h-4 text-neon-cyan opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" />
+                            </Link>
+                          ))}
+                          <div className="h-2" />
+                        </>
+                      )}
+
+                      {suggestions.length > 0 && (
+                        <>
+                          <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/20 border-b border-white/5 mb-1">
+                            Matching Games
+                          </div>
+                          {suggestions.map((game) => (
                         <Link
                           key={game.id}
                           href={`/game/${game.slug}`}
@@ -207,7 +241,9 @@ export function Navbar({ categories }: NavbarProps) {
                           <Play className="w-4 h-4 text-neon-cyan opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" />
                         </Link>
                       ))}
-                      <button
+                    </>
+                  )}
+                  <button
                         onClick={handleSearch}
                         className="w-full mt-2 p-3 text-[10px] font-black uppercase tracking-widest text-neon-cyan hover:bg-neon-cyan/5 transition-colors border-t border-white/5"
                       >
@@ -339,10 +375,33 @@ export function Navbar({ categories }: NavbarProps) {
                 />
               </form>
 
-              {showSuggestions && searchQuery.length >= 2 && suggestions.length > 0 && (
+              {showSuggestions && searchQuery.length >= 2 && (suggestions.length > 0 || categorySuggestions.length > 0) && (
                 <div
                   className="mt-2 bg-white/5 border border-white/10 rounded-xl overflow-hidden"
                 >
+                  {categorySuggestions.map((cat) => (
+                    <Link
+                      key={cat.id}
+                      href={`/${cat.slug}`}
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setShowSuggestions(false);
+                      }}
+                      className="flex items-center gap-3 p-3 hover:bg-neon-cyan/10 transition-colors border-b border-white/5 last:border-0"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-neon-cyan/5 border border-white/10 flex items-center justify-center shrink-0">
+                        <Search className="w-4 h-4 text-neon-cyan/40" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-black uppercase tracking-tight text-white truncate">
+                          {cat.name} Games
+                        </div>
+                        <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                          Category Page
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
                   {suggestions.map((game) => (
                     <Link
                       key={game.id}

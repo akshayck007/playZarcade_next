@@ -18,8 +18,37 @@ export async function GET(request: Request) {
       .select("*, Category(name, slug)")
       .eq("isPublished", true);
 
+    let matchingCategories: any[] = [];
+
     if (q) {
       query = query.ilike('title', `%${q}%`);
+      
+      // Also search for categories
+      // Try exact match, then partial match, then check if query contains category name
+      const { data: catMatches } = await supabase
+        .from("Category")
+        .select("id, name, slug")
+        .or(`name.ilike.%${q}%,slug.ilike.%${q}%`)
+        .limit(3);
+      
+      if (catMatches && catMatches.length > 0) {
+        matchingCategories = catMatches;
+      } else {
+        // Fallback: Check if any category name is part of the query (e.g., "play horror games" contains "horror")
+        const { data: allCats } = await supabase
+          .from("Category")
+          .select("id, name, slug");
+        
+        if (allCats) {
+          const queryLower = q.toLowerCase();
+          matchingCategories = allCats
+            .filter(cat => 
+              queryLower.includes(cat.name.toLowerCase()) || 
+              cat.name.toLowerCase().includes(queryLower)
+            )
+            .slice(0, 3);
+        }
+      }
     }
 
     if (categories && categories.length > 0) {
@@ -61,7 +90,11 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     return NextResponse.json(
-      { success: true, games: data },
+      { 
+        success: true, 
+        games: data,
+        categories: matchingCategories
+      },
       {
         headers: {
           'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
