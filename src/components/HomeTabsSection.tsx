@@ -13,71 +13,46 @@ interface Section {
   order: number;
 }
 
+const TABS = [
+  { name: "Featured", slug: "featured", icon: <Sparkles className="w-4 h-4" /> },
+  { name: "New Releases", slug: "new-releases", icon: <Clock className="w-4 h-4" /> },
+  { name: "Editor's Choice", slug: "editors-choice", icon: <Star className="w-4 h-4" /> },
+  { name: "Continue Playing", slug: "continue-playing", icon: <History className="w-4 h-4" /> },
+];
+
 export function HomeTabsSection() {
   const supabase = createClientComponentClient();
   const [activeTab, setActiveTab] = useState<string>('featured');
-  const [tabs, setTabs] = useState<any[]>([]);
+  const [showContinuePlaying, setShowContinuePlaying] = useState(false);
   const [games, setGames] = useState<any[]>([]);
-  const [loadingTabs, setLoadingTabs] = useState(true);
   const [loadingGames, setLoadingGames] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const getIcon = (slug: string) => {
-    switch (slug) {
-      case 'featured': return <Sparkles className="w-4 h-4" />;
-      case 'continue-playing': return <History className="w-4 h-4" />;
-      case 'new-releases': return <Clock className="w-4 h-4" />;
-      case 'editors-choice': return <Star className="w-4 h-4" />;
-      default: return <Sparkles className="w-4 h-4" />;
-    }
-  };
-
+  // Check for history to show/hide Continue Playing tab
   useEffect(() => {
-    const fetchTabs = async () => {
-      setLoadingTabs(true);
-      try {
-        const { data: sections } = await supabase
-          .from("Section")
-          .select("*")
-          .order("order", { ascending: true });
-        
-        if (sections && sections.length > 0) {
-          // Quick check for history
-          const hasLocalHistory = (JSON.parse(localStorage.getItem('playz_history') || '[]')).length > 0 || 
-                                 (localStorage.getItem('playz_recently_played') ? JSON.parse(localStorage.getItem('playz_recently_played')!).length > 0 : false);
-          
-          let hasHistory = hasLocalHistory;
-          
-          // Only check cloud if local is empty and user is logged in
-          if (!hasHistory) {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-              const { data: historyData } = await supabase
-                .from('UserHistory')
-                .select('id')
-                .eq('userId', session.user.id)
-                .limit(1);
-              if (historyData && historyData.length > 0) hasHistory = true;
-            }
-          }
-          
-          const filteredTabs = sections.filter(t => t.slug !== 'continue-playing' || hasHistory);
-          setTabs(filteredTabs);
-          
-          // Set initial active tab if not set or invalid
-          if (!activeTab || !filteredTabs.find(t => t.slug === activeTab)) {
-            setActiveTab(filteredTabs[0].slug);
-          }
-        }
-      } catch (e) {
-        console.error('Failed to fetch tabs', e);
-      } finally {
-        setLoadingTabs(false);
+    const checkHistory = async () => {
+      const hasLocalHistory = (JSON.parse(localStorage.getItem('playz_history') || '[]')).length > 0 || 
+                             (localStorage.getItem('playz_recently_played') ? JSON.parse(localStorage.getItem('playz_recently_played')!).length > 0 : false);
+      
+      if (hasLocalHistory) {
+        setShowContinuePlaying(true);
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data } = await supabase
+          .from('UserHistory')
+          .select('id')
+          .eq('userId', session.user.id)
+          .limit(1);
+        if (data && data.length > 0) setShowContinuePlaying(true);
       }
     };
-    fetchTabs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    checkHistory();
   }, [supabase]);
+
+  const filteredTabs = TABS.filter(t => t.slug !== 'continue-playing' || showContinuePlaying);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -95,14 +70,13 @@ export function HomeTabsSection() {
 
   useEffect(() => {
     const fetchGamesForTab = async () => {
-      console.log('[HomeTabsSection] Fetching games for tab:', activeTab);
       setLoadingGames(true);
       try {
         let fetchedGames: any[] = [];
 
         if (activeTab === 'continue-playing') {
           const { data: { session } } = await supabase.auth.getSession();
-          let history: string[] = [];
+          let historyIds: string[] = [];
 
           if (session?.user) {
             const { data } = await supabase
@@ -111,20 +85,11 @@ export function HomeTabsSection() {
               .eq('userId', session.user.id)
               .order('lastPlayedAt', { ascending: false })
               .limit(30);
-            if (data) history = data.map(h => h.gameId);
+            if (data) historyIds = data.map(h => h.gameId);
           }
 
-          // Merge with local history if cloud is empty or to complement
           const localHistory = JSON.parse(localStorage.getItem('playz_history') || '[]');
-          const recentStored = localStorage.getItem('playz_recently_played');
-          let recent: string[] = [];
-          if (recentStored) {
-            try {
-              recent = JSON.parse(recentStored).map((g: any) => g.id).filter(Boolean);
-            } catch (e) {}
-          }
-          
-          const combined = [...new Set([...history, ...localHistory, ...recent])].slice(0, 30);
+          const combined = [...new Set([...historyIds, ...localHistory])].slice(0, 30);
 
           if (combined.length > 0) {
             const { data } = await supabase
@@ -133,7 +98,6 @@ export function HomeTabsSection() {
               .in("id", combined)
               .eq("isPublished", true);
             
-            // Reorder to match history
             if (data) {
               fetchedGames = combined
                 .map((id: string) => data.find(g => g.id === id))
@@ -148,55 +112,43 @@ export function HomeTabsSection() {
             .order("createdAt", { ascending: false })
             .limit(30);
           fetchedGames = data || [];
-        } else {
-          // Featured or Editor's Choice
-          const { data: section } = await supabase
-            .from("Section")
-            .select("id")
-            .eq("slug", activeTab)
-            .maybeSingle();
-
-          let manualGames: any[] = [];
+        } else if (activeTab === 'featured') {
+          const { data } = await supabase
+            .from("Game")
+            .select("*, Category(name, slug)")
+            .eq("isPublished", true)
+            .order("qualityScore", { ascending: false })
+            .limit(30);
+          fetchedGames = data || [];
+        } else if (activeTab === 'editors-choice') {
+          // Fallback to quality score if no manual items assigned
+          const { data: section } = await supabase.from("Section").select("id").eq("slug", "editors-choice").maybeSingle();
           if (section) {
             const { data: items } = await supabase
               .from("SectionItem")
-              .select("*, Game(*, Category(name, slug))")
+              .select("Game(*, Category(name, slug))")
               .eq("sectionId", section.id)
               .order("order", { ascending: true })
               .limit(30);
-
             if (items && items.length > 0) {
-              manualGames = items.map(item => item.Game).filter(Boolean);
+              fetchedGames = items.map(i => i.Game).filter(Boolean);
             }
           }
           
-          if (activeTab === 'featured') {
-            // Fetch automatic featured games (top quality)
-            const { data: autoGames } = await supabase
+          if (fetchedGames.length === 0) {
+            const { data } = await supabase
               .from("Game")
               .select("*, Category(name, slug)")
               .eq("isPublished", true)
-              .order("qualityScore", { ascending: false })
+              .order("trendScore", { ascending: false })
               .limit(30);
-            
-            // Merge manual and automatic, manual first, no duplicates
-            const merged = [...manualGames];
-            if (autoGames) {
-              autoGames.forEach(ag => {
-                if (!merged.find(mg => mg.id === ag.id)) {
-                  merged.push(ag);
-                }
-              });
-            }
-            fetchedGames = merged.slice(0, 30);
-          } else {
-            fetchedGames = manualGames;
+            fetchedGames = data || [];
           }
         }
 
         setGames(fetchedGames);
       } catch (e) {
-        console.error('Failed to fetch games for tab', e);
+        console.error('Failed to fetch games', e);
       } finally {
         setLoadingGames(false);
       }
@@ -210,28 +162,21 @@ export function HomeTabsSection() {
       {/* Tabs Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-x-auto scrollbar-hide">
         <div className="flex items-center gap-2 p-1 bg-white/5 rounded-2xl border border-white/5">
-          {loadingTabs ? (
-            <div className="flex items-center gap-4 px-6 py-3">
-              <Loader2 className="w-4 h-4 animate-spin text-white/20" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Loading Tabs...</span>
-            </div>
-          ) : (
-            tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.slug)}
-                className={`
-                  flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap
-                  ${activeTab === tab.slug 
-                    ? 'bg-neon-cyan text-black shadow-[0_0_20px_rgba(0,243,255,0.3)]' 
-                    : 'text-white/40 hover:text-white hover:bg-white/5'}
-                `}
-              >
-                {getIcon(tab.slug)}
-                {tab.name}
-              </button>
-            ))
-          )}
+          {filteredTabs.map((tab) => (
+            <button
+              key={tab.slug}
+              onClick={() => setActiveTab(tab.slug)}
+              className={`
+                flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap
+                ${activeTab === tab.slug 
+                  ? 'bg-neon-cyan text-black shadow-[0_0_20px_rgba(0,243,255,0.3)]' 
+                  : 'text-white/40 hover:text-white hover:bg-white/5'}
+              `}
+            >
+              {tab.icon}
+              {tab.name}
+            </button>
+          ))}
         </div>
       </div>
 

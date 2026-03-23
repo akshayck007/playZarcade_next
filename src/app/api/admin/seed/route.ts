@@ -37,54 +37,56 @@ export async function GET() {
       { name: "Continue Playing", slug: "continue-playing", order: 3 },
     ];
 
-    // Clean up redundant or old slugs to avoid confusion
-    const redundantSlugs = ['top-games', 'trending-now', 'trending'];
-    await supabase
-      .from("Section")
-      .delete()
-      .in("slug", redundantSlugs);
+    console.log('[SEED] Starting authoritative section reset...');
 
-    // Authoritatively ensure each default section exists and is correct
-    for (const def of defaultSections) {
-      // Check by slug
-      const { data: existing } = await supabase
-        .from("Section")
-        .select("id")
-        .eq("slug", def.slug)
-        .maybeSingle();
+    // 1. Get all current sections
+    const { data: currentSections } = await supabase.from("Section").select("*");
+    
+    if (currentSections) {
+      const defaultSlugs = defaultSections.map(s => s.slug);
       
-      if (existing) {
-        // Update existing to match defaults
-        await supabase
-          .from("Section")
-          .update({ 
-            name: def.name, 
-            order: def.order 
-          })
-          .eq("id", existing.id);
-      } else {
-        // Insert missing
-        await supabase
-          .from("Section")
-          .insert(def);
+      // 2. Delete sections that are NOT in our default list OR are redundant
+      const redundantSlugs = ['top-games', 'trending-now', 'trending'];
+      const toDelete = currentSections
+        .filter(s => !defaultSlugs.includes(s.slug) || redundantSlugs.includes(s.slug))
+        .map(s => s.id);
+
+      if (toDelete.length > 0) {
+        console.log(`[SEED] Deleting ${toDelete.length} non-default/redundant sections...`);
+        // We delete SectionItems first to avoid FK issues if CASCADE isn't set
+        await supabase.from("SectionItem").delete().in("sectionId", toDelete);
+        await supabase.from("Section").delete().in("id", toDelete);
       }
     }
 
-    // Final pass: Ensure no other sections are squatting on the first few order slots
-    const { data: allSections } = await supabase
+    // 3. Upsert the 4 default sections to ensure they exist with correct names and orders
+    for (const def of defaultSections) {
+      console.log(`[SEED] Upserting section: ${def.slug}`);
+      const { error } = await supabase
+        .from("Section")
+        .upsert(def, { onConflict: 'slug' });
+      
+      if (error) {
+        console.error(`[SEED] Error upserting ${def.slug}:`, error);
+      }
+    }
+
+    // 4. Final verification and order normalization
+    const { data: finalSections } = await supabase
       .from("Section")
       .select("*")
       .order("order", { ascending: true });
     
-    if (allSections) {
-      // Re-index everything to be safe
-      for (let i = 0; i < allSections.length; i++) {
+    if (finalSections) {
+      for (let i = 0; i < finalSections.length; i++) {
         await supabase
           .from("Section")
           .update({ order: i })
-          .eq("id", allSections[i].id);
+          .eq("id", finalSections[i].id);
       }
     }
+
+    console.log('[SEED] Section reset complete.');
 
     // Seed Games
     const { data: puzzleCat } = await supabase.from("Category").select("*").eq("slug", "puzzle-games").single();
