@@ -31,10 +31,10 @@ export async function GET() {
 
     // Seed Default Sections
     const sections = [
-      { name: "Featured Games", slug: "featured", order: 0 },
+      { name: "Featured", slug: "featured", order: 0 },
       { name: "Editor's Choice", slug: "editors-choice", order: 1 },
-      { name: "Top Games", slug: "top-games", order: 2 },
-      { name: "Newly Added", slug: "new-releases", order: 3 },
+      { name: "Trending", slug: "top-games", order: 2 },
+      { name: "New Releases", slug: "new-releases", order: 3 },
       { name: "Continue Playing", slug: "continue-playing", order: 4 },
     ];
 

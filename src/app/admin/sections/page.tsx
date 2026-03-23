@@ -64,7 +64,7 @@ export default function HomeSectionsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: sections.map(s => ({ id: s.id, order: s.order }))
+          items: sections.map(s => ({ id: s.id, order: s.order, name: s.name }))
         })
       });
 
@@ -94,6 +94,11 @@ export default function HomeSectionsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const updateSectionName = (id: string, newName: string) => {
+    setSections(sections.map(s => s.id === id ? { ...s, name: newName } : s));
+    setHasChanges(true);
   };
 
   if (loading) {
@@ -163,7 +168,13 @@ export default function HomeSectionsPage() {
             </div>
 
             <div className="flex-1">
-              <h3 className="font-black uppercase tracking-tight text-xl">{section.name}</h3>
+              <input 
+                type="text"
+                value={section.name}
+                onChange={(e) => updateSectionName(section.id, e.target.value)}
+                className="bg-transparent border-none focus:ring-0 p-0 font-black uppercase tracking-tight text-xl w-full hover:bg-white/5 rounded transition-colors"
+                placeholder="Section Name"
+              />
               <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest">{section.slug}</p>
             </div>
 

@@ -15,7 +15,10 @@ export async function POST(request: Request) {
     const updatePromises = items.map(item => 
       supabase
         .from("Section")
-        .update({ order: item.order })
+        .update({ 
+          order: item.order,
+          name: item.name // Support renaming
+        })
         .eq("id", item.id)
     );
 
