@@ -36,32 +36,35 @@ export function HomeTabsSection() {
     const fetchTabs = async () => {
       setLoadingTabs(true);
       try {
-        const { data } = await supabase
+        const { data: sections } = await supabase
           .from("Section")
           .select("*")
           .order("order", { ascending: true });
         
-        if (data && data.length > 0) {
-          // Check if we should show continue-playing
-          const history = JSON.parse(localStorage.getItem('playz_history') || '[]');
-          const recent = localStorage.getItem('playz_recently_played');
-          let hasHistory = history.length > 0 || (recent && JSON.parse(recent).length > 0);
+        if (sections && sections.length > 0) {
+          // Quick check for history
+          const hasLocalHistory = (JSON.parse(localStorage.getItem('playz_history') || '[]')).length > 0 || 
+                                 (localStorage.getItem('playz_recently_played') ? JSON.parse(localStorage.getItem('playz_recently_played')!).length > 0 : false);
           
-          // Fast check cloud history if logged in
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user && !hasHistory) {
-            const { data: historyData } = await supabase
-              .from('UserHistory')
-              .select('id')
-              .eq('userId', session.user.id)
-              .limit(1);
-            if (historyData && historyData.length > 0) hasHistory = true;
+          let hasHistory = hasLocalHistory;
+          
+          // Only check cloud if local is empty and user is logged in
+          if (!hasHistory) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              const { data: historyData } = await supabase
+                .from('UserHistory')
+                .select('id')
+                .eq('userId', session.user.id)
+                .limit(1);
+              if (historyData && historyData.length > 0) hasHistory = true;
+            }
           }
           
-          const filteredTabs = data.filter(t => t.slug !== 'continue-playing' || hasHistory);
+          const filteredTabs = sections.filter(t => t.slug !== 'continue-playing' || hasHistory);
           setTabs(filteredTabs);
           
-          // Set initial active tab if not set
+          // Set initial active tab if not set or invalid
           if (!activeTab || !filteredTabs.find(t => t.slug === activeTab)) {
             setActiveTab(filteredTabs[0].slug);
           }

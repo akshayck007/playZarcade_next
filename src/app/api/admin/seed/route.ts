@@ -30,49 +30,59 @@ export async function GET() {
     }
 
     // Seed Default Sections
-    const sections = [
+    const defaultSections = [
       { name: "Featured", slug: "featured", order: 0 },
       { name: "New Releases", slug: "new-releases", order: 1 },
       { name: "Editor's Choice", slug: "editors-choice", order: 2 },
       { name: "Continue Playing", slug: "continue-playing", order: 3 },
     ];
 
-    // Clean up redundant sections if they exist
+    // Clean up redundant or old slugs to avoid confusion
     const redundantSlugs = ['top-games', 'trending-now', 'trending'];
     await supabase
       .from("Section")
       .delete()
       .in("slug", redundantSlugs);
 
-    // Upsert defaults and ensure their order is correct
-    for (const section of sections) {
-      await supabase
+    // Authoritatively ensure each default section exists and is correct
+    for (const def of defaultSections) {
+      // Check by slug
+      const { data: existing } = await supabase
         .from("Section")
-        .upsert(section, { onConflict: 'slug' });
+        .select("id")
+        .eq("slug", def.slug)
+        .maybeSingle();
+      
+      if (existing) {
+        // Update existing to match defaults
+        await supabase
+          .from("Section")
+          .update({ 
+            name: def.name, 
+            order: def.order 
+          })
+          .eq("id", existing.id);
+      } else {
+        // Insert missing
+        await supabase
+          .from("Section")
+          .insert(def);
+      }
     }
 
-    // Reset order of all sections to match the desired sequence
+    // Final pass: Ensure no other sections are squatting on the first few order slots
     const { data: allSections } = await supabase
       .from("Section")
       .select("*")
       .order("order", { ascending: true });
     
     if (allSections) {
-      // Sort allSections to prioritize our defaults
-      const sorted = [...allSections].sort((a, b) => {
-        const aIdx = sections.findIndex(s => s.slug === a.slug);
-        const bIdx = sections.findIndex(s => s.slug === b.slug);
-        if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
-        if (aIdx !== -1) return -1;
-        if (bIdx !== -1) return 1;
-        return a.order - b.order;
-      });
-
-      for (let i = 0; i < sorted.length; i++) {
+      // Re-index everything to be safe
+      for (let i = 0; i < allSections.length; i++) {
         await supabase
           .from("Section")
           .update({ order: i })
-          .eq("id", sorted[i].id);
+          .eq("id", allSections[i].id);
       }
     }
 
