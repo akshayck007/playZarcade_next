@@ -32,16 +32,20 @@ async function processTrendsWithAI(trends: { keyword: string; volume: number; so
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Analyze these gaming search trends for a web arcade:
-      ${JSON.stringify(filteredTrends.slice(0, 30))} 
+      ${JSON.stringify(filteredTrends.slice(0, 20))} 
       
       Tasks:
       1. Keep ONLY specific game titles.
       2. Discard news, reviews, or general industry talk.
       3. Assign 'unifiedScore' (0-150) for viral potential.
       4. Categorize: Action, Puzzle, Adventure, Strategy, Sports, Simulation, Arcade, Racing.
+      5. IMPORTANT: Use Google Search to find a public, embeddable iframe URL for each game. 
+         Look for URLs from unblocked sites, itch.io, or game aggregators that allow embedding.
+      6. Generate a short, engaging 'shadowContent' (2-3 paragraphs) about the game.
       
       Return JSON array only.`,
       config: {
+        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -54,9 +58,11 @@ async function processTrendsWithAI(trends: { keyword: string; volume: number; so
               seoTitle: { type: Type.STRING },
               seoDescription: { type: Type.STRING },
               source: { type: Type.STRING },
-              thumbnailUrl: { type: Type.STRING }
+              thumbnailUrl: { type: Type.STRING },
+              iframeUrl: { type: Type.STRING, description: "Public embeddable iframe URL if found" },
+              shadowContent: { type: Type.STRING, description: "Engaging description of the game" }
             },
-            required: ["keyword", "category", "unifiedScore", "seoTitle", "seoDescription"]
+            required: ["keyword", "category", "unifiedScore", "seoTitle", "seoDescription", "shadowContent"]
           }
         }
       }
@@ -118,16 +124,24 @@ async function fetchCompetitorTrends() {
         // More specific regex for game titles in common patterns
         const seen = new Set();
         
-        // Pattern 1: alt tags (usually on game thumbnails)
-        const altMatches = html.matchAll(/alt="([^"]+)"/g);
-        for (const match of altMatches) {
-          const title = match[1].trim();
+        // Pattern 1: Links with images (common for game thumbnails)
+        const linkMatches = html.matchAll(/<a[^>]+href="([^"]+)"[^>]*>.*?<img[^>]+alt="([^"]+)"/gs);
+        for (const match of linkMatches) {
+          let gameUrl = match[1];
+          const title = match[2].trim();
+          
           if (title.length > 3 && title.length < 40 && !seen.has(title.toLowerCase())) {
             if (!['poki', 'crazygames', 'logo', 'popular', 'games', 'play', 'online'].includes(title.toLowerCase())) {
+              // Normalize URL
+              if (gameUrl.startsWith('/')) {
+                gameUrl = (comp.name === 'Poki' ? 'https://poki.com' : 'https://www.crazygames.com') + gameUrl;
+              }
+
               compTrends.push({
                 keyword: title,
                 volume: 25000,
-                source: comp.name
+                source: comp.name,
+                gameUrl: gameUrl
               });
               seen.add(title.toLowerCase());
             }
@@ -270,7 +284,8 @@ export async function POST(req: Request) {
         shadowIframeUrl: trend.iframeUrl || "",
         shadowThumbnailUrl: trend.thumbnailUrl || "",
         shadowTitle: trend.seoTitle || `${trend.keyword} - Play Online Now`,
-        shadowSeoDescription: trend.seoDescription || `Play ${trend.keyword} online for free. Discover the latest trending games and unblocked web games on PlayZ Arcade.`
+        shadowSeoDescription: trend.seoDescription || `Play ${trend.keyword} online for free. Discover the latest trending games and unblocked web games on PlayZ Arcade.`,
+        shadowContent: trend.shadowContent || ""
       };
       
       return item;

@@ -38,6 +38,8 @@ export async function POST(req: Request) {
 
     // 3. Create Game Record
     const gameId = uuidv4();
+    const hasIframe = !!trend.shadowIframeUrl;
+    
     const { data: newGame, error: gameError } = await supabase
       .from("Game")
       .insert({
@@ -50,8 +52,9 @@ export async function POST(req: Request) {
         thumbnailUrl: trend.shadowThumbnailUrl || "",
         iframeUrl: trend.shadowIframeUrl || "",
         trendScore: trend.unifiedScore || 0,
-        isPublished: true,
-        qualityScore: 80
+        isPublished: hasIframe, // Only publish if playable
+        isFeatured: hasIframe && (trend.unifiedScore || 0) > 100, // Only feature if playable and high score
+        qualityScore: hasIframe ? 80 : 40
       })
       .select()
       .single();
