@@ -161,7 +161,7 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
               </div>
             </div>
           ) : (
-            <GamePlayer iframeUrl={game.iframeUrl!} title={game.title} />
+            <GamePlayer iframeUrl={game.iframeUrl!} title={game.title} thumbnail={game.thumbnail} />
           )}
 
           {/* Action Bar */}

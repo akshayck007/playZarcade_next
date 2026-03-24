@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { trackPlay } from './RecentlyPlayed';
-import { Maximize2, Heart, Share2, Swords } from 'lucide-react';
+import { Maximize2, Heart, Share2, Swords, ExternalLink } from 'lucide-react';
 import { ShareButtons } from './ShareButtons';
 
 interface GameActionsProps {
@@ -122,6 +122,17 @@ export function GameActions({ game }: GameActionsProps) {
             <Maximize2 className="w-4 h-4" />
             <span>Full Protocol</span>
           </button>
+          {game.iframeUrl && (
+            <a 
+              href={game.iframeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-400 transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span>New Tab</span>
+            </a>
+          )}
         </div>
       </div>
       <div className="text-right mt-4 md:mt-0 skew-x-[2deg]">
