@@ -5,6 +5,7 @@ import Image from "next/image";
 import { GameCard } from "@/components/GameCard";
 import { GameActions } from "@/components/GameActions";
 import { GamePlayer } from "@/components/GamePlayer";
+import RetroPlayer from "@/components/RetroPlayer";
 import { AdSlot } from "@/components/AdSlot";
 import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle, TrendingUp, Swords } from "lucide-react";
 import Markdown from "@/components/Markdown";
@@ -30,8 +31,12 @@ export async function generateMetadata({ params }: GamePageProps) {
 
   if (!game) return { title: "Game Not Found" };
 
-  const title = `Play ${game.title} Online | Free Browser Game`;
-  const description = game.description;
+  const title = game.isRetro 
+    ? `Play ${game.title} ${game.console?.toUpperCase()} Online | Free Retro Game`
+    : `Play ${game.title} Online | Free Browser Game`;
+  const description = game.isRetro
+    ? `Play the classic ${game.console?.toUpperCase()} game ${game.title} online in your browser. Pixel-perfect emulation, no downloads required.`
+    : game.description;
 
   return {
     title,
@@ -105,7 +110,7 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
     "url": `${baseUrl}/game/${game.slug}`,
   };
 
-  const isShadowPage = !game.iframeUrl;
+  const isShadowPage = !game.iframeUrl && !game.isRetro;
 
   return (
     <div className="space-y-12">
@@ -160,6 +165,8 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
                 </div>
               </div>
             </div>
+          ) : game.isRetro ? (
+            <RetroPlayer romUrl={game.romUrl!} system={game.console!} title={game.title} />
           ) : (
             <GamePlayer iframeUrl={game.iframeUrl!} title={game.title} thumbnail={game.thumbnail} />
           )}

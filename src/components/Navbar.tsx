@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User, Home, Flame, History, ShieldCheck, LogIn, Newspaper } from 'lucide-react';
+import { ChevronDown, Search, Menu, X, Loader2, Play, LogOut, User, Home, Flame, History, ShieldCheck, LogIn, Newspaper, Gamepad2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 // import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
@@ -20,9 +20,10 @@ interface Category {
 
 interface NavbarProps {
   categories: Category[];
+  retroEnabled?: boolean;
 }
 
-export function Navbar({ categories }: NavbarProps) {
+export function Navbar({ categories, retroEnabled = true }: NavbarProps) {
   const supabase = createClientComponentClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGenresOpen, setIsGenresOpen] = useState(false);
@@ -116,6 +117,15 @@ export function Navbar({ categories }: NavbarProps) {
               <Flame className="w-3.5 h-3.5" />
               Trending
             </Link>
+            {retroEnabled && (
+              <Link href="/retro" className="relative hover:text-neon-cyan transition-colors flex items-center gap-2 group">
+                <Gamepad2 className="w-3.5 h-3.5" />
+                Retro
+                <span className="absolute -top-3 -right-4 px-1.5 py-0.5 rounded-md bg-neon-cyan text-[8px] font-black text-black animate-pulse shadow-[0_0_10px_rgba(0,243,255,0.5)]">
+                  NEW
+                </span>
+              </Link>
+            )}
             <Link href="/blog" className="hover:text-neon-cyan transition-colors flex items-center gap-2">
               <Newspaper className="w-3.5 h-3.5" />
               Blog
@@ -448,6 +458,12 @@ export function Navbar({ categories }: NavbarProps) {
               <Flame className="w-5 h-5 text-neon-cyan" />
               Trending
             </Link>
+            {retroEnabled && (
+              <Link href="/retro" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                <Gamepad2 className="w-5 h-5 text-neon-cyan" />
+                Retro
+              </Link>
+            )}
             <Link href="/blog" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
               <Newspaper className="w-5 h-5 text-neon-cyan" />
               Blog

@@ -194,6 +194,13 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                 initialValue={settings?.autoCreateShadowGames ?? true}
                 onToggle={(val) => setSettings({ ...settings, autoCreateShadowGames: val })}
               />
+              <SettingToggle 
+                id="retroEnabled"
+                label="Retro Section"
+                description="Enable the retro arcade section"
+                initialValue={settings?.retroEnabled ?? true}
+                onToggle={(val) => setSettings({ ...settings, retroEnabled: val })}
+              />
             </div>
           </div>
 

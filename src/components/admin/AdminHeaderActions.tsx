@@ -1,6 +1,6 @@
 'use client';
 
-import { Database, RefreshCw, Plus, Sparkles } from "lucide-react";
+import { Database, RefreshCw, Plus, Sparkles, Gamepad2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -94,6 +94,10 @@ export function AdminHeaderActions() {
         <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
         {isSyncing ? 'Syncing...' : 'Sync Games'}
       </button>
+      <Link href="/admin/retro-import" className="glass px-6 py-3 rounded-full font-bold uppercase tracking-tight hover:bg-white/10 transition-colors flex items-center gap-2">
+        <Gamepad2 className="w-5 h-5" />
+        Retro Import
+      </Link>
       <Link href="/admin/games/new" className="bg-emerald-500 text-black px-6 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-colors flex items-center gap-2">
         <Plus className="w-5 h-5" />
         Add Game

@@ -188,7 +188,7 @@ export default async function RootLayout({
         <ThemeProvider>
           <SyncManager />
           <PwaHandler />
-          <Navbar categories={categories} />
+          <Navbar categories={categories} retroEnabled={settings?.retroEnabled ?? true} />
           <LiveActivityTicker />
 
           <main className="max-w-7xl mx-auto px-6 py-8 relative z-10">
