@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Navbar } from '@/components/Navbar';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Gamepad2, Filter, Search, LayoutGrid, List, SlidersHorizontal, ChevronDown, Monitor, Cpu, Trophy, Flame, History, Star, Clock } from 'lucide-react';
 import Image from 'next/image';
@@ -45,7 +44,6 @@ const SORT_OPTIONS = [
 export default function RetroPage() {
   const supabase = createClientComponentClient();
   const [games, setGames] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [retroEnabled, setRetroEnabled] = useState(true);
   const [selectedConsole, setSelectedConsole] = useState('all');
@@ -70,10 +68,6 @@ export default function RetroPage() {
           setIsLoading(false);
           return;
         }
-
-        // Fetch categories for navbar
-        const { data: cats } = await supabase.from('Category').select('*');
-        setCategories(cats || []);
 
         // Fetch retro games
         let query = supabase
@@ -134,8 +128,6 @@ export default function RetroPage() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-neon-cyan selection:text-black">
-      <Navbar categories={categories} />
-
       {/* Hero Section - Editorial/Magazine Style */}
       <section className="relative h-[60vh] flex items-center justify-center overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 z-0">
