@@ -13,6 +13,8 @@ export default async function AdminTrendsPage() {
     .order("searchVolume", { ascending: false });
 
   const trends = trendsRaw || [];
+  const totalVolume = trends.reduce((sum, t) => sum + (t.searchVolume || 0), 0);
+  const opportunities = trends.filter(t => t.status === 'detected').length;
 
   return (
     <div className="space-y-10">
@@ -48,7 +50,9 @@ export default async function AdminTrendsPage() {
           </div>
           <div className="space-y-1">
             <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Total Search Volume</span>
-            <h3 className="text-3xl font-black tracking-tighter">1.2M+</h3>
+            <h3 className="text-3xl font-black tracking-tighter">
+              {totalVolume > 1000000 ? `${(totalVolume / 1000000).toFixed(1)}M+` : totalVolume.toLocaleString()}
+            </h3>
           </div>
         </div>
 
@@ -61,7 +65,7 @@ export default async function AdminTrendsPage() {
           </div>
           <div className="space-y-1">
             <span className="text-[10px] font-black uppercase tracking-widest text-white/30">New Opportunities</span>
-            <h3 className="text-3xl font-black tracking-tighter">12 Games</h3>
+            <h3 className="text-3xl font-black tracking-tighter">{opportunities} Games</h3>
           </div>
         </div>
       </div>

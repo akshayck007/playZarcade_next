@@ -277,6 +277,8 @@ export async function POST(req: Request) {
       
       if (keywordToId.has(keywordLower)) {
         item.id = keywordToId.get(keywordLower);
+      } else {
+        item.id = crypto.randomUUID();
       }
       
       return item;
@@ -572,6 +574,8 @@ export async function GET(req: Request) {
       
       if (keywordToId.has(keywordLower)) {
         item.id = keywordToId.get(keywordLower);
+      } else {
+        item.id = crypto.randomUUID();
       }
       
       return item;
