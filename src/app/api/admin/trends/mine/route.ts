@@ -239,15 +239,20 @@ export async function POST(req: Request) {
     }
 
     // Fetch existing keywords to get their IDs for upsert
-    const { data: existingKeywords } = await supabase
+    const { data: existingKeywords, error: fetchError } = await supabase
       .from("TrendingKeyword")
       .select("id, keyword, searchVolume");
     
-    const keywordToId = new Map(existingKeywords?.map(k => [k.keyword, k.id]) || []);
+    if (fetchError) {
+      console.error('[TREND MINE] POST: Error fetching existing keywords:', fetchError);
+    }
+
+    const keywordToId = new Map(existingKeywords?.map(k => [k.keyword.toLowerCase(), k.id]) || []);
 
     // Prepare bulk upsert for TrendingKeyword
     const upsertData = trends.map(trend => {
-      const existing = existingKeywords?.find(k => k.keyword === trend.keyword);
+      const keywordLower = trend.keyword.toLowerCase();
+      const existing = existingKeywords?.find(k => k.keyword.toLowerCase() === keywordLower);
       const previousVolume = existing ? (existing as any).searchVolume : 0;
       
       // Calculate Trend Velocity (Growth Rate)
@@ -265,23 +270,31 @@ export async function POST(req: Request) {
         shadowSlug: trend.keyword.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         shadowType: 'game',
         shadowIframeUrl: trend.iframeUrl || "",
-        shadowThumbnailUrl: trend.thumbnailUrl || ""
+        shadowThumbnailUrl: trend.thumbnailUrl || "",
+        shadowTitle: trend.seoTitle || `${trend.keyword} - Play Online Now`,
+        shadowSeoDescription: trend.seoDescription || `Play ${trend.keyword} online for free. Discover the latest trending games and unblocked web games on PlayZ Arcade.`
       };
       
-      if (keywordToId.has(trend.keyword)) {
-        item.id = keywordToId.get(trend.keyword);
-      } else {
-        item.id = crypto.randomUUID();
+      if (keywordToId.has(keywordLower)) {
+        item.id = keywordToId.get(keywordLower);
       }
       
       return item;
     });
 
-    const { error: upsertError } = await supabase
-      .from("TrendingKeyword")
-      .upsert(upsertData, { onConflict: 'keyword' });
+    console.log(`[TREND MINE] POST: Upserting ${upsertData.length} items. Sample keyword:`, upsertData[0]?.keyword);
 
-    if (upsertError) throw upsertError;
+    const { data: savedData, error: upsertError } = await supabase
+      .from("TrendingKeyword")
+      .upsert(upsertData, { onConflict: 'keyword' })
+      .select();
+
+    if (upsertError) {
+      console.error('[TREND MINE] POST: Upsert Error:', upsertError);
+      throw upsertError;
+    }
+
+    console.log(`[TREND MINE] POST: Successfully saved ${savedData?.length || 0} trends.`);
 
     // Cleanup: Remove any keywords that contain past years (e.g., 2024, 2025 if current year is 2026)
     const currentYear = new Date().getFullYear();
@@ -521,15 +534,20 @@ export async function GET(req: Request) {
     }
 
     // Fetch existing keywords to get their IDs for upsert
-    const { data: existingKeywords } = await supabase
+    const { data: existingKeywords, error: fetchError } = await supabase
       .from("TrendingKeyword")
       .select("id, keyword, searchVolume");
     
-    const keywordToId = new Map(existingKeywords?.map(k => [k.keyword, k.id]) || []);
+    if (fetchError) {
+      console.error('[TREND MINE] GET: Error fetching existing keywords:', fetchError);
+    }
+
+    const keywordToId = new Map(existingKeywords?.map(k => [k.keyword.toLowerCase(), k.id]) || []);
 
     // Prepare bulk upsert for TrendingKeyword
     const upsertData = uniqueTrends.map(trend => {
-      const existing = existingKeywords?.find(k => k.keyword === trend.keyword);
+      const keywordLower = trend.keyword.toLowerCase();
+      const existing = existingKeywords?.find(k => k.keyword.toLowerCase() === keywordLower);
       const previousVolume = existing ? (existing as any).searchVolume : 0;
       
       // Calculate Trend Velocity (Growth Rate)
@@ -552,20 +570,26 @@ export async function GET(req: Request) {
         shadowType: 'game'
       };
       
-      if (keywordToId.has(trend.keyword)) {
-        item.id = keywordToId.get(trend.keyword);
-      } else {
-        item.id = crypto.randomUUID();
+      if (keywordToId.has(keywordLower)) {
+        item.id = keywordToId.get(keywordLower);
       }
       
       return item;
     });
 
-    const { error: upsertError } = await supabase
-      .from("TrendingKeyword")
-      .upsert(upsertData, { onConflict: 'keyword' });
+    console.log(`[TREND MINE] GET: Upserting ${upsertData.length} items. Sample keyword:`, upsertData[0]?.keyword);
 
-    if (upsertError) throw upsertError;
+    const { data: savedData, error: upsertError } = await supabase
+      .from("TrendingKeyword")
+      .upsert(upsertData, { onConflict: 'keyword' })
+      .select();
+
+    if (upsertError) {
+      console.error('[TREND MINE] GET: Upsert Error:', upsertError);
+      throw upsertError;
+    }
+
+    console.log(`[TREND MINE] GET: Successfully saved ${savedData?.length || 0} trends.`);
 
     // Cleanup: Remove any keywords that contain past years (e.g., 2024, 2025 if current year is 2026)
     const pastYears = [];
@@ -622,9 +646,9 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `Trend mining complete. Found ${uniqueTrends.length} trends.`,
-      totalTrends: uniqueTrends.length,
-      source: "Google Trends RSS + Autocomplete"
+      message: `Trend mining complete. Saved ${savedData?.length || 0} trends.`,
+      totalTrends: savedData?.length || 0,
+      source: aiResults ? "AI Processed" : "Google Trends RSS + Autocomplete"
     });
   } catch (error: any) {
     console.error("[TREND MINE ERROR]", error);

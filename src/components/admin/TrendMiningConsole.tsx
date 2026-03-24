@@ -25,7 +25,8 @@ export function TrendMiningConsole() {
   const [discoveryPrompt, setDiscoveryPrompt] = useState("");
   const [isDiscovering, setIsDiscovering] = useState(false);
 
-  const handleDiscover = async () => {
+  const handleDiscover = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
     if (!discoveryPrompt.trim()) return;
     
     setIsDiscovering(true);
@@ -124,7 +125,8 @@ export function TrendMiningConsole() {
     setPreviewData(newData);
   };
 
-  const handlePreview = async () => {
+  const handlePreview = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     setIsLoading(true);
     setError(null);
     setStatus('previewing');
@@ -146,7 +148,8 @@ export function TrendMiningConsole() {
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleMine = async () => {
+  const handleMine = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     console.log('[TrendMiningConsole] Starting mining process. Status:', status, 'PreviewData length:', previewData?.length);
     setIsLoading(true);
     setError(null);
@@ -159,7 +162,8 @@ export function TrendMiningConsole() {
         const res = await fetch('/api/admin/trends/mine', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ trends: previewData })
+          body: JSON.stringify({ trends: previewData }),
+          cache: 'no-store'
         });
         const data = await res.json();
         console.log('[TrendMiningConsole] POST response:', data);
@@ -175,7 +179,7 @@ export function TrendMiningConsole() {
       } else {
         // Otherwise trigger full auto-mine
         console.log('[TrendMiningConsole] Triggering full auto-mine via GET');
-        const res = await fetch('/api/admin/trends/mine');
+        const res = await fetch('/api/admin/trends/mine', { cache: 'no-store' });
         const data = await res.json();
         console.log('[TrendMiningConsole] GET response:', data);
         if (data.success) {
@@ -204,12 +208,13 @@ export function TrendMiningConsole() {
             type="text"
             value={discoveryPrompt}
             onChange={(e) => setDiscoveryPrompt(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleDiscover()}
+            onKeyDown={(e) => e.key === 'Enter' && handleDiscover(e)}
             placeholder="Suggest search terms..."
             className="bg-white/5 border border-white/10 rounded-full px-6 py-3 text-sm font-bold w-64 focus:w-80 focus:bg-white/10 focus:border-emerald-500/50 transition-all outline-none placeholder:text-white/20"
           />
           <button 
-            onClick={handleDiscover}
+            type="button"
+            onClick={(e) => handleDiscover(e)}
             disabled={isDiscovering || !discoveryPrompt.trim()}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-emerald-500 rounded-full text-black hover:bg-emerald-400 transition-colors disabled:opacity-0 disabled:scale-0 transition-all duration-300"
           >
@@ -220,14 +225,16 @@ export function TrendMiningConsole() {
         <div className="h-6 w-px bg-white/10 mx-2" />
 
         <button 
-          onClick={handlePreview}
+          type="button"
+          onClick={(e) => handlePreview(e)}
           className="bg-white/5 text-white/60 px-6 py-3 rounded-full font-bold uppercase tracking-tight hover:bg-white/10 transition-colors flex items-center gap-2 border border-white/5"
         >
           <Eye className="w-4 h-4" />
           Preview Data
         </button>
         <button 
-          onClick={handleMine}
+          type="button"
+          onClick={(e) => handleMine(e)}
           disabled={isLoading}
           className="bg-emerald-500 text-black px-8 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-all flex flex-col items-center justify-center gap-0 disabled:opacity-50 relative overflow-hidden group"
         >
