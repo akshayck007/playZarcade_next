@@ -227,6 +227,47 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
     setIsLoading(null);
   };
 
+  const handleBulkImportGame = async () => {
+    if (selectedIds.size === 0) return;
+    
+    setIsLoading('bulk');
+    setError(null);
+    setSuccess(null);
+    
+    const selectedTrends = trends.filter(t => selectedIds.has(t.id));
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const trend of selectedTrends) {
+      try {
+        const res = await fetch('/api/admin/trends/import-game', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trendId: trend.id })
+        });
+        const data = await res.json();
+        if (data.success) {
+          successCount++;
+          // Update local state for this trend
+          setTrends(prev => prev.map(t => t.id === trend.id ? { ...t, status: 'imported' } : t));
+        } else {
+          failCount++;
+        }
+      } catch (err) {
+        failCount++;
+      }
+    }
+
+    if (successCount > 0) {
+      setSuccess(`Successfully imported ${successCount} games.${failCount > 0 ? ` (${failCount} failed)` : ''}`);
+      setSelectedIds(new Set());
+    } else if (failCount > 0) {
+      setError(`Failed to import ${failCount} games.`);
+    }
+    
+    setIsLoading(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Bulk Actions Bar */}
@@ -259,6 +300,15 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
               >
                 {isLoading === 'bulk' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
                 Bulk Article
+              </button>
+
+              <button 
+                onClick={handleBulkImportGame}
+                disabled={isLoading !== null}
+                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-400 transition-colors disabled:opacity-50"
+              >
+                {isLoading === 'bulk' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                Bulk Import
               </button>
 
               <div className="h-4 w-px bg-white/10 mx-2" />

@@ -46,6 +46,7 @@ export async function POST(req: Request) {
         slug: slug,
         description: trend.shadowSeoDescription || `Play ${trend.keyword} online for free.`,
         contentBody: trend.shadowContent || "",
+        thumbnail: trend.shadowThumbnailUrl || "",
         thumbnailUrl: trend.shadowThumbnailUrl || "",
         iframeUrl: trend.shadowIframeUrl || "",
         trendScore: trend.unifiedScore || 0,
