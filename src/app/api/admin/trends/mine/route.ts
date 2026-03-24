@@ -245,6 +245,8 @@ export async function POST(req: Request) {
       console.error('[TREND MINE] POST: Error fetching existing keywords:', fetchError);
     }
 
+    const keywordToId = new Map(existingKeywords?.map(k => [k.keyword.toLowerCase(), k.id]) || []);
+
     // Prepare bulk upsert for TrendingKeyword
     const upsertData = trends.map(trend => {
       const keywordLower = trend.keyword.toLowerCase();
@@ -269,6 +271,10 @@ export async function POST(req: Request) {
         shadowTitle: trend.seoTitle || `${trend.keyword} - Play Online Now`,
         shadowSeoDescription: trend.seoDescription || `Play ${trend.keyword} online for free. Discover the latest trending games and unblocked web games on PlayZ Arcade.`
       };
+      
+      if (keywordToId.has(keywordLower)) {
+        item.id = keywordToId.get(keywordLower);
+      }
       
       return item;
     });
@@ -487,6 +493,8 @@ export async function GET(req: Request) {
       console.error('[TREND MINE] GET: Error fetching existing keywords:', fetchError);
     }
 
+    const keywordToId = new Map(existingKeywords?.map(k => [k.keyword.toLowerCase(), k.id]) || []);
+
     // Prepare bulk upsert for TrendingKeyword
     const upsertData = uniqueTrends.map(trend => {
       const keywordLower = trend.keyword.toLowerCase();
@@ -512,6 +520,10 @@ export async function GET(req: Request) {
         shadowSlug: trend.keyword.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         shadowType: 'game'
       };
+      
+      if (keywordToId.has(keywordLower)) {
+        item.id = keywordToId.get(keywordLower);
+      }
       
       return item;
     });
