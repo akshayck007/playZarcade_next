@@ -22,7 +22,7 @@ export function TrendMiningConsole() {
   const [isLoading, setIsLoading] = useState(false);
   const [previewData, setPreviewData] = useState<RawTrend[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<'idle' | 'previewing' | 'mining' | 'complete'>('idle');
+  const [status, setStatus] = useState<'idle' | 'previewing' | 'mining' | 'complete' | 'error'>('idle');
   const [isRefining, setIsRefining] = useState(false);
   const [discoveryPrompt, setDiscoveryPrompt] = useState("");
   const [isDiscovering, setIsDiscovering] = useState(false);
@@ -193,7 +193,7 @@ export function TrendMiningConsole() {
         } else {
           console.error('[TrendMiningConsole] Preview fetch failed:', data.error);
           setError(data.error || "Failed to discover trends");
-          setStatus('idle');
+          setStatus('error');
         }
       } else {
         // We have preview data, now we execute the actual mining (Save phase)
@@ -220,13 +220,13 @@ export function TrendMiningConsole() {
         } else {
           console.error('[TrendMiningConsole] POST failed:', data.error);
           setError(data.error || "Mining execution failed");
-          setStatus('idle');
+          setStatus('error');
         }
       }
     } catch (err: any) {
       console.error("[TrendMiningConsole] Mining Error:", err);
       setError(`Network error: ${err.message || 'Unknown error'}`);
-      setStatus('idle');
+      setStatus('error');
     } finally {
       setIsLoading(false);
     }
