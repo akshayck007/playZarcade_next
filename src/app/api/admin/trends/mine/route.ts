@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { supabase } from '@/lib/supabase';
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -30,19 +31,16 @@ async function processTrendsWithAI(trends: { keyword: string; volume: number; so
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `You are a gaming trend analyst for a web arcade. Analyze these potential search trends:
-      ${JSON.stringify(filteredTrends.slice(0, 50))} 
+      contents: `Analyze these gaming search trends for a web arcade:
+      ${JSON.stringify(filteredTrends.slice(0, 30))} 
       
-      CRITICAL INSTRUCTIONS:
-      1. DISCARD anything that is not a specific video game title (e.g. "Slope", "2048", "Among Us").
-      2. DISCARD news, reviews, opinions, layoffs, or general industry discussions.
-      3. DISCARD "megathreads", "find-a-game" requests, or "looking for" posts.
-      4. ONLY keep actual game titles or very specific "play [game name]" queries.
-      5. For valid games, assign a 'unifiedScore' (0-150) based on viral potential.
-      6. Categorize into: Action, Puzzle, Adventure, Strategy, Sports, Simulation, Arcade, or Racing.
-      7. Suggest a 'thumbnailUrl' if possible (use placeholder if unknown).
+      Tasks:
+      1. Keep ONLY specific game titles.
+      2. Discard news, reviews, or general industry talk.
+      3. Assign 'unifiedScore' (0-150) for viral potential.
+      4. Categorize: Action, Puzzle, Adventure, Strategy, Sports, Simulation, Arcade, Racing.
       
-      Return ONLY a JSON array of objects.`,
+      Return JSON array only.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -277,8 +275,6 @@ export async function POST(req: Request) {
       
       if (keywordToId.has(keywordLower)) {
         item.id = keywordToId.get(keywordLower);
-      } else {
-        item.id = crypto.randomUUID();
       }
       
       return item;
@@ -301,65 +297,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: upsertError.message }, { status: 500 });
     }
 
-    console.log(`[TREND MINE] POST: Successfully saved ${savedData?.length || 0} trends. IDs:`, savedData?.map(d => d.id).join(', '));
+    console.log(`[TREND MINE] POST: Successfully saved ${savedData?.length || 0} trends.`);
 
-    // Cleanup: Remove any keywords that contain past years (e.g., 2024, 2025 if current year is 2026)
-    const currentYear = new Date().getFullYear();
-    const pastYears = [];
-    for (let year = 2000; year < currentYear; year++) {
-      pastYears.push(`keyword.ilike.%${year}%`);
-    }
-    
-    if (pastYears.length > 0) {
-      await supabase
-        .from("TrendingKeyword")
-        .delete()
-        .or(pastYears.join(','));
-    }
-
-    // Auto-boost game trend scores if setting is enabled
-    if (settings?.autoBoostTrending) {
-      console.log('[TREND MINE] Auto-boosting games based on trends');
-      
-      // Collect all potential game words from trends
-      const allWords = Array.from(new Set(trends.flatMap(t => t.keyword.split(' ').filter(w => w.length > 3))));
-      
-      if (allWords.length > 0) {
-        // Find ALL games that might match ANY of these words
-        const { data: matchingGames } = await supabase
-          .from("Game")
-          .select("id, title, trendScore")
-          .or(allWords.map(word => `title.ilike.%${word}%`).join(','));
-
-        if (matchingGames && matchingGames.length > 0) {
-          // Create a map for faster lookup
-          const gameUpdates: { [id: string]: number } = {};
-          
-          for (const trend of trends) {
-            const trendWords = trend.keyword.split(' ').filter(w => w.length > 3);
-            const boost = trend.volume / 1000;
-            
-            for (const game of matchingGames) {
-              const matches = trendWords.some(word => game.title.toLowerCase().includes(word.toLowerCase()));
-              if (matches) {
-                gameUpdates[game.id] = (gameUpdates[game.id] || game.trendScore || 0) + boost;
-              }
-            }
-          }
-
-          // Apply updates in parallel (still individual calls but fewer if we deduplicate)
-          const updatePromises = Object.entries(gameUpdates).map(([id, newScore]) => 
-            supabase.from("Game").update({ trendScore: newScore }).eq("id", id)
-          );
-          
-          await Promise.all(updatePromises);
-        }
-      }
-    }
+    revalidatePath('/admin/trends');
 
     return NextResponse.json({ 
       success: true, 
-      message: `Saved ${trends.length} trends.`
+      message: `Trend mining complete. Saved ${savedData?.length || 0} trends.`,
+      count: savedData?.length || 0
     });
   } catch (error: any) {
     console.error("[TREND SAVE ERROR]", error);
@@ -579,8 +524,6 @@ export async function GET(req: Request) {
       
       if (keywordToId.has(keywordLower)) {
         item.id = keywordToId.get(keywordLower);
-      } else {
-        item.id = crypto.randomUUID();
       }
       
       return item;
@@ -603,60 +546,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: false, error: upsertError.message }, { status: 500 });
     }
 
-    console.log(`[TREND MINE] GET: Successfully saved ${savedData?.length || 0} trends. IDs:`, savedData?.map(d => d.id).join(', '));
+    console.log(`[TREND MINE] GET: Successfully saved ${savedData?.length || 0} trends.`);
 
-    // Cleanup: Remove any keywords that contain past years (e.g., 2024, 2025 if current year is 2026)
-    const pastYears = [];
-    for (let year = 2000; year < currentYear; year++) {
-      pastYears.push(`keyword.ilike.%${year}%`);
-    }
-    
-    if (pastYears.length > 0) {
-      await supabase
-        .from("TrendingKeyword")
-        .delete()
-        .or(pastYears.join(','));
-    }
-
-    // Auto-boost game trend scores if setting is enabled
-    if (settings?.autoBoostTrending) {
-      console.log('[TREND MINE] Auto-boosting games based on trends');
-      
-      // Collect all potential game words from trends
-      const allWords = Array.from(new Set(uniqueTrends.flatMap(t => t.keyword.split(' ').filter(w => w.length > 3))));
-      
-      if (allWords.length > 0) {
-        // Find ALL games that might match ANY of these words
-        const { data: matchingGames } = await supabase
-          .from("Game")
-          .select("id, title, trendScore")
-          .or(allWords.map(word => `title.ilike.%${word}%`).join(','));
-
-        if (matchingGames && matchingGames.length > 0) {
-          // Create a map for faster lookup
-          const gameUpdates: { [id: string]: number } = {};
-          
-          for (const trend of uniqueTrends) {
-            const trendWords = trend.keyword.split(' ').filter(w => w.length > 3);
-            const boost = trend.volume / 1000;
-            
-            for (const game of matchingGames) {
-              const matches = trendWords.some(word => game.title.toLowerCase().includes(word.toLowerCase()));
-              if (matches) {
-                gameUpdates[game.id] = (gameUpdates[game.id] || game.trendScore || 0) + boost;
-              }
-            }
-          }
-
-          // Apply updates in parallel (still individual calls but fewer if we deduplicate)
-          const updatePromises = Object.entries(gameUpdates).map(([id, newScore]) => 
-            supabase.from("Game").update({ trendScore: newScore }).eq("id", id)
-          );
-          
-          await Promise.all(updatePromises);
-        }
-      }
-    }
+    revalidatePath('/admin/trends');
 
     return NextResponse.json({ 
       success: true, 

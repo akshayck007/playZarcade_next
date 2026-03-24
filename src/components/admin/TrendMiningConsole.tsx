@@ -155,6 +155,7 @@ export function TrendMiningConsole() {
     if (isLoading && status === 'mining') return; // Guard against double clicks
     
     console.log('[TrendMiningConsole] Starting mining process. Status:', status, 'PreviewData length:', previewData?.length);
+    setIsOpen(true); // Open modal to show progress
     setIsLoading(true);
     setError(null);
     setSuccessMessage(null);
@@ -172,7 +173,7 @@ export function TrendMiningConsole() {
         const data = await res.json();
         console.log('[TrendMiningConsole] POST response:', data);
         if (data.success) {
-          console.log('[TrendMiningConsole] POST Success:', data.message);
+          console.log('[TrendMiningConsole] POST Success:', data.message, 'Count:', data.count);
           setSuccessMessage(data.message);
           setStatus('complete');
           router.refresh();
@@ -182,7 +183,9 @@ export function TrendMiningConsole() {
             setSuccessMessage(null);
           }, 3000);
         } else {
+          console.error('[TrendMiningConsole] POST Failed:', data.error);
           setError(data.error || "Mining failed");
+          setStatus('idle');
         }
       } else {
         // Otherwise trigger full auto-mine
@@ -191,7 +194,7 @@ export function TrendMiningConsole() {
         const data = await res.json();
         console.log('[TrendMiningConsole] GET response:', data);
         if (data.success) {
-          console.log('[TrendMiningConsole] GET Success:', data.message);
+          console.log('[TrendMiningConsole] GET Success:', data.message, 'TotalTrends:', data.totalTrends);
           setSuccessMessage(data.message);
           setStatus('complete');
           router.refresh();
@@ -201,12 +204,15 @@ export function TrendMiningConsole() {
             setSuccessMessage(null);
           }, 3000);
         } else {
+          console.error('[TrendMiningConsole] GET Failed:', data.error);
           setError(data.error || "Mining failed");
+          setStatus('idle');
         }
       }
     } catch (err: any) {
       console.error("[TrendMiningConsole] Mining Error:", err);
       setError(`Network error: ${err.message || 'Unknown error'}`);
+      setStatus('idle');
     } finally {
       setIsLoading(false);
     }

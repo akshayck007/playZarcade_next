@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from "react";
 import { Trash2, FileText, Sparkles, CheckCircle2, AlertCircle, RefreshCw, ArrowUpRight, Plus, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 interface Trend {
   id: string;
@@ -22,14 +24,44 @@ interface Trend {
 }
 
 export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [trends, setTrends] = useState<Trend[]>(initialTrends);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Sync state with props when parent refreshes (e.g. after router.refresh())
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string>(new Date().toLocaleTimeString());
+
   useEffect(() => {
     setTrends(initialTrends);
+    setLastUpdated(new Date().toLocaleTimeString());
   }, [initialTrends]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    router.refresh();
+    setTimeout(() => {
+      setIsRefreshing(false);
+      setLastUpdated(new Date().toLocaleTimeString());
+    }, 1000);
+  };
+
+  const handleClearAll = async () => {
+    if (!confirm("Are you sure you want to clear ALL trends? This cannot be undone.")) return;
+    
+    setIsLoading('clearing');
+    try {
+      const { error } = await supabase.from("TrendingKeyword").delete().neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
+      if (error) throw error;
+      setSuccess("All trends cleared successfully.");
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(null);
+    }
+  };
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -265,16 +297,39 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
         )}
       </AnimatePresence>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
-        <input 
-          type="text" 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search keywords or sources..." 
-          className="w-full glass py-4 pl-16 pr-8 rounded-2xl text-sm font-bold placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
-        />
+      {/* Search Bar & Actions */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
+          <input 
+            type="text" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search keywords or sources..." 
+            className="w-full glass py-4 pl-16 pr-8 rounded-2xl text-sm font-bold placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/20">
+            Last Updated: {lastUpdated}
+          </span>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="glass px-6 py-4 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          <button
+            onClick={handleClearAll}
+            disabled={isLoading === 'clearing'}
+            className="glass px-6 py-4 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-red-500/60 hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" />
+            Clear All
+          </button>
+        </div>
       </div>
 
       <div className="glass rounded-3xl overflow-hidden border border-white/5">
