@@ -286,6 +286,11 @@ export async function POST(req: Request) {
 
     console.log(`[TREND MINE] POST: Upserting ${upsertData.length} items. Sample keyword:`, upsertData[0]?.keyword);
 
+    if (upsertData.length === 0) {
+      console.warn('[TREND MINE] POST: No data to upsert.');
+      return NextResponse.json({ success: false, error: "No trends processed to save." }, { status: 400 });
+    }
+
     const { data: savedData, error: upsertError } = await supabase
       .from("TrendingKeyword")
       .upsert(upsertData, { onConflict: 'keyword' })
@@ -293,10 +298,10 @@ export async function POST(req: Request) {
 
     if (upsertError) {
       console.error('[TREND MINE] POST: Upsert Error:', upsertError);
-      throw upsertError;
+      return NextResponse.json({ success: false, error: upsertError.message }, { status: 500 });
     }
 
-    console.log(`[TREND MINE] POST: Successfully saved ${savedData?.length || 0} trends.`);
+    console.log(`[TREND MINE] POST: Successfully saved ${savedData?.length || 0} trends. IDs:`, savedData?.map(d => d.id).join(', '));
 
     // Cleanup: Remove any keywords that contain past years (e.g., 2024, 2025 if current year is 2026)
     const currentYear = new Date().getFullYear();
@@ -583,6 +588,11 @@ export async function GET(req: Request) {
 
     console.log(`[TREND MINE] GET: Upserting ${upsertData.length} items. Sample keyword:`, upsertData[0]?.keyword);
 
+    if (upsertData.length === 0) {
+      console.warn('[TREND MINE] GET: No data to upsert.');
+      return NextResponse.json({ success: false, error: "No trends discovered to save." }, { status: 404 });
+    }
+
     const { data: savedData, error: upsertError } = await supabase
       .from("TrendingKeyword")
       .upsert(upsertData, { onConflict: 'keyword' })
@@ -590,10 +600,10 @@ export async function GET(req: Request) {
 
     if (upsertError) {
       console.error('[TREND MINE] GET: Upsert Error:', upsertError);
-      throw upsertError;
+      return NextResponse.json({ success: false, error: upsertError.message }, { status: 500 });
     }
 
-    console.log(`[TREND MINE] GET: Successfully saved ${savedData?.length || 0} trends.`);
+    console.log(`[TREND MINE] GET: Successfully saved ${savedData?.length || 0} trends. IDs:`, savedData?.map(d => d.id).join(', '));
 
     // Cleanup: Remove any keywords that contain past years (e.g., 2024, 2025 if current year is 2026)
     const pastYears = [];

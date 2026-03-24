@@ -5,6 +5,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { GoogleGenAI, Type } from "@google/genai";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface RawTrend {
   keyword: string;
@@ -16,6 +17,7 @@ interface RawTrend {
 }
 
 export function TrendMiningConsole() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [previewData, setPreviewData] = useState<RawTrend[] | null>(null);
@@ -150,6 +152,8 @@ export function TrendMiningConsole() {
 
   const handleMine = async (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
+    if (isLoading && status === 'mining') return; // Guard against double clicks
+    
     console.log('[TrendMiningConsole] Starting mining process. Status:', status, 'PreviewData length:', previewData?.length);
     setIsLoading(true);
     setError(null);
@@ -168,11 +172,15 @@ export function TrendMiningConsole() {
         const data = await res.json();
         console.log('[TrendMiningConsole] POST response:', data);
         if (data.success) {
+          console.log('[TrendMiningConsole] POST Success:', data.message);
           setSuccessMessage(data.message);
           setStatus('complete');
+          router.refresh();
           setTimeout(() => {
-            window.location.reload();
-          }, 2500);
+            setIsOpen(false);
+            setStatus('idle');
+            setSuccessMessage(null);
+          }, 3000);
         } else {
           setError(data.error || "Mining failed");
         }
@@ -183,11 +191,15 @@ export function TrendMiningConsole() {
         const data = await res.json();
         console.log('[TrendMiningConsole] GET response:', data);
         if (data.success) {
+          console.log('[TrendMiningConsole] GET Success:', data.message);
           setSuccessMessage(data.message);
           setStatus('complete');
+          router.refresh();
           setTimeout(() => {
-            window.location.reload();
-          }, 2500);
+            setIsOpen(false);
+            setStatus('idle');
+            setSuccessMessage(null);
+          }, 3000);
         } else {
           setError(data.error || "Mining failed");
         }
@@ -413,7 +425,8 @@ export function TrendMiningConsole() {
                     Cancel
                   </button>
                   <button 
-                    onClick={handleMine}
+                    type="button"
+                    onClick={(e) => handleMine(e)}
                     disabled={isLoading || status === 'complete'}
                     className="bg-emerald-500 text-black px-8 py-3 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-colors flex items-center gap-2 disabled:opacity-50"
                   >

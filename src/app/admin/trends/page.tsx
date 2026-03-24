@@ -12,6 +12,7 @@ export default async function AdminTrendsPage() {
     .select("*")
     .order("searchVolume", { ascending: false });
 
+  console.log(`[AdminTrendsPage] Fetched ${trendsRaw?.length || 0} trends from DB.`);
   const trends = trendsRaw || [];
   const totalVolume = trends.reduce((sum, t) => sum + (t.searchVolume || 0), 0);
   const opportunities = trends.filter(t => t.status === 'detected').length;

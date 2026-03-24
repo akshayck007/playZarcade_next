@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Trash2, FileText, Sparkles, CheckCircle2, AlertCircle, RefreshCw, ArrowUpRight, Plus, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
@@ -25,6 +25,11 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [trends, setTrends] = useState<Trend[]>(initialTrends);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Sync state with props when parent refreshes (e.g. after router.refresh())
+  useEffect(() => {
+    setTrends(initialTrends);
+  }, [initialTrends]);
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
