@@ -34,6 +34,7 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
   const [lastUpdated, setLastUpdated] = useState<string>(new Date().toLocaleTimeString());
 
   useEffect(() => {
+    console.log('[TrendTable] initialTrends prop changed. Count:', initialTrends.length);
     setTrends(initialTrends);
     setLastUpdated(new Date().toLocaleTimeString());
   }, [initialTrends]);
@@ -51,13 +52,23 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
     if (!confirm("Are you sure you want to clear ALL trends? This cannot be undone.")) return;
     
     setIsLoading('clearing');
+    setError(null);
+    setSuccess(null);
     try {
-      const { error } = await supabase.from("TrendingKeyword").delete().neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
-      if (error) throw error;
-      setSuccess("All trends cleared successfully.");
-      router.refresh();
+      const res = await fetch('/api/admin/trends/clear', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTrends([]);
+        setSuccess(data.message);
+        router.refresh();
+      } else {
+        setError(data.error || "Clear All failed");
+      }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Network error during clear all");
     } finally {
       setIsLoading(null);
     }

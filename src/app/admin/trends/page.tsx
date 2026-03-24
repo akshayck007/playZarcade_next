@@ -1,4 +1,5 @@
-import { supabase } from "@/lib/supabase";
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 import { TrendingUp, Search, Plus } from "lucide-react";
 import { TrendMiningConsole } from "@/components/admin/TrendMiningConsole";
 import { TrendTable } from "@/components/admin/TrendTable";
@@ -7,6 +8,7 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function AdminTrendsPage() {
+  const supabase = createServerComponentClient({ cookies });
   const { data: trendsRaw } = await supabase
     .from("TrendingKeyword")
     .select("*")

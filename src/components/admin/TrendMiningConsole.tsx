@@ -150,62 +150,76 @@ export function TrendMiningConsole() {
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const handleClose = () => {
+    console.log('[TrendMiningConsole] Closing modal. Status:', status);
+    if (status === 'complete') {
+      console.log('[TrendMiningConsole] Refreshing router on close...');
+      router.refresh();
+    }
+    setIsOpen(false);
+    // Reset state when closing
+    if (status === 'complete' || status === 'error') {
+      setStatus('idle');
+      setPreviewData(null);
+      setError(null);
+      setSuccessMessage(null);
+    }
+  };
+
   const handleMine = async (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
-    if (isLoading && status === 'mining') return; // Guard against double clicks
+    if (isLoading && (status === 'mining' || status === 'previewing')) return; // Guard against double clicks
     
-    console.log('[TrendMiningConsole] Starting mining process. Status:', status, 'PreviewData length:', previewData?.length);
+    console.log('[TrendMiningConsole] handleMine called. Status:', status, 'PreviewData length:', previewData?.length);
     setIsOpen(true); // Open modal to show progress
-    setIsLoading(true);
     setError(null);
     setSuccessMessage(null);
-    setStatus('mining');
+
     try {
-      // If we have preview data, we send it via POST to save exactly what we see
-      if (previewData && previewData.length > 0) {
-        console.log('[TrendMiningConsole] Sending POST request with preview data');
+      // If we don't have preview data yet, we fetch it first (Discovery phase)
+      if (!previewData || previewData.length === 0) {
+        console.log('[TrendMiningConsole] No preview data. Fetching preview first...');
+        setStatus('previewing');
+        setIsLoading(true);
+        
+        const res = await fetch('/api/admin/trends/mine?preview=true', { cache: 'no-store' });
+        const data = await res.json();
+        
+        console.log('[TrendMiningConsole] Preview GET response:', data);
+        
+        if (data.success) {
+          setPreviewData(data.trends);
+          setStatus('previewing'); // Stay in preview mode to let user review
+        } else {
+          console.error('[TrendMiningConsole] Preview fetch failed:', data.error);
+          setError(data.error || "Failed to discover trends");
+          setStatus('idle');
+        }
+      } else {
+        // We have preview data, now we execute the actual mining (Save phase)
+        console.log('[TrendMiningConsole] Executing mining with preview data');
+        setStatus('mining');
+        setIsLoading(true);
+        
         const res = await fetch('/api/admin/trends/mine', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ trends: previewData }),
           cache: 'no-store'
         });
+        
         const data = await res.json();
         console.log('[TrendMiningConsole] POST response:', data);
+        
         if (data.success) {
-          console.log('[TrendMiningConsole] POST Success:', data.message, 'Count:', data.count);
-          setSuccessMessage(data.message);
+          const count = data.count ?? data.totalTrends ?? 0;
+          console.log('[TrendMiningConsole] Success. Count:', count);
+          setSuccessMessage(data.message || `Successfully saved ${count} trends.`);
           setStatus('complete');
-          router.refresh();
-          setTimeout(() => {
-            setIsOpen(false);
-            setStatus('idle');
-            setSuccessMessage(null);
-          }, 3000);
+          // router.refresh() moved to handleClose
         } else {
-          console.error('[TrendMiningConsole] POST Failed:', data.error);
-          setError(data.error || "Mining failed");
-          setStatus('idle');
-        }
-      } else {
-        // Otherwise trigger full auto-mine
-        console.log('[TrendMiningConsole] Triggering full auto-mine via GET');
-        const res = await fetch('/api/admin/trends/mine', { cache: 'no-store' });
-        const data = await res.json();
-        console.log('[TrendMiningConsole] GET response:', data);
-        if (data.success) {
-          console.log('[TrendMiningConsole] GET Success:', data.message, 'TotalTrends:', data.totalTrends);
-          setSuccessMessage(data.message);
-          setStatus('complete');
-          router.refresh();
-          setTimeout(() => {
-            setIsOpen(false);
-            setStatus('idle');
-            setSuccessMessage(null);
-          }, 3000);
-        } else {
-          console.error('[TrendMiningConsole] GET Failed:', data.error);
-          setError(data.error || "Mining failed");
+          console.error('[TrendMiningConsole] POST failed:', data.error);
+          setError(data.error || "Mining execution failed");
           setStatus('idle');
         }
       }
@@ -270,38 +284,38 @@ export function TrendMiningConsole() {
       <AnimatePresence>
         {isOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-4xl bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[80vh]"
-            >
-              {/* Header */}
-              <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/5">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
-                    <Terminal className="w-6 h-6 text-emerald-500" />
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={handleClose}
+                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              />
+              
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative w-full max-w-4xl bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[80vh]"
+              >
+                {/* Header */}
+                <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
+                      <Terminal className="w-6 h-6 text-emerald-500" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black uppercase tracking-tighter">Trend Mining Console</h2>
+                      <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Raw Data & Mining Status</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-black uppercase tracking-tighter">Trend Mining Console</h2>
-                    <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Raw Data & Mining Status</p>
-                  </div>
+                  <button 
+                    onClick={handleClose}
+                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-                <button 
-                  onClick={() => setIsOpen(false)}
-                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
 
               {/* Content */}
               <div className="flex-1 overflow-y-auto p-8 space-y-6 relative">
@@ -335,11 +349,20 @@ export function TrendMiningConsole() {
                     </div>
                   </div>
                 ) : status === 'complete' ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <CheckCircle2 className="w-16 h-16 text-emerald-500" />
-                    <h3 className="text-2xl font-black uppercase tracking-tighter">Mining Successful</h3>
-                    {successMessage && <p className="text-emerald-500/80 font-bold text-sm uppercase tracking-widest">{successMessage}</p>}
-                    <p className="text-sm font-bold text-white/40 uppercase tracking-widest">Refreshing library in 2 seconds...</p>
+                  <div className="flex flex-col items-center justify-center py-20 gap-6">
+                    <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                      <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                    </div>
+                    <div className="text-center space-y-2">
+                      <h3 className="text-2xl font-black uppercase tracking-tighter">Mining Successful</h3>
+                      {successMessage && <p className="text-emerald-500/60 font-bold text-sm uppercase tracking-widest">{successMessage}</p>}
+                    </div>
+                    <button
+                      onClick={handleClose}
+                      className="bg-emerald-500 text-black px-10 py-4 rounded-full font-black uppercase tracking-tight hover:bg-emerald-400 transition-all"
+                    >
+                      Done
+                    </button>
                   </div>
                 ) : previewData ? (
                   <div className="space-y-4">
@@ -425,7 +448,7 @@ export function TrendMiningConsole() {
                 </p>
                 <div className="flex items-center gap-3">
                   <button 
-                    onClick={() => setIsOpen(false)}
+                    onClick={handleClose}
                     className="px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors"
                   >
                     Cancel
