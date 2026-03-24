@@ -257,6 +257,7 @@ export async function POST(req: Request) {
       const velocity = previousVolume > 0 ? (trend.volume - previousVolume) / previousVolume : 0;
       
       const item: any = {
+        id: keywordToId.get(keywordLower) || crypto.randomUUID(),
         keyword: trend.keyword,
         searchVolume: trend.volume,
         status: (trend.volume > 15000 || velocity > 0.5 || (trend.unifiedScore || 0) > 80) ? "shadow_page_live" : "detected",
@@ -271,10 +272,6 @@ export async function POST(req: Request) {
         shadowTitle: trend.seoTitle || `${trend.keyword} - Play Online Now`,
         shadowSeoDescription: trend.seoDescription || `Play ${trend.keyword} online for free. Discover the latest trending games and unblocked web games on PlayZ Arcade.`
       };
-      
-      if (keywordToId.has(keywordLower)) {
-        item.id = keywordToId.get(keywordLower);
-      }
       
       return item;
     });
@@ -506,6 +503,7 @@ export async function GET(req: Request) {
       const unifiedScore = (trend as any).unifiedScore || 0;
       
       const item: any = {
+        id: keywordToId.get(keywordLower) || crypto.randomUUID(),
         keyword: trend.keyword,
         searchVolume: trend.volume,
         status: (trend.volume > 15000 || velocity > 0.5 || unifiedScore > 80) ? "shadow_page_live" : "detected", // Automatic Shadow Page Creation if Score > 80
@@ -520,10 +518,6 @@ export async function GET(req: Request) {
         shadowSlug: trend.keyword.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         shadowType: 'game'
       };
-      
-      if (keywordToId.has(keywordLower)) {
-        item.id = keywordToId.get(keywordLower);
-      }
       
       return item;
     });
