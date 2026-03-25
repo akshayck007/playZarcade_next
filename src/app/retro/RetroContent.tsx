@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Gamepad2, Filter, Search, LayoutGrid, List, SlidersHorizontal, ChevronDown, Monitor, Cpu, Trophy, Flame, History, Star, Clock, Play, ArrowRight } from 'lucide-react';
+import { Gamepad2, Filter, Search, LayoutGrid, List, Monitor, Cpu, Trophy, Flame, Clock, Play, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
@@ -37,7 +37,6 @@ const GENRES = [
 const SORT_OPTIONS = [
   { id: 'popularity', name: 'Most Popular', icon: Flame },
   { id: 'newest', name: 'Newest Added', icon: Clock },
-  { id: 'rating', name: 'Top Rated', icon: Star },
   { id: 'alphabetical', name: 'A-Z', icon: List },
 ];
 
@@ -45,20 +44,44 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
   const supabase = createClientComponentClient();
   const [games, setGames] = useState<any[]>(initialGames);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [retroEnabled, setRetroEnabled] = useState(initialRetroEnabled);
   const [selectedConsole, setSelectedConsole] = useState('all');
   const [selectedGenre, setSelectedGenre] = useState('All Genres');
   const [sortBy, setSortBy] = useState('popularity');
   const [searchQuery, setSearchQuery] = useState('');
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(initialGames.length === 20);
+  const isFirstLoad = useRef(true);
+  const LIMIT = 20;
+
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastGameElementRef = (node: HTMLDivElement) => {
+    if (isLoading || isLoadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setOffset(prev => prev + LIMIT);
+      }
+    });
+    if (node) observer.current.observe(node);
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      // Skip first load since we have initialGames
-      if (selectedConsole === 'all' && selectedGenre === 'All Genres' && sortBy === 'popularity' && !searchQuery && games.length === initialGames.length) {
+    const fetchData = async (isInitial = false) => {
+      // Skip initial fetch if filters are default and it's the first load
+      if (isFirstLoad.current && isInitial && selectedConsole === 'all' && selectedGenre === 'All Genres' && sortBy === 'popularity' && !searchQuery) {
+        isFirstLoad.current = false;
         return;
       }
+      isFirstLoad.current = false;
 
-      setIsLoading(true);
+      if (isInitial) {
+        setIsLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+
       try {
         // Fetch retro games
         let query = supabase
@@ -75,38 +98,66 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
           query = query.ilike('title', `%${searchQuery}%`);
         }
 
+        // Server-side genre filtering
+        if (selectedGenre !== 'All Genres') {
+          // First get category ID for the selected genre
+          const { data: catData } = await supabase
+            .from('Category')
+            .select('id')
+            .eq('name', selectedGenre)
+            .maybeSingle();
+          
+          if (catData) {
+            query = query.eq('categoryId', catData.id);
+          } else {
+            // If no category matches, we can still try tags if needed, 
+            // but for now let's stick to categoryId for server-side efficiency
+            // If we want to support tags, we'd need a more complex query
+            query = query.contains('tags', [selectedGenre.toLowerCase()]);
+          }
+        }
+
         // Sorting logic
         if (sortBy === 'newest') {
           query = query.order('createdAt', { ascending: false });
         } else if (sortBy === 'alphabetical') {
           query = query.order('title', { ascending: true });
-        } else if (sortBy === 'rating') {
-          query = query.order('rating', { ascending: false });
         } else {
           query = query.order('playCount', { ascending: false });
         }
 
-        const { data: retroGames } = await query;
-        
-        // Client-side genre filtering
-        let filteredGames = retroGames || [];
-        if (selectedGenre !== 'All Genres') {
-          filteredGames = filteredGames.filter(g => 
-            g.Category?.name === selectedGenre || 
-            (g.tags && g.tags.includes(selectedGenre.toLowerCase()))
-          );
-        }
+        // Pagination
+        const currentOffset = isInitial ? 0 : offset;
+        query = query.range(currentOffset, currentOffset + LIMIT - 1);
 
-        setGames(filteredGames);
+        const { data: fetchedGames, error } = await query;
+        if (error) throw error;
+        
+        const newGames = fetchedGames || [];
+
+        if (isInitial) {
+          setGames(newGames);
+        } else {
+          setGames(prev => [...prev, ...newGames]);
+        }
+        
+        setHasMore(newGames.length === LIMIT);
       } catch (err) {
         console.error('Error fetching retro games:', err);
       } finally {
         setIsLoading(false);
+        setIsLoadingMore(false);
       }
     };
 
-    fetchData();
-  }, [selectedConsole, selectedGenre, sortBy, searchQuery, supabase, initialGames.length]);
+    const isFilterChange = offset === 0;
+    fetchData(isFilterChange);
+  }, [selectedConsole, selectedGenre, sortBy, searchQuery, offset, supabase]);
+
+  // Reset offset when filters change
+  useEffect(() => {
+    setOffset(0);
+  }, [selectedConsole, selectedGenre, sortBy, searchQuery]);
 
   if (!retroEnabled) {
     return (
@@ -288,10 +339,20 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
                 </div>
               </div>
             ) : games.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 lg:gap-10">
-                {games.map((game, index) => (
-                  <GameItem key={game.id} game={game} index={index} />
-                ))}
+              <div className="space-y-12">
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 lg:gap-10">
+                  {games.map((game, index) => (
+                    <div key={game.id} ref={index === games.length - 1 ? lastGameElementRef : null}>
+                      <GameItem game={game} index={index} />
+                    </div>
+                  ))}
+                </div>
+                
+                {isLoadingMore && (
+                  <div className="flex justify-center py-12">
+                    <div className="w-10 h-10 rounded-full border-t-2 border-neon-cyan animate-spin"></div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-48 border border-dashed border-white/10 rounded-[40px] bg-white/[0.01] flex flex-col items-center justify-center">
