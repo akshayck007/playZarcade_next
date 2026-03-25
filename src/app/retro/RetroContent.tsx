@@ -148,14 +148,14 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="inline-block px-3 py-1 bg-neon-cyan/10 border border-neon-cyan/20 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-neon-cyan mb-6">
-              Legacy Protocol Active
+              Retro Mode Active
             </div>
             <h1 className="text-7xl md:text-[10rem] font-black uppercase tracking-tighter italic leading-[0.85] mb-6 mix-blend-difference">
               RETRO<br />
               <span className="text-neon-cyan cyber-text-glow">ARCADE</span>
             </h1>
             <p className="text-xs md:text-sm text-white/40 font-mono uppercase tracking-[0.4em] max-w-2xl mx-auto">
-              Accessing the global legacy database. Pixel-perfect emulation for the modern era.
+              Accessing the global retro database. Pixel-perfect emulation for the modern era.
             </p>
           </motion.div>
         </div>
@@ -245,7 +245,7 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                 <input 
                   type="text" 
-                  placeholder="SEARCH LEGACY DATABASE..." 
+                  placeholder="SEARCH RETRO DATABASE..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-xs focus:outline-none focus:border-neon-cyan/50 transition-all font-mono uppercase tracking-[0.2em] placeholder:text-white/10"
@@ -282,9 +282,9 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
                 <div className="w-16 h-16 rounded-full border-t-2 border-neon-cyan animate-spin shadow-[0_0_30px_rgba(0,243,255,0.2)]"></div>
                 <div className="space-y-2 text-center">
                   <p className="text-[11px] font-black uppercase tracking-[0.4em] text-white/40 animate-pulse">
-                    Synchronizing Legacy Data...
+                    Loading Games...
                   </p>
-                  <p className="text-[9px] font-mono text-white/10 uppercase tracking-widest">Accessing encrypted sectors</p>
+                  <p className="text-[9px] font-mono text-white/10 uppercase tracking-widest">Accessing game library</p>
                 </div>
               </div>
             ) : games.length > 0 ? (
@@ -299,10 +299,10 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
                   <Gamepad2 className="w-10 h-10 text-white/10" />
                 </div>
                 <h3 className="text-3xl font-black uppercase tracking-tighter italic text-white/20 mb-3">
-                  No Legacy Data Found
+                  No Retro Games Found
                 </h3>
                 <p className="text-xs text-white/10 font-mono uppercase tracking-widest">
-                  The requested sector is currently empty or restricted.
+                  The requested library is currently empty.
                 </p>
               </div>
             )}
@@ -364,7 +364,7 @@ function GameItem({ game, index }: { game: any, index: number }) {
           </h3>
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white/40 transition-colors">
-              {game.Category?.name || 'Legacy'}
+              {game.Category?.name || 'Retro'}
             </span>
             <div className="flex items-center gap-2 text-[10px] font-black text-white/30">
               <Flame className="w-3.5 h-3.5 text-orange-500" />

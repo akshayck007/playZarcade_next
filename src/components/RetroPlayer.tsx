@@ -81,7 +81,7 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
     return script;
   }, [system, title]);
 
-  const handleForceLegacy = () => {
+  const handleForceLoad = () => {
     setIsStuck(false);
     setError(null);
     setIsLoading(true);
@@ -101,7 +101,7 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
         setDownloadProgress(0);
         setIsStuck(false);
 
-        // Set a timeout to show the "Force Legacy" button if stuck at 0%
+        // Set a timeout to show the "Force Load" button if stuck at 0%
         stuckTimeout = setTimeout(() => {
           if (isMounted && progressRef.current === 0 && loadingRef.current) {
             setIsStuck(true);
@@ -228,10 +228,10 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
                 Download seems stuck. This is common with Google Drive or restricted servers.
               </p>
               <button 
-                onClick={handleForceLegacy}
+                onClick={handleForceLoad}
                 className="px-6 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
               >
-                Try Force Legacy Load
+                Try Force Load
               </button>
             </div>
           )}

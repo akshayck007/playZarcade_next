@@ -120,7 +120,7 @@ export function GameActions({ game }: GameActionsProps) {
             className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-neon-cyan transition-colors"
           >
             <Maximize2 className="w-4 h-4" />
-            <span>Full Protocol</span>
+            <span>Full Screen</span>
           </button>
           {game.iframeUrl && (
             <a 

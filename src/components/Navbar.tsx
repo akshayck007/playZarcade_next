@@ -263,7 +263,7 @@ export function Navbar({ categories, retroEnabled = true }: NavbarProps) {
                   ) : !isSearching ? (
                     <div className="p-8 text-center">
                       <div className="text-[10px] font-black uppercase tracking-widest text-white/20">
-                        No matching protocols found
+                        No matching results found
                       </div>
                     </div>
                   ) : (

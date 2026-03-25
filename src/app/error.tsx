@@ -30,7 +30,7 @@ export default function Error({
           System Error
         </h1>
         <p className="text-white/40 font-mono text-sm leading-relaxed">
-          [CRITICAL_FAILURE]: An unexpected error has occurred in the arcade protocols. 
+          [CRITICAL_FAILURE]: An unexpected error has occurred in the arcade systems. 
           The current operation could not be completed.
         </p>
         {process.env.NODE_ENV === 'development' && (

@@ -171,7 +171,7 @@ export function TrendingSection() {
               <p className="text-white/20 font-black uppercase tracking-widest">
                 {error ? "Connection Interrupted" : "No games found for this filter"}
               </p>
-              {error && <p className="text-[10px] text-white/10 uppercase tracking-widest max-w-xs text-center">The database protocol encountered an issue. Please try resetting the connection.</p>}
+              {error && <p className="text-[10px] text-white/10 uppercase tracking-widest max-w-xs text-center">The database connection encountered an issue. Please try resetting the connection.</p>}
               <button 
                 onClick={() => {
                   setActiveTab('trending');
