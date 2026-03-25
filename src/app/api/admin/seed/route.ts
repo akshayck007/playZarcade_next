@@ -149,6 +149,60 @@ export async function GET() {
         }, { onConflict: 'slug' });
     }
 
+    // Seed Retro Games
+    const retroGames = [
+      {
+        title: "Super Mario Bros.",
+        slug: "super-mario-bros",
+        description: "The legendary platformer that started it all. Save Princess Peach from Bowser!",
+        isRetro: true,
+        console: "nes",
+        romUrl: "https://archive.org/download/nintendo-nes-usa-collection/Super%20Mario%20Bros.%20%28Japan%2C%20USA%29.nes",
+        thumbnail: "https://picsum.photos/seed/mario/400/600",
+        isPublished: true,
+        playCount: 5000,
+      },
+      {
+        title: "The Legend of Zelda: A Link to the Past",
+        slug: "zelda-link-to-the-past",
+        description: "One of the greatest RPGs of all time. Travel between the Light and Dark worlds.",
+        isRetro: true,
+        console: "snes",
+        romUrl: "https://archive.org/download/snes-usa-collection/Legend%20of%20Zelda%2C%20The%20-%20A%20Link%20to%20the%20Past%20%28USA%29.sfc",
+        thumbnail: "https://picsum.photos/seed/zelda/400/600",
+        isPublished: true,
+        playCount: 4500,
+      },
+      {
+        title: "Sonic the Hedgehog",
+        slug: "sonic-the-hedgehog",
+        description: "Gotta go fast! Speed through Green Hill Zone and stop Dr. Robotnik.",
+        isRetro: true,
+        console: "genesis",
+        romUrl: "https://archive.org/download/sega-genesis-usa-collection/Sonic%20the%20Hedgehog%20%28USA%2C%20Europe%29.md",
+        thumbnail: "https://picsum.photos/seed/sonic/400/600",
+        isPublished: true,
+        playCount: 4200,
+      },
+      {
+        title: "Pokemon Emerald",
+        slug: "pokemon-emerald",
+        description: "Explore the Hoenn region and catch 'em all in this definitive GBA classic.",
+        isRetro: true,
+        console: "gba",
+        romUrl: "https://archive.org/download/gba-usa-collection/Pokemon%20-%20Emerald%20Version%20%28USA%29.gba",
+        thumbnail: "https://picsum.photos/seed/pokemon/400/600",
+        isPublished: true,
+        playCount: 6000,
+      }
+    ];
+
+    for (const game of retroGames) {
+      await supabase
+        .from("Game")
+        .upsert(game, { onConflict: 'slug' });
+    }
+
     return NextResponse.json({ success: true, message: "Database seeded successfully" });
   } catch (error: any) {
     console.error("[SEED ERROR]", error);

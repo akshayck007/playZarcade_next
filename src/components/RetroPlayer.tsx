@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Loader2, Maximize2, RefreshCw, Gamepad2 } from 'lucide-react';
 
 interface RetroPlayerProps {
@@ -29,7 +29,19 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
   const [isStuck, setIsStuck] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const startEmulator = (url: string) => {
+  // Use refs to avoid stale closures in setTimeout
+  const progressRef = useRef(0);
+  const loadingRef = useRef(false);
+
+  useEffect(() => {
+    progressRef.current = downloadProgress;
+  }, [downloadProgress]);
+
+  useEffect(() => {
+    loadingRef.current = isLoading;
+  }, [isLoading]);
+
+  const startEmulator = useCallback((url: string) => {
     if (containerRef.current) {
       // Clear previous content if any
       const container = document.getElementById('retro-game-container');
@@ -65,7 +77,7 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
 
     document.body.appendChild(script);
     return script;
-  };
+  }, [system]);
 
   const handleForceLegacy = () => {
     setIsStuck(false);
@@ -89,7 +101,7 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
 
         // Set a timeout to show the "Force Legacy" button if stuck at 0%
         stuckTimeout = setTimeout(() => {
-          if (isMounted && downloadProgress === 0 && isLoading) {
+          if (isMounted && progressRef.current === 0 && loadingRef.current) {
             setIsStuck(true);
           }
         }, 8000);
@@ -171,7 +183,7 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
       delete (window as any).EJS_pathtodata;
       delete (window as any).EJS_startOnLoaded;
     };
-  }, [romUrl, system]);
+  }, [romUrl, system, startEmulator]);
 
   const handleFullscreen = () => {
     if (containerRef.current?.requestFullscreen) {

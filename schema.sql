@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS public."Game" (
     thumbnail TEXT,
     "thumbnailUrl" TEXT, -- Some parts of the app use thumbnail, some thumbnailUrl
     "iframeUrl" TEXT,
+    "isRetro" BOOLEAN DEFAULT false,
+    "console" TEXT,
+    "romUrl" TEXT,
     "isPublished" BOOLEAN DEFAULT true,
     "isFeatured" BOOLEAN DEFAULT false,
     controls JSONB DEFAULT '{}'::jsonb,
@@ -37,6 +40,7 @@ CREATE TABLE IF NOT EXISTS public."Settings" (
     id TEXT PRIMARY KEY, -- usually 'global'
     "siteName" TEXT DEFAULT 'PlayZ Arcade',
     "defaultTheme" TEXT DEFAULT 'dark',
+    "retroEnabled" BOOLEAN DEFAULT true,
     "trendingMode" TEXT DEFAULT 'trending',
     "autoBoostTrending" BOOLEAN DEFAULT true,
     "autoCreateShadowGames" BOOLEAN DEFAULT false,
