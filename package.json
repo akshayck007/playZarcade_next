@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/generate-roms-manifest.js && next dev",
+    "prebuild": "node scripts/generate-roms-manifest.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
