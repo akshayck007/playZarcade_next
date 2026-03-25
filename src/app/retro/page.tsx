@@ -155,9 +155,18 @@ export default function RetroPage() {
             <h1 className="text-7xl md:text-9xl font-black uppercase tracking-tighter italic mb-6 leading-none">
               RETRO<span className="text-neon-cyan cyber-text-glow">ARCADE</span>
             </h1>
-            <p className="text-lg md:text-xl text-white/60 font-medium max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-white/60 font-medium max-w-2xl mx-auto leading-relaxed mb-10">
               Experience the golden age of gaming. Pixel-perfect emulation for NES, SNES, GBA, and more. No downloads, just play.
             </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <Link href="#games" className="bg-neon-cyan text-black px-8 py-4 rounded-full font-black uppercase tracking-tight hover:bg-white transition-all shadow-[0_0_20px_rgba(0,243,255,0.3)]">
+                Browse Collection
+              </Link>
+              <Link href="/test-ps2" className="bg-white/5 border border-white/10 text-white px-8 py-4 rounded-full font-black uppercase tracking-tight hover:bg-white/10 transition-all backdrop-blur-md flex items-center gap-2">
+                <Gamepad2 className="w-5 h-5" />
+                Test Custom ISO
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>

@@ -24,43 +24,120 @@ declare global {
 export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!romUrl || !system) return;
 
-    // Set configuration
-    window.EJS_player = '#retro-game-container';
-    window.EJS_core = system;
-    window.EJS_gameUrl = romUrl;
-    window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-    window.EJS_startOnLoaded = true;
-    
-    window.EJS_onGameStart = () => {
-      setIsLoading(false);
+    let isMounted = true;
+    let blobUrl: string | null = null;
+
+    const startEmulator = (url: string) => {
+      if (!isMounted) return;
+      
+      // Set configuration
+      window.EJS_player = '#retro-game-container';
+      window.EJS_core = system;
+      window.EJS_gameUrl = url;
+      window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+      window.EJS_startOnLoaded = true;
+      
+      window.EJS_onGameStart = () => {
+        setIsLoading(false);
+      };
+
+      // Load script
+      const script = document.createElement('script');
+      script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+      script.async = true;
+      
+      script.onload = () => {
+        console.log('EmulatorJS loader script loaded');
+      };
+
+      script.onerror = () => {
+        setError('Failed to load emulator engine. Please check your connection.');
+        setIsLoading(false);
+      };
+
+      document.body.appendChild(script);
+      return script;
     };
 
-    // Load script
-    const script = document.createElement('script');
-    script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
-    script.async = true;
-    
-    script.onload = () => {
-      console.log('EmulatorJS loader script loaded');
+    const fetchRom = async () => {
+      try {
+        setIsLoading(true);
+        setDownloadProgress(0);
+        
+        console.log('Attempting manual fetch for progress tracking...');
+        const response = await fetch(romUrl);
+        
+        if (!response.ok) {
+          console.warn('Manual fetch failed with status:', response.status, 'Falling back to direct load.');
+          startEmulator(romUrl);
+          return;
+        }
+        
+        const contentLength = response.headers.get('content-length');
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+        
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('Failed to get reader');
+        
+        let loaded = 0;
+        const chunks = [];
+        
+        while(true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          chunks.push(value);
+          loaded += value.length;
+          
+          if (total > 0) {
+            const progress = Math.round((loaded / total) * 100);
+            setDownloadProgress(progress);
+          }
+        }
+        
+        const blob = new Blob(chunks);
+        blobUrl = URL.createObjectURL(blob);
+        
+        console.log('Manual fetch successful, starting emulator with blob URL');
+        const script = startEmulator(blobUrl);
+        
+        return () => {
+          if (script && document.body.contains(script)) {
+            document.body.removeChild(script);
+          }
+          if (blobUrl) URL.revokeObjectURL(blobUrl);
+        };
+      } catch (err: any) {
+        console.error('Manual ROM Fetch Error:', err);
+        
+        // Fallback: Try to let the emulator handle the URL directly
+        console.log('Attempting fallback: Direct URL load...');
+        try {
+          const script = startEmulator(romUrl);
+          return () => {
+            if (script && document.body.contains(script)) {
+              document.body.removeChild(script);
+            }
+          };
+        } catch (fallbackErr) {
+          setError(`Failed to load game: ${err.message}. This is likely due to CORS restrictions on the source server.`);
+          setIsLoading(false);
+        }
+      }
     };
 
-    script.onerror = () => {
-      setError('Failed to load emulator engine. Please check your connection.');
-      setIsLoading(false);
-    };
-
-    document.body.appendChild(script);
+    const cleanupPromise = fetchRom();
 
     return () => {
-      // Cleanup
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
+      isMounted = false;
+      cleanupPromise.then(cleanup => cleanup?.());
+      
       // Clear global config to prevent conflicts on re-mount
       delete (window as any).EJS_player;
       delete (window as any).EJS_core;
@@ -95,8 +172,14 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
           <h3 className="text-xl font-black uppercase tracking-tighter italic mb-2">
             Initializing <span className="text-neon-cyan">{system.toUpperCase()}</span> Core
           </h3>
-          <p className="text-xs font-mono text-white/40 animate-pulse">
-            LOADING ROM DATA...
+          <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden mb-2">
+            <div 
+              className="h-full bg-neon-cyan transition-all duration-300 ease-out"
+              style={{ width: `${downloadProgress}%` }}
+            ></div>
+          </div>
+          <p className="text-[10px] font-mono text-white/40 animate-pulse">
+            {downloadProgress < 100 ? `DOWNLOADING ROM: ${downloadProgress}%` : 'STARTING EMULATOR...'}
           </p>
         </div>
       )}
