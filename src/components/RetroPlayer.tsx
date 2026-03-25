@@ -60,24 +60,29 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
     const gameId = `${system}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
     (window as any).EJS_gameID = gameId;
     
-    // Manual Save/Load Fallback for Iframe environments
-    (window as any).EJS_onSaveState = (data: any) => {
+    // Correct EmulatorJS Save/Load Hooks
+    (window as any).EJS_onSave = (id: string, data: any) => {
       try {
-        const key = `playz_save_${gameId}`;
-        // Only use localStorage for reasonably sized states (NES/SNES/GBA usually fit)
-        if (data && data.length < 4000000) { // 4MB limit
+        const key = `playz_save_${id}`;
+        // Convert to base64 if it's a Uint8Array/Blob
+        if (data instanceof Uint8Array) {
+          const base64 = btoa(String.fromCharCode.apply(null, Array.from(data)));
+          localStorage.setItem(key, base64);
+        } else {
           localStorage.setItem(key, data);
-          console.log('[RetroPlayer] State saved to localStorage fallback');
         }
+        console.log('[RetroPlayer] State saved for:', id);
       } catch (e) {
-        console.warn('[RetroPlayer] LocalStorage fallback save failed:', e);
+        console.error('[RetroPlayer] Save failed:', e);
       }
     };
 
-    (window as any).EJS_onLoadState = () => {
+    (window as any).EJS_onLoad = (id: string) => {
       try {
-        const key = `playz_save_${gameId}`;
-        return localStorage.getItem(key);
+        const key = `playz_save_${id}`;
+        const data = localStorage.getItem(key);
+        if (data && data.startsWith('data:')) return data; // Already a URL
+        return data;
       } catch (e) {
         return null;
       }
