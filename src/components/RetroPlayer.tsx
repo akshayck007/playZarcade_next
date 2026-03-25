@@ -15,6 +15,7 @@ declare global {
     EJS_core: string;
     EJS_gameUrl: string;
     EJS_pathtodata: string;
+    EJS_language: string;
     EJS_startOnLoaded: boolean;
     EJS_DEBUG_XX: boolean;
     EJS_onGameStart: () => void;
@@ -25,53 +26,78 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [isStuck, setIsStuck] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const startEmulator = (url: string) => {
+    if (containerRef.current) {
+      // Clear previous content if any
+      const container = document.getElementById('retro-game-container');
+      if (container) container.innerHTML = '';
+    }
+
+    // Set configuration
+    window.EJS_player = '#retro-game-container';
+    window.EJS_core = system;
+    window.EJS_gameUrl = url;
+    window.EJS_pathtodata = 'https://cdn.emulatorjs.org/latest/data/';
+    window.EJS_language = 'en-US';
+    window.EJS_startOnLoaded = true;
+    
+    window.EJS_onGameStart = () => {
+      setIsLoading(false);
+      setIsStuck(false);
+    };
+
+    // Load script
+    const script = document.createElement('script');
+    script.src = 'https://cdn.emulatorjs.org/latest/data/loader.js';
+    script.async = true;
+    
+    script.onload = () => {
+      console.log('EmulatorJS loader script loaded');
+    };
+
+    script.onerror = () => {
+      setError('Failed to load emulator engine. Please check your connection.');
+      setIsLoading(false);
+    };
+
+    document.body.appendChild(script);
+    return script;
+  };
+
+  const handleForceLegacy = () => {
+    setIsStuck(false);
+    setError(null);
+    setIsLoading(true);
+    startEmulator(romUrl);
+  };
 
   useEffect(() => {
     if (!romUrl || !system) return;
 
     let isMounted = true;
     let blobUrl: string | null = null;
-
-    const startEmulator = (url: string) => {
-      if (!isMounted) return;
-      
-      // Set configuration
-      window.EJS_player = '#retro-game-container';
-      window.EJS_core = system;
-      window.EJS_gameUrl = url;
-      window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-      window.EJS_startOnLoaded = true;
-      
-      window.EJS_onGameStart = () => {
-        setIsLoading(false);
-      };
-
-      // Load script
-      const script = document.createElement('script');
-      script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
-      script.async = true;
-      
-      script.onload = () => {
-        console.log('EmulatorJS loader script loaded');
-      };
-
-      script.onerror = () => {
-        setError('Failed to load emulator engine. Please check your connection.');
-        setIsLoading(false);
-      };
-
-      document.body.appendChild(script);
-      return script;
-    };
+    let stuckTimeout: NodeJS.Timeout;
 
     const fetchRom = async () => {
       try {
         setIsLoading(true);
         setDownloadProgress(0);
+        setIsStuck(false);
+
+        // Set a timeout to show the "Force Legacy" button if stuck at 0%
+        stuckTimeout = setTimeout(() => {
+          if (isMounted && downloadProgress === 0 && isLoading) {
+            setIsStuck(true);
+          }
+        }, 8000);
         
         console.log('Attempting manual fetch for progress tracking...');
         const response = await fetch(romUrl);
+        
+        clearTimeout(stuckTimeout);
         
         if (!response.ok) {
           console.warn('Manual fetch failed with status:', response.status, 'Falling back to direct load.');
@@ -181,6 +207,20 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
           <p className="text-[10px] font-mono text-white/40 animate-pulse">
             {downloadProgress < 100 ? `DOWNLOADING ROM: ${downloadProgress}%` : 'STARTING EMULATOR...'}
           </p>
+
+          {isStuck && (
+            <div className="mt-8 flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest text-center max-w-xs">
+                Download seems stuck. This is common with Google Drive or restricted servers.
+              </p>
+              <button 
+                onClick={handleForceLegacy}
+                className="px-6 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                Try Force Legacy Load
+              </button>
+            </div>
+          )}
         </div>
       )}
 
