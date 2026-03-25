@@ -19,6 +19,40 @@ const CONSOLES = [
   { id: 'play', name: 'PlayStation 2' },
 ];
 
+const LIBRETRO_SYSTEMS: Record<string, string> = {
+  'nes': 'Nintendo - Nintendo Entertainment System',
+  'snes': 'Nintendo - Super Nintendo Entertainment System',
+  'gba': 'Nintendo - Game Boy Advance',
+  'gbc': 'Nintendo - Game Boy Color',
+  'gb': 'Nintendo - Game Boy',
+  'n64': 'Nintendo - Nintendo 64',
+  'genesis': 'Sega - Mega Drive - Genesis',
+  'mame': 'MAME',
+  'psx': 'Sony - PlayStation',
+  'psp': 'Sony - PlayStation Portable',
+  'play': 'Sony - PlayStation 2',
+};
+
+const cleanTitle = (filename: string) => {
+  return filename.split('.')[0]
+    .replace(/\(.*\)/g, '') // Remove (USA), (Europe), etc.
+    .replace(/\[.*\]/g, '') // Remove [!], [T-En], etc.
+    .replace(/v\d+(\.\d+)*/g, '') // Remove v1.0, v2, etc.
+    .replace(/Beta \d+/g, '') // Remove Beta 1
+    .replace(/Rev \d+/g, '') // Remove Rev 1
+    .replace(/\s+/g, ' ') // Collapse spaces
+    .trim();
+};
+
+const getThumbnailUrl = (title: string, consoleId: string) => {
+  const system = LIBRETRO_SYSTEMS[consoleId];
+  if (!system) return `https://picsum.photos/seed/${title}/400/600`;
+  
+  // Libretro uses exact matching with .png extension
+  const encodedTitle = encodeURIComponent(title);
+  return `https://raw.githubusercontent.com/libretro-thumbnails/${system}/master/Named_Boxarts/${encodedTitle}.png`;
+};
+
 export default function RetroImportPage() {
   const supabase = createClientComponentClient();
   const router = useRouter();
@@ -58,13 +92,8 @@ export default function RetroImportPage() {
     if (activeTab === 'urls') {
       const urls = romUrls.split('\n').filter(url => url.trim().length > 0);
       const games = urls.map(url => {
-        // Extract filename from URL
         const filename = decodeURIComponent(url.split('/').pop() || '');
-        // Remove extension and common tags like (USA), (Europe), [!], etc.
-        let title = filename.split('.')[0]
-          .replace(/\(.*\)/g, '')
-          .replace(/\[.*\]/g, '')
-          .trim();
+        const title = cleanTitle(filename);
         
         return {
           title,
@@ -75,18 +104,14 @@ export default function RetroImportPage() {
       setPreviewGames(games);
     } else if (activeTab === 'local') {
       const games = localFiles.map(file => ({
-        title: file.title,
+        title: cleanTitle(file.filename),
         romUrl: file.url,
-        console: selectedConsole // Use selected console for all local files for now
+        console: selectedConsole
       }));
       setPreviewGames(games);
     } else {
       const games = uploadFiles.map(file => {
-        const filename = file.name;
-        let title = filename.split('.')[0]
-          .replace(/\(.*\)/g, '')
-          .replace(/\[.*\]/g, '')
-          .trim();
+        const title = cleanTitle(file.name);
         
         return {
           title,
@@ -132,8 +157,9 @@ export default function RetroImportPage() {
           finalRomUrl = publicUrl;
         }
 
-        // 1. Generate slug
-        const slug = game.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        // 1. Generate unique slug per console
+        const baseSlug = game.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const slug = `${baseSlug}-${game.console}`;
         
         // 2. Check if game already exists
         const { data: existing } = await supabase
@@ -143,26 +169,30 @@ export default function RetroImportPage() {
           .maybeSingle();
 
         if (existing) {
-          newResults.push({ success: false, message: `Skipped: ${game.title} (Slug already exists)` });
+          newResults.push({ success: false, message: `Skipped: ${game.title} (${game.console.toUpperCase()}) - Already exists` });
           continue;
         }
 
-        // 3. Insert game
+        // 3. Get Thumbnail
+        const thumbnailUrl = getThumbnailUrl(game.title, game.console);
+
+        // 4. Insert game
         const { error } = await supabase.from('Game').insert({
-          id: crypto.randomUUID(), // Explicitly generate ID for safety
+          id: crypto.randomUUID(),
           title: game.title,
           slug,
           description: `Play the classic ${game.console.toUpperCase()} game ${game.title} online in your browser.`,
-          thumbnail: `https://picsum.photos/seed/${slug}/400/600`, // Placeholder thumbnail
+          thumbnail: thumbnailUrl,
+          thumbnailUrl: thumbnailUrl,
           isPublished: true,
           isRetro: true,
           console: game.console,
           romUrl: finalRomUrl,
-          playCount: Math.floor(Math.random() * 1000) // Initial popularity
+          playCount: Math.floor(Math.random() * 1000)
         });
 
         if (error) throw error;
-        newResults.push({ success: true, message: `Imported: ${game.title}` });
+        newResults.push({ success: true, message: `Imported: ${game.title} (${game.console.toUpperCase()})` });
       } catch (err: any) {
         newResults.push({ success: false, message: `Error importing ${game.title}: ${err.message}` });
       }

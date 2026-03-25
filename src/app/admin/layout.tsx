@@ -39,6 +39,7 @@ export default async function AdminLayout({
     { icon: Star, label: "Featured Order", href: "/admin/sections/featured" },
     { icon: Layout, label: "Home Tabs", href: "/admin/sections" },
     { icon: RefreshCw, label: "GamePix Sync", href: "/admin/games/sync" },
+    { icon: Gamepad2, label: "Retro Bulk Import", href: "/admin/retro-import" },
     { icon: Layers, label: "Categories", href: "/admin/categories" },
     { icon: TrendingUp, label: "Trends", href: "/admin/trends" },
     { icon: FileText, label: "SEO Pages", href: "/admin/seo" },

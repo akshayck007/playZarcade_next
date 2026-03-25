@@ -7,6 +7,27 @@ import { Save, ArrowLeft, Image as ImageIcon, Link as LinkIcon, Type, FileText, 
 import Link from "next/link";
 import Image from "next/image";
 
+const LIBRETRO_SYSTEMS: Record<string, string> = {
+  'nes': 'Nintendo - Nintendo Entertainment System',
+  'snes': 'Nintendo - Super Nintendo Entertainment System',
+  'gba': 'Nintendo - Game Boy Advance',
+  'gbc': 'Nintendo - Game Boy Color',
+  'gb': 'Nintendo - Game Boy',
+  'n64': 'Nintendo - Nintendo 64',
+  'genesis': 'Sega - Mega Drive - Genesis',
+  'mame': 'MAME',
+  'psx': 'Sony - PlayStation',
+  'psp': 'Sony - PlayStation Portable',
+  'play': 'Sony - PlayStation 2',
+};
+
+const getThumbnailUrl = (title: string, consoleId: string) => {
+  const system = LIBRETRO_SYSTEMS[consoleId];
+  if (!system) return `https://picsum.photos/seed/${title}/400/600`;
+  const encodedTitle = encodeURIComponent(title);
+  return `https://raw.githubusercontent.com/libretro-thumbnails/${system}/master/Named_Boxarts/${encodedTitle}.png`;
+};
+
 export default function NewGamePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -41,8 +62,16 @@ export default function NewGamePage() {
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const title = e.target.value;
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    setFormData({ ...formData, title, slug });
+    const baseSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const slug = formData.isRetro ? `${baseSlug}-${formData.console}` : baseSlug;
+    
+    // Auto-fill thumbnail if retro
+    let thumbnail = formData.thumbnail;
+    if (formData.isRetro && title.length > 3) {
+      thumbnail = getThumbnailUrl(title, formData.console);
+    }
+
+    setFormData({ ...formData, title, slug, thumbnail });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,9 +100,14 @@ export default function NewGamePage() {
         finalRomUrl = publicUrl;
       }
 
+      // Final slug check
+      const baseSlug = formData.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const finalSlug = formData.isRetro ? `${baseSlug}-${formData.console}` : baseSlug;
+
       // Clean up data before sending to Supabase
       const submissionData: any = {
         ...formData,
+        slug: finalSlug,
         romUrl: finalRomUrl,
         id: crypto.randomUUID(), // Explicitly generate ID to avoid "null value" errors if DB default fails
         categoryId: formData.categoryId === "" ? null : formData.categoryId,

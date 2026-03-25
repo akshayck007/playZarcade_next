@@ -55,6 +55,8 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/latest/data/';
     window.EJS_language = 'en-US';
     window.EJS_startOnLoaded = true;
+    // Add game ID for persistent saves
+    (window as any).EJS_gameID = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     
     window.EJS_onGameStart = () => {
       setIsLoading(false);
