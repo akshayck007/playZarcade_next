@@ -62,6 +62,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.crazygames.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+      },
     ],
   },
   // Security headers

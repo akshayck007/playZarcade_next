@@ -20,17 +20,17 @@ const CONSOLES = [
 ];
 
 const LIBRETRO_SYSTEMS: Record<string, string> = {
-  'nes': 'Nintendo - Nintendo Entertainment System',
-  'snes': 'Nintendo - Super Nintendo Entertainment System',
-  'gba': 'Nintendo - Game Boy Advance',
-  'gbc': 'Nintendo - Game Boy Color',
-  'gb': 'Nintendo - Game Boy',
-  'n64': 'Nintendo - Nintendo 64',
-  'genesis': 'Sega - Mega Drive - Genesis',
+  'nes': 'Nintendo_-_Nintendo_Entertainment_System',
+  'snes': 'Nintendo_-_Super_Nintendo_Entertainment_System',
+  'gba': 'Nintendo_-_Game_Boy_Advance',
+  'gbc': 'Nintendo_-_Game_Boy_Color',
+  'gb': 'Nintendo_-_Game_Boy',
+  'n64': 'Nintendo_-_Nintendo_64',
+  'genesis': 'Sega_-_Mega_Drive_-_Genesis',
   'mame': 'MAME',
-  'psx': 'Sony - PlayStation',
-  'psp': 'Sony - PlayStation Portable',
-  'play': 'Sony - PlayStation 2',
+  'psx': 'Sony_-_PlayStation',
+  'psp': 'Sony_-_PlayStation_Portable',
+  'play': 'Sony_-_PlayStation_2',
 };
 
 const cleanTitle = (filename: string) => {
@@ -49,6 +49,8 @@ const getThumbnailUrl = (title: string, consoleId: string) => {
   if (!system) return `https://picsum.photos/seed/${title}/400/600`;
   
   // Libretro uses exact matching with .png extension
+  // Note: Libretro filenames use spaces, but in a URL they must be encoded.
+  // We use the title as provided, which should be the uncleaned filename for better matching.
   const encodedTitle = encodeURIComponent(title);
   return `https://raw.githubusercontent.com/libretro-thumbnails/${system}/master/Named_Boxarts/${encodedTitle}.png`;
 };
@@ -92,29 +94,33 @@ export default function RetroImportPage() {
     if (activeTab === 'urls') {
       const urls = romUrls.split('\n').filter(url => url.trim().length > 0);
       const games = urls.map(url => {
-        const filename = decodeURIComponent(url.split('/').pop() || '');
-        const title = cleanTitle(filename);
+        const fullFilename = decodeURIComponent(url.split('/').pop() || '');
+        const filenameWithoutExt = fullFilename.split('.')[0];
+        const title = cleanTitle(fullFilename);
         
         return {
           title,
+          thumbnailTitle: filenameWithoutExt,
           romUrl: url.trim(),
           console: selectedConsole
         };
       });
-      setPreviewGames(games);
+      setPreviewGames(games as any);
     } else if (activeTab === 'local') {
       const games = localFiles.map(file => ({
         title: cleanTitle(file.filename),
+        thumbnailTitle: file.filename.split('.')[0],
         romUrl: file.url,
         console: selectedConsole
       }));
-      setPreviewGames(games);
+      setPreviewGames(games as any);
     } else {
       const games = uploadFiles.map(file => {
         const title = cleanTitle(file.name);
         
         return {
           title,
+          thumbnailTitle: file.name.split('.')[0],
           romUrl: 'PENDING_UPLOAD',
           console: selectedConsole,
           file: file
@@ -174,7 +180,7 @@ export default function RetroImportPage() {
         }
 
         // 3. Get Thumbnail
-        const thumbnailUrl = getThumbnailUrl(game.title, game.console);
+        const thumbnailUrl = getThumbnailUrl((game as any).thumbnailTitle || game.title, game.console);
 
         // 4. Insert game
         const { error } = await supabase.from('Game').insert({

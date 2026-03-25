@@ -8,17 +8,17 @@ import Link from "next/link";
 import Image from "next/image";
 
 const LIBRETRO_SYSTEMS: Record<string, string> = {
-  'nes': 'Nintendo - Nintendo Entertainment System',
-  'snes': 'Nintendo - Super Nintendo Entertainment System',
-  'gba': 'Nintendo - Game Boy Advance',
-  'gbc': 'Nintendo - Game Boy Color',
-  'gb': 'Nintendo - Game Boy',
-  'n64': 'Nintendo - Nintendo 64',
-  'genesis': 'Sega - Mega Drive - Genesis',
+  'nes': 'Nintendo_-_Nintendo_Entertainment_System',
+  'snes': 'Nintendo_-_Super_Nintendo_Entertainment_System',
+  'gba': 'Nintendo_-_Game_Boy_Advance',
+  'gbc': 'Nintendo_-_Game_Boy_Color',
+  'gb': 'Nintendo_-_Game_Boy',
+  'n64': 'Nintendo_-_Nintendo_64',
+  'genesis': 'Sega_-_Mega_Drive_-_Genesis',
   'mame': 'MAME',
-  'psx': 'Sony - PlayStation',
-  'psp': 'Sony - PlayStation Portable',
-  'play': 'Sony - PlayStation 2',
+  'psx': 'Sony_-_PlayStation',
+  'psp': 'Sony_-_PlayStation_Portable',
+  'play': 'Sony_-_PlayStation_2',
 };
 
 const getThumbnailUrl = (title: string, consoleId: string) => {

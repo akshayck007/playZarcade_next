@@ -1,6 +1,7 @@
 'use client';
 
-import { Play } from "lucide-react";
+import { useState } from "react";
+import { Play, Gamepad2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
@@ -11,21 +12,31 @@ interface GameCardProps {
 }
 
 export function GameCard({ game }: GameCardProps) {
+  const [imgError, setImgError] = useState(false);
+
   return (
     <div className="group relative flex flex-col gap-3">
       <Link 
         href={`/game/${game.slug}`} 
-        className="relative aspect-[4/3] rounded-xl overflow-hidden bg-dark-surface border border-white/5 group-hover:border-neon-cyan/50 transition-all duration-300 shadow-lg group-hover:shadow-neon-cyan/20"
+        className="relative aspect-[4/3] rounded-xl overflow-hidden bg-dark-surface border border-white/5 group-hover:border-neon-cyan/50 transition-all duration-300 shadow-lg group-hover:shadow-neon-cyan/20 flex items-center justify-center"
       >
-        <Image 
-          src={game.thumbnail} 
-          alt={game.title}
-          fill
-          loading="lazy"
-          className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[0.3] group-hover:grayscale-0"
-          referrerPolicy="no-referrer"
-          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
-        />
+        {!imgError ? (
+          <Image 
+            src={game.thumbnail} 
+            alt={game.title}
+            fill
+            loading="lazy"
+            className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[0.3] group-hover:grayscale-0"
+            referrerPolicy="no-referrer"
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-2 text-white/10">
+            <Gamepad2 className="w-12 h-12" />
+            <span className="text-[8px] font-black uppercase tracking-widest">{game.console || 'Retro'}</span>
+          </div>
+        )}
         
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 backdrop-blur-[2px]">
