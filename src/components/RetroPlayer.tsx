@@ -79,7 +79,7 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
 
     document.body.appendChild(script);
     return script;
-  }, [system]);
+  }, [system, title]);
 
   const handleForceLegacy = () => {
     setIsStuck(false);
