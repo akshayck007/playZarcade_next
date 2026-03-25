@@ -22,11 +22,17 @@ export default function EditGamePage({ params }: { params: Promise<{ id: string 
     categoryId: "",
     isPublished: true,
     isFeatured: false,
+    isRetro: false,
+    console: "nes",
+    romUrl: "",
     qualityScore: 0.8,
     playCount: 0,
     trendScore: 0,
     contentBody: "",
   });
+
+  const [romFile, setRomFile] = useState<File | null>(null);
+  const [uploadingRom, setUploadingRom] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -49,6 +55,9 @@ export default function EditGamePage({ params }: { params: Promise<{ id: string 
             categoryId: game.categoryId || "",
             isPublished: game.isPublished ?? true,
             isFeatured: game.isFeatured ?? false,
+            isRetro: game.isRetro ?? false,
+            console: game.console || "nes",
+            romUrl: game.romUrl || "",
             qualityScore: game.qualityScore || 0.8,
             playCount: game.playCount || 0,
             trendScore: game.trendScore || 0,
@@ -75,8 +84,30 @@ export default function EditGamePage({ params }: { params: Promise<{ id: string 
     setSaving(true);
 
     try {
+      let finalRomUrl = formData.romUrl;
+
+      // Upload ROM if provided
+      if (formData.isRetro && romFile) {
+        setUploadingRom(true);
+        const fileExt = romFile.name.split('.').pop();
+        const fileName = `${formData.console}/${crypto.randomUUID()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('roms')
+          .upload(fileName, romFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('roms')
+          .getPublicUrl(fileName);
+        
+        finalRomUrl = publicUrl;
+      }
+
       const submissionData: any = {
         ...formData,
+        romUrl: finalRomUrl,
         categoryId: formData.categoryId === "" ? null : formData.categoryId,
         thumbnailUrl: formData.thumbnail,
       };
@@ -177,6 +208,24 @@ export default function EditGamePage({ params }: { params: Promise<{ id: string 
               <ImageIcon className="w-5 h-5 text-emerald-500" />
               Assets & Source
             </h2>
+
+            <div className="flex p-1 bg-white/5 rounded-2xl border border-white/10 mb-6">
+              <button 
+                type="button"
+                onClick={() => setFormData({ ...formData, isRetro: false })}
+                className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!formData.isRetro ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}
+              >
+                Web / Iframe Game
+              </button>
+              <button 
+                type="button"
+                onClick={() => setFormData({ ...formData, isRetro: true })}
+                className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.isRetro ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}
+              >
+                Retro ROM
+              </button>
+            </div>
+
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Thumbnail URL</label>
@@ -196,16 +245,82 @@ export default function EditGamePage({ params }: { params: Promise<{ id: string 
                   )}
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Iframe / Game URL</label>
-                <input 
-                  type="url" 
-                  value={formData.iframeUrl}
-                  onChange={(e) => setFormData({ ...formData, iframeUrl: e.target.value })}
-                  placeholder="https://gamepix.com/play/..."
-                  className="w-full glass p-4 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                />
-              </div>
+
+              {!formData.isRetro ? (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Iframe / Game URL</label>
+                  <input 
+                    type="url" 
+                    value={formData.iframeUrl}
+                    onChange={(e) => setFormData({ ...formData, iframeUrl: e.target.value })}
+                    placeholder="https://gamepix.com/play/..."
+                    className="w-full glass p-4 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Console System</label>
+                      <select 
+                        value={formData.console}
+                        onChange={(e) => setFormData({ ...formData, console: e.target.value })}
+                        className="w-full glass p-4 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none"
+                      >
+                        <option value="nes">NES</option>
+                        <option value="snes">SNES</option>
+                        <option value="gba">GBA</option>
+                        <option value="gbc">GBC</option>
+                        <option value="n64">N64</option>
+                        <option value="genesis">Genesis</option>
+                        <option value="mame">Arcade</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white/40">ROM Source</label>
+                      <div className="flex gap-2">
+                        <button 
+                          type="button"
+                          onClick={() => setRomFile(null)}
+                          className={`flex-1 py-4 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${!romFile ? 'bg-white/10 border-white/20' : 'bg-transparent border-white/5 text-white/40'}`}
+                        >
+                          URL
+                        </button>
+                        <label className={`flex-1 py-4 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer text-center ${romFile ? 'bg-white/10 border-white/20' : 'bg-transparent border-white/5 text-white/40'}`}>
+                          File
+                          <input type="file" className="hidden" onChange={(e) => e.target.files && setRomFile(e.target.files[0])} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {romFile ? (
+                    <div className="glass p-4 rounded-xl border border-emerald-500/20 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                          <Save className="w-5 h-5 text-emerald-500" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white truncate max-w-[200px]">{romFile.name}</p>
+                          <p className="text-[10px] text-white/40 font-mono">{(romFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => setRomFile(null)} className="text-red-500 text-[10px] font-black uppercase tracking-widest">Remove</button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white/40">ROM URL</label>
+                      <input 
+                        type="url" 
+                        value={formData.romUrl}
+                        onChange={(e) => setFormData({ ...formData, romUrl: e.target.value })}
+                        placeholder="https://archive.org/.../game.nes"
+                        className="w-full glass p-4 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

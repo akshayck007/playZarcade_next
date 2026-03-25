@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Gamepad2, Upload, Loader2, CheckCircle2, AlertCircle, Trash2, Plus, Info } from 'lucide-react';
+import { Gamepad2, Upload, Loader2, CheckCircle2, AlertCircle, Trash2, Plus, Info, Layers } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const CONSOLES = [
@@ -27,9 +27,11 @@ export default function RetroImportPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [results, setResults] = useState<{ success: boolean; message: string }[]>([]);
   const [previewGames, setPreviewGames] = useState<{ title: string; romUrl: string; console: string }[]>([]);
-  const [activeTab, setActiveTab] = useState<'urls' | 'local'>('urls');
+  const [activeTab, setActiveTab] = useState<'urls' | 'local' | 'upload'>('urls');
   const [localFiles, setLocalFiles] = useState<{ filename: string; title: string; url: string; extension: string }[]>([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
   const scanLocalRoms = async () => {
     setIsScanning(true);
@@ -43,6 +45,12 @@ export default function RetroImportPage() {
       console.error('Error scanning local ROMs:', err);
     } finally {
       setIsScanning(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setUploadFiles(Array.from(e.target.files));
     }
   };
 
@@ -65,13 +73,29 @@ export default function RetroImportPage() {
         };
       });
       setPreviewGames(games);
-    } else {
+    } else if (activeTab === 'local') {
       const games = localFiles.map(file => ({
         title: file.title,
         romUrl: file.url,
         console: selectedConsole // Use selected console for all local files for now
       }));
       setPreviewGames(games);
+    } else {
+      const games = uploadFiles.map(file => {
+        const filename = file.name;
+        let title = filename.split('.')[0]
+          .replace(/\(.*\)/g, '')
+          .replace(/\[.*\]/g, '')
+          .trim();
+        
+        return {
+          title,
+          romUrl: 'PENDING_UPLOAD',
+          console: selectedConsole,
+          file: file
+        };
+      });
+      setPreviewGames(games as any);
     }
   };
 
@@ -84,6 +108,30 @@ export default function RetroImportPage() {
 
     for (const game of previewGames) {
       try {
+        let finalRomUrl = game.romUrl;
+
+        // If it's a direct upload, upload to Supabase Storage first
+        if (finalRomUrl === 'PENDING_UPLOAD' && (game as any).file) {
+          const file = (game as any).file;
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${game.console}/${crypto.randomUUID()}.${fileExt}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('roms')
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('roms')
+            .getPublicUrl(fileName);
+          
+          finalRomUrl = publicUrl;
+        }
+
         // 1. Generate slug
         const slug = game.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         
@@ -108,7 +156,7 @@ export default function RetroImportPage() {
           isPublished: true,
           isRetro: true,
           console: game.console,
-          romUrl: game.romUrl,
+          romUrl: finalRomUrl,
           playCount: Math.floor(Math.random() * 1000) // Initial popularity
         });
 
@@ -146,7 +194,7 @@ export default function RetroImportPage() {
               onClick={() => setActiveTab('urls')}
               className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'urls' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}
             >
-              Archive.org URLs
+              URLs
             </button>
             <button 
               onClick={() => {
@@ -155,7 +203,13 @@ export default function RetroImportPage() {
               }}
               className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'local' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}
             >
-              Local ROMs
+              Local
+            </button>
+            <button 
+              onClick={() => setActiveTab('upload')}
+              className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'upload' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}
+            >
+              Upload
             </button>
           </div>
 
@@ -188,7 +242,7 @@ export default function RetroImportPage() {
                 className="w-full h-64 bg-white/5 border border-white/10 rounded-2xl p-4 text-xs font-mono focus:outline-none focus:border-emerald-500/50 transition-all"
               />
             </div>
-          ) : (
+          ) : activeTab === 'local' ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Files in /public/roms/</label>
@@ -218,6 +272,40 @@ export default function RetroImportPage() {
                   </div>
                 )}
               </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Upload ROM Files</label>
+              <div className="relative group">
+                <input 
+                  type="file" 
+                  multiple
+                  onChange={handleFileSelect}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <div className="w-full h-64 bg-white/5 border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center text-center p-8 group-hover:border-emerald-500/50 transition-all">
+                  <Upload className="w-12 h-12 text-white/20 mb-4 group-hover:text-emerald-500 transition-colors" />
+                  <p className="text-xs font-bold uppercase tracking-widest mb-2">Click or Drag ROMs here</p>
+                  <p className="text-[10px] text-white/20 font-mono">Supports .nes, .sfc, .gba, .zip, etc.</p>
+                  {uploadFiles.length > 0 && (
+                    <div className="mt-4 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                      <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                        {uploadFiles.length} files selected
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {uploadFiles.length > 0 && (
+                <div className="max-h-32 overflow-y-auto space-y-1 pr-2">
+                  {uploadFiles.map((file, i) => (
+                    <div key={i} className="flex items-center justify-between text-[8px] font-mono text-white/40 bg-white/5 p-2 rounded border border-white/5">
+                      <span className="truncate">{file.name}</span>
+                      <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -309,7 +397,7 @@ export default function RetroImportPage() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-3 gap-8">
         <div className="glass p-6 rounded-3xl border border-white/5 flex items-start gap-4">
           <div className="p-3 bg-emerald-500/10 rounded-2xl">
             <Info className="w-6 h-6 text-emerald-500" />
@@ -334,6 +422,21 @@ export default function RetroImportPage() {
               1. Use the <strong>File Explorer</strong> in AI Studio to upload your ROM files to the <code className="text-blue-400">/public/roms/</code> directory.<br />
               2. Switch to the <strong>Local ROMs</strong> tab above.<br />
               3. Select the correct console and click <strong>Preview Import</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div className="glass p-6 rounded-3xl border border-white/5 flex items-start gap-4">
+          <div className="p-3 bg-orange-500/10 rounded-2xl">
+            <Layers className="w-6 h-6 text-orange-500" />
+          </div>
+          <div className="space-y-2">
+            <h4 className="text-sm font-black uppercase tracking-tight">Supabase Storage Setup</h4>
+            <p className="text-xs text-white/40 leading-relaxed">
+              To use the <strong>Upload</strong> feature, you must create a public bucket named <code className="text-orange-400">roms</code> in your Supabase project.<br />
+              1. Go to <strong>Storage</strong> in Supabase Dashboard.<br />
+              2. Click <strong>New Bucket</strong> and name it <code className="text-orange-400">roms</code>.<br />
+              3. Make sure to set it to <strong>Public</strong>.
             </p>
           </div>
         </div>
