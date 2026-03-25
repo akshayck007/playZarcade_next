@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import RetroContent from './RetroContent';
 import { Metadata } from 'next';
 
+export const runtime = 'edge';
+
 export const metadata: Metadata = {
   title: 'Retro Arcade | Play Classic Games Online | PlayZ Arcade',
   description: 'Play thousands of classic retro games from NES, SNES, GBA, N64, and more directly in your browser. Pixel-perfect emulation, no downloads required.',
