@@ -187,9 +187,28 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
     };
   }, [romUrl, system, startEmulator]);
 
-  const handleFullscreen = () => {
-    if (containerRef.current?.requestFullscreen) {
-      containerRef.current.requestFullscreen();
+  const toggleFullscreen = () => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    if (!document.fullscreenElement && 
+        !(document as any).webkitFullscreenElement && 
+        !(document as any).msFullscreenElement) {
+      if (container.requestFullscreen) {
+        container.requestFullscreen();
+      } else if ((container as any).webkitRequestFullscreen) {
+        (container as any).webkitRequestFullscreen();
+      } else if ((container as any).msRequestFullscreen) {
+        (container as any).msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      } else if ((document as any).msExitFullscreen) {
+        (document as any).msExitFullscreen();
+      }
     }
   };
 
@@ -198,7 +217,7 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
   };
 
   return (
-    <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl group" ref={containerRef}>
+    <div className="game-container relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl group" ref={containerRef}>
       {/* Emulator Container */}
       <div id="retro-game-container" className="w-full h-full"></div>
 
@@ -262,7 +281,7 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
       {/* Controls Overlay (Bottom Right) */}
       <div className="absolute bottom-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-30">
         <button 
-          onClick={handleFullscreen}
+          onClick={toggleFullscreen}
           className="p-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-lg hover:bg-neon-cyan/20 hover:border-neon-cyan/50 text-white transition-all"
           title="Fullscreen"
         >

@@ -79,7 +79,7 @@ export async function GET(request: Request) {
     // Map sort parameter to column name
     const sortColumn = sort === 'play_count' ? 'playCount' : 
                        sort === 'quality_score' ? 'qualityScore' : 
-                       sort === 'newest' ? 'created_at' :
+                       sort === 'newest' ? 'createdAt' :
                        'trendScore';
 
     query = query.order(sortColumn, { ascending: false })

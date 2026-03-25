@@ -21,19 +21,6 @@ const CONSOLES = [
   { id: 'play', name: 'PlayStation 2', icon: Gamepad2 },
 ];
 
-const GENRES = [
-  'All Genres',
-  'Action',
-  'Adventure',
-  'Platformer',
-  'RPG',
-  'Puzzle',
-  'Sports',
-  'Racing',
-  'Fighting',
-  'Shooter',
-];
-
 const SORT_OPTIONS = [
   { id: 'popularity', name: 'Most Popular', icon: Flame },
   { id: 'newest', name: 'Newest Added', icon: Clock },
@@ -45,15 +32,29 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
   const [games, setGames] = useState<any[]>(initialGames);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [genres, setGenres] = useState<any[]>([]);
   const [retroEnabled, setRetroEnabled] = useState(initialRetroEnabled);
   const [selectedConsole, setSelectedConsole] = useState('all');
-  const [selectedGenre, setSelectedGenre] = useState('All Genres');
+  const [selectedGenre, setSelectedGenre] = useState('all');
   const [sortBy, setSortBy] = useState('popularity');
   const [searchQuery, setSearchQuery] = useState('');
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(initialGames.length === 20);
   const isFirstLoad = useRef(true);
   const LIMIT = 20;
+
+  useEffect(() => {
+    const fetchGenres = async () => {
+      const { data } = await supabase
+        .from('Category')
+        .select('*')
+        .order('name');
+      if (data) {
+        setGenres(data);
+      }
+    };
+    fetchGenres();
+  }, [supabase]);
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastGameElementRef = (node: HTMLDivElement) => {
@@ -70,7 +71,7 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
   useEffect(() => {
     const fetchData = async (isInitial = false) => {
       // Skip initial fetch if filters are default and it's the first load
-      if (isFirstLoad.current && isInitial && selectedConsole === 'all' && selectedGenre === 'All Genres' && sortBy === 'popularity' && !searchQuery) {
+      if (isFirstLoad.current && isInitial && selectedConsole === 'all' && selectedGenre === 'all' && sortBy === 'popularity' && !searchQuery) {
         isFirstLoad.current = false;
         return;
       }
@@ -99,22 +100,8 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
         }
 
         // Server-side genre filtering
-        if (selectedGenre !== 'All Genres') {
-          // First get category ID for the selected genre
-          const { data: catData } = await supabase
-            .from('Category')
-            .select('id')
-            .eq('name', selectedGenre)
-            .maybeSingle();
-          
-          if (catData) {
-            query = query.eq('categoryId', catData.id);
-          } else {
-            // If no category matches, we can still try tags if needed, 
-            // but for now let's stick to categoryId for server-side efficiency
-            // If we want to support tags, we'd need a more complex query
-            query = query.contains('tags', [selectedGenre.toLowerCase()]);
-          }
+        if (selectedGenre !== 'all') {
+          query = query.eq('categoryId', selectedGenre);
         }
 
         // Sorting logic
@@ -249,18 +236,29 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
                 <Filter className="w-3.5 h-3.5" /> Genres
               </h3>
               <div className="grid grid-cols-1 gap-2">
-                {GENRES.map((genre) => (
+                <button
+                  onClick={() => setSelectedGenre('all')}
+                  className={cn(
+                    "w-full text-left px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border border-transparent",
+                    selectedGenre === 'all' 
+                      ? "text-neon-cyan bg-neon-cyan/5 border-neon-cyan/20" 
+                      : "text-white/30 hover:text-white/60 hover:bg-white/5"
+                  )}
+                >
+                  All Genres
+                </button>
+                {genres.map((genre) => (
                   <button
-                    key={genre}
-                    onClick={() => setSelectedGenre(genre)}
+                    key={genre.id}
+                    onClick={() => setSelectedGenre(genre.id)}
                     className={cn(
                       "w-full text-left px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border border-transparent",
-                      selectedGenre === genre 
+                      selectedGenre === genre.id 
                         ? "text-neon-cyan bg-neon-cyan/5 border-neon-cyan/20" 
                         : "text-white/30 hover:text-white/60 hover:bg-white/5"
                     )}
                   >
-                    {genre}
+                    {genre.name}
                   </button>
                 ))}
               </div>
@@ -270,23 +268,53 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col">
-          {/* Mobile Console Bar */}
-          <div className="lg:hidden sticky top-[72px] z-40 bg-[#050505]/90 backdrop-blur-2xl border-b border-white/10 px-4 py-4 overflow-x-auto flex gap-3 scrollbar-hide">
-            {CONSOLES.map((console) => (
+          {/* Mobile Filters Bar */}
+          <div className="lg:hidden sticky top-[72px] z-40 bg-[#050505]/95 backdrop-blur-2xl border-b border-white/10 p-4 space-y-4">
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+              {CONSOLES.map((console) => (
+                <button
+                  key={console.id}
+                  onClick={() => setSelectedConsole(console.id)}
+                  className={cn(
+                    "flex items-center gap-3 px-5 py-3 rounded-xl border transition-all shrink-0 text-[11px] font-black uppercase tracking-widest",
+                    selectedConsole === console.id 
+                      ? "bg-white text-black border-white shadow-[0_10px_20px_rgba(255,255,255,0.1)]" 
+                      : "bg-white/5 border-white/10 text-white/40"
+                  )}
+                >
+                  <console.icon className="w-4 h-4" />
+                  {console.name}
+                </button>
+              ))}
+            </div>
+            
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
               <button
-                key={console.id}
-                onClick={() => setSelectedConsole(console.id)}
+                onClick={() => setSelectedGenre('all')}
                 className={cn(
-                  "flex items-center gap-3 px-5 py-3 rounded-xl border transition-all shrink-0 text-[11px] font-black uppercase tracking-widest",
-                  selectedConsole === console.id 
-                    ? "bg-white text-black border-white shadow-[0_10px_20px_rgba(255,255,255,0.1)]" 
+                  "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border shrink-0",
+                  selectedGenre === 'all' 
+                    ? "bg-neon-cyan/10 border-neon-cyan/50 text-neon-cyan" 
                     : "bg-white/5 border-white/10 text-white/40"
                 )}
               >
-                <console.icon className="w-4 h-4" />
-                {console.name}
+                All Genres
               </button>
-            ))}
+              {genres.map((genre) => (
+                <button
+                  key={genre.id}
+                  onClick={() => setSelectedGenre(genre.id)}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border shrink-0",
+                    selectedGenre === genre.id 
+                      ? "bg-neon-cyan/10 border-neon-cyan/50 text-neon-cyan" 
+                      : "bg-white/5 border-white/10 text-white/40"
+                  )}
+                >
+                  {genre.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Search & Sort Bar */}

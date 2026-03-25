@@ -53,15 +53,27 @@ export function GameActions({ game }: GameActionsProps) {
     setIsLiked(!isLiked);
   };
 
-  const handleFullscreen = () => {
+  const toggleFullscreen = () => {
     const container = document.querySelector('.game-container') || document.querySelector('iframe');
     if (container) {
-      if (container.requestFullscreen) {
-        container.requestFullscreen();
-      } else if ((container as any).webkitRequestFullscreen) {
-        (container as any).webkitRequestFullscreen();
-      } else if ((container as any).msRequestFullscreen) {
-        (container as any).msRequestFullscreen();
+      if (!document.fullscreenElement && 
+          !(document as any).webkitFullscreenElement && 
+          !(document as any).msFullscreenElement) {
+        if (container.requestFullscreen) {
+          container.requestFullscreen();
+        } else if ((container as any).webkitRequestFullscreen) {
+          (container as any).webkitRequestFullscreen();
+        } else if ((container as any).msRequestFullscreen) {
+          (container as any).msRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          (document as any).webkitExitFullscreen();
+        } else if ((document as any).msExitFullscreen) {
+          (document as any).msExitFullscreen();
+        }
       }
     }
   };
@@ -107,7 +119,7 @@ export function GameActions({ game }: GameActionsProps) {
               className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-neon-cyan transition-colors"
             >
               <Share2 className="w-4 h-4" />
-              <span>Sync</span>
+              <span>Share</span>
             </button>
             {showShare && (
               <div className="absolute bottom-full left-0 mb-4 glass p-4 rounded-xl border border-white/10 z-50 min-w-[200px]">
@@ -116,7 +128,7 @@ export function GameActions({ game }: GameActionsProps) {
             )}
           </div>
           <button 
-            onClick={handleFullscreen}
+            onClick={toggleFullscreen}
             className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-neon-cyan transition-colors"
           >
             <Maximize2 className="w-4 h-4" />
