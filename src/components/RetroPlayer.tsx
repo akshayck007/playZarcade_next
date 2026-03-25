@@ -55,8 +55,33 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/latest/data/';
     window.EJS_language = 'en-US';
     window.EJS_startOnLoaded = true;
-    // Add game ID for persistent saves
-    (window as any).EJS_gameID = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    
+    // Robust Game ID for persistent saves
+    const gameId = `${system}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    (window as any).EJS_gameID = gameId;
+    
+    // Manual Save/Load Fallback for Iframe environments
+    (window as any).EJS_onSaveState = (data: any) => {
+      try {
+        const key = `playz_save_${gameId}`;
+        // Only use localStorage for reasonably sized states (NES/SNES/GBA usually fit)
+        if (data && data.length < 4000000) { // 4MB limit
+          localStorage.setItem(key, data);
+          console.log('[RetroPlayer] State saved to localStorage fallback');
+        }
+      } catch (e) {
+        console.warn('[RetroPlayer] LocalStorage fallback save failed:', e);
+      }
+    };
+
+    (window as any).EJS_onLoadState = () => {
+      try {
+        const key = `playz_save_${gameId}`;
+        return localStorage.getItem(key);
+      } catch (e) {
+        return null;
+      }
+    };
     
     window.EJS_onGameStart = () => {
       setIsLoading(false);
