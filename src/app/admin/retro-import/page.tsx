@@ -149,6 +149,7 @@ export default function RetroImportPage() {
 
         // 3. Insert game
         const { error } = await supabase.from('Game').insert({
+          id: crypto.randomUUID(), // Explicitly generate ID for safety
           title: game.title,
           slug,
           description: `Play the classic ${game.console.toUpperCase()} game ${game.title} online in your browser.`,

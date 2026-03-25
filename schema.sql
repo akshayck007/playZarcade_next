@@ -176,3 +176,22 @@ CREATE TABLE IF NOT EXISTS public."SeoPage" (
 ALTER TABLE public."SeoPage" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access on SeoPage" ON public."SeoPage" FOR SELECT USING (true);
 CREATE POLICY "Allow all access for anon on SeoPage" ON public."SeoPage" FOR ALL USING (true) WITH CHECK (true);
+
+-- 12. Storage Setup (Run these manually in Supabase SQL Editor)
+-- Note: storage.buckets and storage.objects are in the 'storage' schema
+
+-- Create the roms bucket
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('roms', 'roms', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage Policies for 'roms' bucket
+-- Allow anyone to read files
+CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'roms');
+
+-- Allow anyone to upload files (Required for the Admin panel to work with the anon key)
+CREATE POLICY "Public Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'roms');
+
+-- Allow anyone to update/delete (Optional, but useful for management)
+CREATE POLICY "Public Update" ON storage.objects FOR UPDATE USING (bucket_id = 'roms');
+CREATE POLICY "Public Delete" ON storage.objects FOR DELETE USING (bucket_id = 'roms');
