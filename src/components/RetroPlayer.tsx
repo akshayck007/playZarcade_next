@@ -55,6 +55,9 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/latest/data/';
     window.EJS_language = 'en-US';
     window.EJS_startOnLoaded = true;
+    window.EJS_DEBUG_XX = true; // Enable debug logs in console
+    (window as any).EJS_savestate = true;
+    (window as any).EJS_loadstate = true;
     
     // Check for SharedArrayBuffer support - required for threads
     const hasSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined';
@@ -70,48 +73,81 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
       core: system,
       gameId,
       threads: (window as any).EJS_threads,
-      hasSAB: hasSharedArrayBuffer
+      hasSAB: hasSharedArrayBuffer,
+      localStorageAvailable: (() => { try { localStorage.setItem('test', '1'); localStorage.removeItem('test'); return true; } catch(e) { return false; } })()
     });
     
-    // Correct EmulatorJS Save/Load Hooks with robust DataURL conversion
-    (window as any).EJS_onSave = (id: string, data: any) => {
+    // Correct EmulatorJS Save/Load Hooks with robust synchronous conversion
+    const saveToLocalStorage = (idOrData: any, dataOrUndefined: any) => {
       try {
-        const key = `playz_save_${id}`;
-        if (data instanceof Uint8Array || data instanceof ArrayBuffer) {
-          const blob = new Blob([data], { type: 'application/octet-stream' });
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64data = reader.result as string;
-            try {
-              localStorage.setItem(key, base64data);
-              console.log('[RetroPlayer] State saved successfully to localStorage');
-            } catch (e) {
-              console.error('[RetroPlayer] LocalStorage quota exceeded or blocked:', e);
-            }
-          };
-          reader.readAsDataURL(blob);
-        } else {
-          localStorage.setItem(key, data);
+        let id = typeof idOrData === 'string' ? idOrData : (window as any).EJS_gameID;
+        let data = typeof idOrData === 'string' ? dataOrUndefined : idOrData;
+        
+        if (!id) {
+          console.error('[RetroPlayer] Save failed: No game ID found');
+          return false;
         }
+
+        console.log('[RetroPlayer] Save hook triggered for ID:', id);
+        
+        const key = `playz_save_${id}`;
+        let valueToStore = data;
+        
+        if (data instanceof Uint8Array || data instanceof ArrayBuffer) {
+          const uint8 = data instanceof Uint8Array ? data : new Uint8Array(data);
+          // More efficient base64 conversion for larger buffers
+          let binary = '';
+          const chunk_size = 8192;
+          for (let i = 0; i < uint8.length; i += chunk_size) {
+            binary += String.fromCharCode.apply(null, uint8.subarray(i, i + chunk_size) as any);
+          }
+          valueToStore = `data:application/octet-stream;base64,${window.btoa(binary)}`;
+        }
+        
+        localStorage.setItem(key, valueToStore);
+        console.log('[RetroPlayer] State saved successfully to localStorage for:', id, 'Size:', valueToStore.length);
+        return true;
       } catch (e) {
-        console.error('[RetroPlayer] Save hook error:', e);
+        console.error('[RetroPlayer] Save error:', e);
+        return false;
       }
     };
 
-    (window as any).EJS_onLoad = (id: string) => {
+    const loadFromLocalStorage = (idOrUndefined: any) => {
       try {
+        let id = typeof idOrUndefined === 'string' ? idOrUndefined : (window as any).EJS_gameID;
+        if (!id) {
+          console.error('[RetroPlayer] Load failed: No game ID found');
+          return null;
+        }
+
+        console.log('[RetroPlayer] Load hook triggered for ID:', id);
+        
         const key = `playz_save_${id}`;
         const data = localStorage.getItem(key);
-        if (!data) return null;
-        
-        // If it's a DataURL, the emulator loader will handle it
-        console.log('[RetroPlayer] Loading state from localStorage for:', id);
+        if (!data) {
+          console.log('[RetroPlayer] No save state found for:', id);
+          return null;
+        }
+        console.log('[RetroPlayer] Loading state from localStorage for:', id, 'Size:', data.length);
         return data;
       } catch (e) {
-        console.error('[RetroPlayer] Load hook error:', e);
+        console.error('[RetroPlayer] Load error:', e);
         return null;
       }
     };
+
+    // Set multiple hook variations for maximum compatibility across different cores/versions
+    (window as any).EJS_onSave = saveToLocalStorage;
+    (window as any).EJS_onSaveState = saveToLocalStorage;
+    (window as any).EJS_onSaveStateData = saveToLocalStorage;
+    (window as any).EJS_onLoad = loadFromLocalStorage;
+    (window as any).EJS_onLoadState = loadFromLocalStorage;
+    (window as any).EJS_onLoadStateData = loadFromLocalStorage;
+    
+    // Some versions use these specific names
+    (window as any).EJS_onSaveState_callback = saveToLocalStorage;
+    (window as any).EJS_onLoadState_callback = loadFromLocalStorage;
     
     window.EJS_onGameStart = () => {
       setIsLoading(false);
@@ -152,7 +188,6 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
 
     let isMounted = true;
     let blobUrl: string | null = null;
-    let stuckTimeout: NodeJS.Timeout;
 
     const fetchRom = async () => {
       try {
@@ -160,17 +195,8 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
         setDownloadProgress(0);
         setIsStuck(false);
 
-        // Set a timeout to show the "Force Load" button if stuck at 0%
-        stuckTimeout = setTimeout(() => {
-          if (isMounted && progressRef.current === 0 && loadingRef.current) {
-            setIsStuck(true);
-          }
-        }, 8000);
-        
         console.log('Attempting manual fetch for progress tracking...');
         const response = await fetch(romUrl);
-        
-        clearTimeout(stuckTimeout);
         
         if (!response.ok) {
           console.warn('Manual fetch failed with status:', response.status, 'Falling back to direct load.');
@@ -280,41 +306,27 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
       {/* Emulator Container */}
       <div id="retro-game-container" className="w-full h-full"></div>
 
-      {/* Loading Overlay */}
-      {isLoading && !error && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#050505] text-white">
-          <div className="relative mb-6">
-            <div className="w-24 h-24 rounded-full border-t-2 border-neon-cyan animate-spin"></div>
-            <Gamepad2 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 text-neon-cyan animate-pulse" />
-          </div>
-          <h3 className="text-xl font-black uppercase tracking-tighter italic mb-2">
-            Initializing <span className="text-neon-cyan">{system.toUpperCase()}</span> Core
-          </h3>
-          <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden mb-2">
-            <div 
-              className="h-full bg-neon-cyan transition-all duration-300 ease-out"
-              style={{ width: `${downloadProgress}%` }}
-            ></div>
-          </div>
-          <p className="text-[10px] font-mono text-white/40 animate-pulse">
-            {downloadProgress < 100 ? `DOWNLOADING ROM: ${downloadProgress}%` : 'STARTING EMULATOR...'}
-          </p>
-
-          {isStuck && (
-            <div className="mt-8 flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest text-center max-w-xs">
-                Download seems stuck. This is common with Google Drive or restricted servers.
+          {/* Loading Overlay */}
+          {isLoading && !error && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#050505] text-white">
+              <div className="relative mb-6">
+                <div className="w-24 h-24 rounded-full border-t-2 border-neon-cyan animate-spin"></div>
+                <Gamepad2 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 text-neon-cyan animate-pulse" />
+              </div>
+              <h3 className="text-xl font-black uppercase tracking-tighter italic mb-2">
+                Initializing <span className="text-neon-cyan">{system.toUpperCase()}</span> Core
+              </h3>
+              <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden mb-2">
+                <div 
+                  className="h-full bg-neon-cyan transition-all duration-300 ease-out"
+                  style={{ width: `${downloadProgress}%` }}
+                ></div>
+              </div>
+              <p className="text-[10px] font-mono text-white/40 animate-pulse">
+                {downloadProgress < 100 ? `DOWNLOADING ROM: ${downloadProgress}%` : 'STARTING EMULATOR...'}
               </p>
-              <button 
-                onClick={handleForceLoad}
-                className="px-6 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
-              >
-                Try Force Load
-              </button>
             </div>
           )}
-        </div>
-      )}
 
       {/* Error Overlay */}
       {error && (
