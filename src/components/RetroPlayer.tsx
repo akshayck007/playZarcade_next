@@ -55,25 +55,34 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/latest/data/';
     window.EJS_language = 'en-US';
     window.EJS_startOnLoaded = true;
+    (window as any).EJS_threads = true; // Required for PSP, N64, etc.
     
     // Robust Game ID for persistent saves
     const gameId = `${system}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
     (window as any).EJS_gameID = gameId;
     
-    // Correct EmulatorJS Save/Load Hooks
+    // Correct EmulatorJS Save/Load Hooks with robust DataURL conversion
     (window as any).EJS_onSave = (id: string, data: any) => {
       try {
         const key = `playz_save_${id}`;
-        // Convert to base64 if it's a Uint8Array/Blob
-        if (data instanceof Uint8Array) {
-          const base64 = btoa(String.fromCharCode.apply(null, Array.from(data)));
-          localStorage.setItem(key, base64);
+        if (data instanceof Uint8Array || data instanceof ArrayBuffer) {
+          const blob = new Blob([data], { type: 'application/octet-stream' });
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64data = reader.result as string;
+            try {
+              localStorage.setItem(key, base64data);
+              console.log('[RetroPlayer] State saved successfully to localStorage');
+            } catch (e) {
+              console.error('[RetroPlayer] LocalStorage quota exceeded or blocked:', e);
+            }
+          };
+          reader.readAsDataURL(blob);
         } else {
           localStorage.setItem(key, data);
         }
-        console.log('[RetroPlayer] State saved for:', id);
       } catch (e) {
-        console.error('[RetroPlayer] Save failed:', e);
+        console.error('[RetroPlayer] Save hook error:', e);
       }
     };
 
@@ -81,9 +90,13 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
       try {
         const key = `playz_save_${id}`;
         const data = localStorage.getItem(key);
-        if (data && data.startsWith('data:')) return data; // Already a URL
+        if (!data) return null;
+        
+        // If it's a DataURL, the emulator loader will handle it
+        console.log('[RetroPlayer] Loading state from localStorage for:', id);
         return data;
       } catch (e) {
+        console.error('[RetroPlayer] Load hook error:', e);
         return null;
       }
     };
@@ -94,6 +107,10 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
     };
 
     // Load script
+    // Clean up any existing EmulatorJS scripts to prevent "redeclaration" errors
+    const existingScripts = document.querySelectorAll('script[src*="loader.js"]');
+    existingScripts.forEach(s => s.parentNode?.removeChild(s));
+
     const script = document.createElement('script');
     script.src = 'https://cdn.emulatorjs.org/latest/data/loader.js';
     script.async = true;

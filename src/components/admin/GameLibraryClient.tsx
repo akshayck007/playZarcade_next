@@ -90,10 +90,37 @@ export function GameLibraryClient({ initialGames, gameSectionsMap }: GameLibrary
     if (!window.confirm(`Are you sure you want to delete "${title}"?`)) return;
 
     try {
+      // 1. Find the game to check for storage URLs
+      const gameToDelete = games.find(g => g.id === id);
+      
+      if (gameToDelete) {
+        const storageFields = ['romUrl', 'thumbnailUrl', 'bannerUrl', 'thumbnail'];
+        const buckets = ['roms', 'images', 'thumbnails'];
+
+        for (const field of storageFields) {
+          const url = gameToDelete[field];
+          if (url && typeof url === 'string') {
+            for (const bucket of buckets) {
+              const marker = `/storage/v1/object/public/${bucket}/`;
+              if (url.includes(marker)) {
+                const path = url.split(marker)[1];
+                if (path) {
+                  console.log(`Deleting ${field} from storage bucket ${bucket}:`, path);
+                  await supabase.storage.from(bucket).remove([path]);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // 2. Delete from database
       const { error } = await supabase.from('Game').delete().eq('id', id);
       if (error) throw error;
+      
       setGames(prev => prev.filter(g => g.id !== id));
     } catch (err: any) {
+      console.error('Delete error:', err);
       alert(err.message || 'Failed to delete game');
     }
   };
