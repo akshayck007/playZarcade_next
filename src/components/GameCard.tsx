@@ -61,7 +61,7 @@ export function GameCard({ game }: GameCardProps) {
         </h3>
         <div className="flex items-center justify-between mt-1">
           <span className="text-[9px] text-neon-magenta/60 uppercase tracking-widest font-black">
-            {game.Category?.name || "Casual"}
+            {game.isRetro ? (game.console?.toUpperCase() || 'RETRO') : (game.Category?.name || "Casual")}
           </span>
           <span className="text-[9px] text-white/20 font-mono uppercase">
             {(game.playCount || 0).toLocaleString()} USERS

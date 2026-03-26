@@ -55,11 +55,23 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/latest/data/';
     window.EJS_language = 'en-US';
     window.EJS_startOnLoaded = true;
-    (window as any).EJS_threads = true; // Required for PSP, N64, etc.
+    
+    // Check for SharedArrayBuffer support - required for threads
+    const hasSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined';
+    (window as any).EJS_threads = hasSharedArrayBuffer && (system === 'psp' || system === 'n64');
     
     // Robust Game ID for persistent saves
     const gameId = `${system}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
     (window as any).EJS_gameID = gameId;
+    // Also set it as a global variable directly for better compatibility
+    (window as any).gameId = gameId;
+    
+    console.log('[RetroPlayer] Starting emulator with config:', {
+      core: system,
+      gameId,
+      threads: (window as any).EJS_threads,
+      hasSAB: hasSharedArrayBuffer
+    });
     
     // Correct EmulatorJS Save/Load Hooks with robust DataURL conversion
     (window as any).EJS_onSave = (id: string, data: any) => {

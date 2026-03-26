@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Gamepad2, Filter, Search, LayoutGrid, List, Monitor, Cpu, Trophy, Flame, Clock, Play, ArrowRight } from 'lucide-react';
+import { Gamepad2, Search, LayoutGrid, List, Monitor, Cpu, Trophy, Flame, Clock, Play, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
@@ -32,29 +32,14 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
   const [games, setGames] = useState<any[]>(initialGames);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [genres, setGenres] = useState<any[]>([]);
   const [retroEnabled, setRetroEnabled] = useState(initialRetroEnabled);
   const [selectedConsole, setSelectedConsole] = useState('all');
-  const [selectedGenre, setSelectedGenre] = useState('all');
   const [sortBy, setSortBy] = useState('popularity');
   const [searchQuery, setSearchQuery] = useState('');
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(initialGames.length === 20);
   const isFirstLoad = useRef(true);
   const LIMIT = 20;
-
-  useEffect(() => {
-    const fetchGenres = async () => {
-      const { data } = await supabase
-        .from('Category')
-        .select('*')
-        .order('name');
-      if (data) {
-        setGenres(data);
-      }
-    };
-    fetchGenres();
-  }, [supabase]);
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastGameElementRef = (node: HTMLDivElement) => {
@@ -71,7 +56,7 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
   useEffect(() => {
     const fetchData = async (isInitial = false) => {
       // Skip initial fetch if filters are default and it's the first load
-      if (isFirstLoad.current && isInitial && selectedConsole === 'all' && selectedGenre === 'all' && sortBy === 'popularity' && !searchQuery) {
+      if (isFirstLoad.current && isInitial && selectedConsole === 'all' && sortBy === 'popularity' && !searchQuery) {
         isFirstLoad.current = false;
         return;
       }
@@ -97,11 +82,6 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
 
         if (searchQuery) {
           query = query.ilike('title', `%${searchQuery}%`);
-        }
-
-        // Server-side genre filtering
-        if (selectedGenre !== 'all') {
-          query = query.eq('categoryId', selectedGenre);
         }
 
         // Sorting logic
@@ -139,12 +119,12 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
 
     const isFilterChange = offset === 0;
     fetchData(isFilterChange);
-  }, [selectedConsole, selectedGenre, sortBy, searchQuery, offset, supabase]);
+  }, [selectedConsole, sortBy, searchQuery, offset, supabase]);
 
   // Reset offset when filters change
   useEffect(() => {
     setOffset(0);
-  }, [selectedConsole, selectedGenre, sortBy, searchQuery]);
+  }, [selectedConsole, sortBy, searchQuery]);
 
   if (!retroEnabled) {
     return (
@@ -230,39 +210,6 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
                 ))}
               </div>
             </div>
-
-            <div>
-              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/20 mb-8 flex items-center gap-3">
-                <Filter className="w-3.5 h-3.5" /> Genres
-              </h3>
-              <div className="grid grid-cols-1 gap-2">
-                <button
-                  onClick={() => setSelectedGenre('all')}
-                  className={cn(
-                    "w-full text-left px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border border-transparent",
-                    selectedGenre === 'all' 
-                      ? "text-neon-cyan bg-neon-cyan/5 border-neon-cyan/20" 
-                      : "text-white/30 hover:text-white/60 hover:bg-white/5"
-                  )}
-                >
-                  All Genres
-                </button>
-                {genres.map((genre) => (
-                  <button
-                    key={genre.id}
-                    onClick={() => setSelectedGenre(genre.id)}
-                    className={cn(
-                      "w-full text-left px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border border-transparent",
-                      selectedGenre === genre.id 
-                        ? "text-neon-cyan bg-neon-cyan/5 border-neon-cyan/20" 
-                        : "text-white/30 hover:text-white/60 hover:bg-white/5"
-                    )}
-                  >
-                    {genre.name}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </aside>
 
@@ -284,34 +231,6 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
                 >
                   <console.icon className="w-4 h-4" />
                   {console.name}
-                </button>
-              ))}
-            </div>
-            
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-              <button
-                onClick={() => setSelectedGenre('all')}
-                className={cn(
-                  "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border shrink-0",
-                  selectedGenre === 'all' 
-                    ? "bg-neon-cyan/10 border-neon-cyan/50 text-neon-cyan" 
-                    : "bg-white/5 border-white/10 text-white/40"
-                )}
-              >
-                All Genres
-              </button>
-              {genres.map((genre) => (
-                <button
-                  key={genre.id}
-                  onClick={() => setSelectedGenre(genre.id)}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border shrink-0",
-                    selectedGenre === genre.id 
-                      ? "bg-neon-cyan/10 border-neon-cyan/50 text-neon-cyan" 
-                      : "bg-white/5 border-white/10 text-white/40"
-                  )}
-                >
-                  {genre.name}
                 </button>
               ))}
             </div>
@@ -453,7 +372,7 @@ function GameItem({ game, index }: { game: any, index: number }) {
           </h3>
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white/40 transition-colors">
-              {game.Category?.name || 'Retro'}
+              {game.console}
             </span>
             <div className="flex items-center gap-2 text-[10px] font-black text-white/30">
               <Flame className="w-3.5 h-3.5 text-orange-500" />
