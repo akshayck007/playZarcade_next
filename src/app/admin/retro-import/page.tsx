@@ -483,17 +483,44 @@ export default function RetroImportPage() {
         </div>
 
         <div className="glass p-6 rounded-3xl border border-white/5 flex items-start gap-4">
-          <div className="p-3 bg-orange-500/10 rounded-2xl">
-            <Layers className="w-6 h-6 text-orange-500" />
+          <div className="p-3 bg-red-500/10 rounded-2xl">
+            <Trash2 className="w-6 h-6 text-red-500" />
           </div>
           <div className="space-y-2">
-            <h4 className="text-sm font-black uppercase tracking-tight">Supabase Storage Setup</h4>
+            <h4 className="text-sm font-black uppercase tracking-tight text-red-500">Danger Zone</h4>
             <p className="text-xs text-white/40 leading-relaxed">
-              To use the <strong>Upload</strong> feature, you must create a public bucket named <code className="text-orange-400">roms</code> in your Supabase project.<br />
-              1. Go to <strong>Storage</strong> in Supabase Dashboard.<br />
-              2. Click <strong>New Bucket</strong> and name it <code className="text-orange-400">roms</code>.<br />
-              3. Make sure to set it to <strong>Public</strong>.
+              Need to remove games? You can delete all games for the selected console ({selectedConsole.toUpperCase()}) from your database.
             </p>
+            <button 
+              onClick={async () => {
+                const count = await supabase
+                  .from('Game')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('console', selectedConsole);
+                
+                if (count.count === 0) {
+                  alert(`No games found for ${selectedConsole.toUpperCase()}`);
+                  return;
+                }
+
+                if (!window.confirm(`Are you sure you want to delete ALL ${count.count} games for ${selectedConsole.toUpperCase()}? This cannot be undone.`)) return;
+                
+                const { error } = await supabase
+                  .from('Game')
+                  .delete()
+                  .eq('console', selectedConsole);
+                
+                if (error) {
+                  alert(`Error: ${error.message}`);
+                } else {
+                  alert(`Successfully deleted ${count.count} games for ${selectedConsole.toUpperCase()}`);
+                  router.refresh();
+                }
+              }}
+              className="mt-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-500 transition-all"
+            >
+              Delete All {selectedConsole.toUpperCase()} Games
+            </button>
           </div>
         </div>
       </div>

@@ -26,26 +26,39 @@ export default function GamePixSyncPage() {
   }, [logs]);
 
   const handleSync = async () => {
-    if (isSyncing) return;
+    if (isSyncing || isFullSyncing) return;
     setIsSyncing(true);
     addLog(`Initiating GamePix Sync (Start Page: ${page}, Total Pages: ${totalPages}, Pagination: ${pagination})...`);
 
-    try {
-      const response = await fetch('/api/admin/games/sync-gamepix', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sid, page, pagination, mode, totalPages })
-      });
+    let currentSyncPage = page;
+    let totalUpdated = 0;
+    let totalNewCategories = 0;
 
-      const data = await response.json();
-      if (data.success) {
-        if (data.logs) {
-          setLogs(prev => [...prev, ...data.logs]);
+    try {
+      for (let i = 0; i < totalPages; i++) {
+        const p = currentSyncPage + i;
+        addLog(`📦 Processing Page ${p}...`);
+        
+        const response = await fetch('/api/admin/games/sync-gamepix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sid, page: p, pagination, mode, totalPages: 1 })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          if (data.logs) {
+            const meaningfulLogs = data.logs.filter((l: string) => l.includes('SUCCESS') || l.includes('Creating') || l.includes('Error'));
+            setLogs(prev => [...prev, ...meaningfulLogs]);
+          }
+          totalUpdated += data.stats.updated;
+          totalNewCategories += data.stats.newCategories;
+        } else {
+          addLog(`ERROR on Page ${p}: ${data.error}`);
+          break;
         }
-        addLog(`SUCCESS: Sync completed. Updated: ${data.stats.updated}, New Categories: ${data.stats.newCategories}`);
-      } else {
-        addLog(`ERROR: ${data.error}`);
       }
+      addLog(`✨ Sync completed. Total Updated: ${totalUpdated}, Total New Categories: ${totalNewCategories}`);
     } catch (error: any) {
       addLog(`CRITICAL ERROR: ${error.message}`);
     } finally {
@@ -86,22 +99,26 @@ export default function GamePixSyncPage() {
     setIsSyncing(true);
     addLog(`Initiating Deep Categorization (Crawling 50 pages with 96 items each)...`);
 
-    try {
-      const response = await fetch('/api/admin/games/sync-gamepix', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sid, page: 1, pagination: 96, mode: 'sync', totalPages: 50 })
-      });
+    let totalUpdated = 0;
 
-      const data = await response.json();
-      if (data.success) {
-        if (data.logs) {
-          setLogs(prev => [...prev, ...data.logs]);
+    try {
+      for (let p = 1; p <= 50; p++) {
+        addLog(`📦 Categorizing Page ${p}...`);
+        const response = await fetch('/api/admin/games/sync-gamepix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sid, page: p, pagination: 96, mode: 'sync', totalPages: 1 })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          totalUpdated += data.stats.updated;
+        } else {
+          addLog(`ERROR on Page ${p}: ${data.error}`);
+          break;
         }
-        addLog(`SUCCESS: Deep Categorization completed. Updated: ${data.stats.updated}`);
-      } else {
-        addLog(`ERROR: ${data.error}`);
       }
+      addLog(`SUCCESS: Deep Categorization completed. Total Updated: ${totalUpdated}`);
     } catch (error: any) {
       addLog(`CRITICAL ERROR: ${error.message}`);
     } finally {

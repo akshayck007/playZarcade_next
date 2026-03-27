@@ -48,7 +48,27 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: '**.ign.com',
+      },
+      {
+        protocol: 'https',
         hostname: '**.gamespot.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.giantbomb.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.cbsistatic.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.wikia.nocookie.net',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.nocookie.net',
       },
       {
         protocol: 'https',
@@ -65,6 +85,42 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'raw.githubusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.akamaized.net',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.akamaihd.net',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.rockstargames.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.steamstatic.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.epicgames.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.gog.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.media-amazon.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.ssl-images-amazon.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.m.media-amazon.com',
       },
     ],
   },

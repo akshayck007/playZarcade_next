@@ -7,6 +7,7 @@ interface RetroPlayerProps {
   romUrl: string;
   system: string; // e.g., 'nes', 'snes', 'gba', 'n64'
   title: string;
+  gameId?: string;
 }
 
 declare global {
@@ -19,13 +20,36 @@ declare global {
     EJS_startOnLoaded: boolean;
     EJS_DEBUG_XX: boolean;
     EJS_onGameStart: () => void;
+    EJS_onSaveState?: (arg1: any, arg2?: any) => boolean | void;
+    EJS_onLoadState?: (arg1: any) => any;
+    EJS_onSaveState_callback?: (arg1: any, arg2?: any) => boolean | void;
+    EJS_onLoadState_callback?: (arg1: any) => any;
+    EJS_emulator?: any;
+    EJS_instance?: any;
   }
 }
 
-export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps) {
+export default function RetroPlayer({ romUrl, system, title, gameId: propGameId }: RetroPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isInitializedRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
+
+  // Derive a stable gameId if not provided
+  const gameId = propGameId || title.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'default-game';
+
+  const addLog = useCallback((msg: string, isError = false) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const formattedMsg = `[${timestamp}] ${msg}`;
+    setDebugLogs(prev => [...prev.slice(-19), formattedMsg]);
+    if (isError) {
+      console.error(formattedMsg);
+    } else {
+      console.log(formattedMsg);
+    }
+  }, []);
   const [isStuck, setIsStuck] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,60 +66,96 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
   }, [isLoading]);
 
   const startEmulator = useCallback((url: string) => {
+    if (isInitializedRef.current) {
+      addLog('Emulator already initialized, skipping...');
+      return;
+    }
+    isInitializedRef.current = true;
+
     if (containerRef.current) {
       // Clear previous content if any
       const container = document.getElementById('retro-game-container');
       if (container) container.innerHTML = '';
     }
 
+    addLog(`Initializing emulator for ${title} (${system})`);
+
     // Set configuration
-    window.EJS_player = '#retro-game-container';
-    window.EJS_core = system;
-    window.EJS_gameUrl = url;
-    window.EJS_pathtodata = 'https://cdn.emulatorjs.org/latest/data/';
-    window.EJS_language = 'en-US';
-    window.EJS_startOnLoaded = true;
-    window.EJS_DEBUG_XX = true; // Enable debug logs in console
-    (window as any).EJS_savestate = true;
-    (window as any).EJS_loadstate = true;
+    const config: any = {
+      EJS_player: '#retro-game-container',
+      EJS_core: system,
+      EJS_gameUrl: url,
+      EJS_pathtodata: 'https://cdn.emulatorjs.org/latest/data/',
+      EJS_language: 'en-US',
+      EJS_startOnLoaded: true,
+      EJS_DEBUG_XX: true,
+      EJS_DEBUG: true,
+      EJS_VERBOSE: true,
+      EJS_savestate: true,
+      EJS_saveState: true,
+      EJS_loadstate: true,
+      EJS_loadState: true,
+      EJS_gameID: gameId,
+      EJS_gameid: gameId,
+      EJS_gameName: title,
+      EJS_use_idb: false, // Force hooks instead of IndexedDB
+    };
+
+    // Apply config to window
+    Object.entries(config).forEach(([key, value]) => {
+      (window as any)[key] = value;
+    });
+
+    // Force gameId to stay set (some scripts might clear it)
+    const idInterval = setInterval(() => {
+      (window as any).EJS_gameID = gameId;
+      (window as any).EJS_gameid = gameId;
+      (window as any).gameId = gameId;
+    }, 100);
     
     // Check for SharedArrayBuffer support - required for threads
     const hasSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined';
     (window as any).EJS_threads = hasSharedArrayBuffer && (system === 'psp' || system === 'n64');
     
-    // Robust Game ID for persistent saves
-    const gameId = `${system}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-    (window as any).EJS_gameID = gameId;
-    // Also set it as a global variable directly for better compatibility
-    (window as any).gameId = gameId;
-    
-    console.log('[RetroPlayer] Starting emulator with config:', {
-      core: system,
-      gameId,
-      threads: (window as any).EJS_threads,
-      hasSAB: hasSharedArrayBuffer,
-      localStorageAvailable: (() => { try { localStorage.setItem('test', '1'); localStorage.removeItem('test'); return true; } catch(e) { return false; } })()
-    });
+    addLog(`Config set. GameID: ${gameId}`);
     
     // Correct EmulatorJS Save/Load Hooks with robust synchronous conversion
-    const saveToLocalStorage = (idOrData: any, dataOrUndefined: any) => {
+    const saveToLocalStorage = (arg1: any, arg2: any) => {
       try {
-        let id = typeof idOrData === 'string' ? idOrData : (window as any).EJS_gameID;
-        let data = typeof idOrData === 'string' ? dataOrUndefined : idOrData;
+        addLog(`Save hook triggered! Args: ${typeof arg1}, ${typeof arg2}`);
         
+        let id = (window as any).EJS_gameID || (window as any).EJS_gameid || gameId;
+        let data = arg1;
+
+        // Handle different callback signatures: (id, data) or (data)
+        if (typeof arg1 === 'string' && arg2) {
+          id = arg1;
+          data = arg2;
+        }
+
         if (!id) {
-          console.error('[RetroPlayer] Save failed: No game ID found');
+          addLog('Save failed: No game ID found', true);
           return false;
         }
 
-        console.log('[RetroPlayer] Save hook triggered for ID:', id);
+        // Handle if data is an object { state: ..., screenshot: ... }
+        if (data && typeof data === 'object' && data.state) {
+          data = data.state;
+        }
+
+        if (!data) {
+          addLog('Save failed: No data found', true);
+          return false;
+        }
+
+        addLog(`Saving state for: ${id} (Size: ${data.byteLength || data.length || 'unknown'})`);
         
         const key = `playz_save_${id}`;
         let valueToStore = data;
         
-        if (data instanceof Uint8Array || data instanceof ArrayBuffer) {
-          const uint8 = data instanceof Uint8Array ? data : new Uint8Array(data);
-          // More efficient base64 conversion for larger buffers
+        if (data instanceof Uint8Array || data instanceof ArrayBuffer || (data && data.buffer instanceof ArrayBuffer)) {
+          const uint8 = data instanceof Uint8Array ? data : new Uint8Array(data.buffer || data);
+          
           let binary = '';
           const chunk_size = 8192;
           for (let i = 0; i < uint8.length; i += chunk_size) {
@@ -105,57 +165,80 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
         }
         
         localStorage.setItem(key, valueToStore);
-        console.log('[RetroPlayer] State saved successfully to localStorage for:', id, 'Size:', valueToStore.length);
+        addLog(`Saved successfully to localStorage.`);
         return true;
-      } catch (e) {
-        console.error('[RetroPlayer] Save error:', e);
+      } catch (e: any) {
+        addLog(`Save error: ${e.message}`, true);
         return false;
       }
     };
 
-    const loadFromLocalStorage = (idOrUndefined: any) => {
+    const loadFromLocalStorage = (arg1: any) => {
       try {
-        let id = typeof idOrUndefined === 'string' ? idOrUndefined : (window as any).EJS_gameID;
+        addLog(`Load hook triggered! Arg: ${typeof arg1}`);
+        
+        let id = typeof arg1 === 'string' ? arg1 : ((window as any).EJS_gameID || (window as any).EJS_gameid || gameId);
+        
         if (!id) {
-          console.error('[RetroPlayer] Load failed: No game ID found');
+          addLog('Load failed: No game ID found', true);
           return null;
         }
 
-        console.log('[RetroPlayer] Load hook triggered for ID:', id);
+        addLog(`Loading state for: ${id}`);
         
         const key = `playz_save_${id}`;
         const data = localStorage.getItem(key);
         if (!data) {
-          console.log('[RetroPlayer] No save state found for:', id);
+          addLog(`No save state found in localStorage for: ${id}`);
           return null;
         }
-        console.log('[RetroPlayer] Loading state from localStorage for:', id, 'Size:', data.length);
+
+        if (typeof data === 'string' && data.startsWith('data:application/octet-stream;base64,')) {
+          addLog(`Decoding base64 state...`);
+          const base64 = data.split(',')[1];
+          const binary = window.atob(base64);
+          const uint8 = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            uint8[i] = binary.charCodeAt(i);
+          }
+          addLog(`Decoded successfully. Size: ${uint8.length}`);
+          return uint8;
+        }
+        
+        addLog(`Loaded raw state. Size: ${data.length}`);
         return data;
-      } catch (e) {
-        console.error('[RetroPlayer] Load error:', e);
+      } catch (e: any) {
+        addLog(`Load error: ${e.message}`, true);
         return null;
       }
     };
 
-    // Set multiple hook variations for maximum compatibility across different cores/versions
-    (window as any).EJS_onSave = saveToLocalStorage;
-    (window as any).EJS_onSaveState = saveToLocalStorage;
-    (window as any).EJS_onSaveStateData = saveToLocalStorage;
-    (window as any).EJS_onLoad = loadFromLocalStorage;
-    (window as any).EJS_onLoadState = loadFromLocalStorage;
-    (window as any).EJS_onLoadStateData = loadFromLocalStorage;
+    // Set multiple hook variations for maximum compatibility
+    const hooks = [
+      'EJS_onSaveState', 'EJS_onLoadState',
+      'EJS_onSave', 'EJS_onLoad',
+      'EJS_onSaveState_callback', 'EJS_onLoadState_callback',
+      'EJS_saveState_callback', 'EJS_loadState_callback',
+      'EJS_saveState', 'EJS_loadState'
+    ];
+
+    hooks.forEach(hook => {
+      (window as any)[hook] = hook.toLowerCase().includes('save') ? saveToLocalStorage : loadFromLocalStorage;
+    });
     
-    // Some versions use these specific names
-    (window as any).EJS_onSaveState_callback = saveToLocalStorage;
-    (window as any).EJS_onLoadState_callback = loadFromLocalStorage;
-    
+    // Also set them on the window object directly for some versions
+    window.EJS_onSaveState = saveToLocalStorage;
+    window.EJS_onLoadState = loadFromLocalStorage;
+    window.EJS_onSaveState_callback = saveToLocalStorage;
+    window.EJS_onLoadState_callback = loadFromLocalStorage;
+
     window.EJS_onGameStart = () => {
+      addLog('Game started! Emulator is ready.');
       setIsLoading(false);
       setIsStuck(false);
     };
 
     // Load script
-    // Clean up any existing EmulatorJS scripts to prevent "redeclaration" errors
     const existingScripts = document.querySelectorAll('script[src*="loader.js"]');
     existingScripts.forEach(s => s.parentNode?.removeChild(s));
 
@@ -164,17 +247,36 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
     script.async = true;
     
     script.onload = () => {
-      console.log('EmulatorJS loader script loaded');
+      addLog('Loader script loaded');
+      // Re-apply hooks and config after load
+      hooks.forEach(hook => {
+        (window as any)[hook] = hook.toLowerCase().includes('save') ? saveToLocalStorage : loadFromLocalStorage;
+      });
+      window.EJS_onSaveState = saveToLocalStorage;
+      window.EJS_onLoadState = loadFromLocalStorage;
+      window.EJS_onSaveState_callback = saveToLocalStorage;
+      window.EJS_onLoadState_callback = loadFromLocalStorage;
+      
+      Object.entries(config).forEach(([key, value]) => {
+        (window as any)[key] = value;
+      });
+      
+      addLog(`Hooks re-applied. EJS_onSaveState is ${typeof window.EJS_onSaveState}`);
     };
 
     script.onerror = () => {
+      addLog('Failed to load emulator engine', true);
       setError('Failed to load emulator engine. Please check your connection.');
       setIsLoading(false);
+      clearInterval(idInterval);
     };
 
     document.body.appendChild(script);
-    return script;
-  }, [system, title]);
+    return () => {
+      if (script.parentNode) script.parentNode.removeChild(script);
+      clearInterval(idInterval);
+    };
+  }, [system, title, gameId, addLog]);
 
   const handleForceLoad = () => {
     setIsStuck(false);
@@ -261,6 +363,7 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
 
     return () => {
       isMounted = false;
+      isInitializedRef.current = false;
       cleanupPromise.then(cleanup => cleanup?.());
       
       // Clear global config to prevent conflicts on re-mount
@@ -301,10 +404,95 @@ export default function RetroPlayer({ romUrl, system, title }: RetroPlayerProps)
     window.location.reload();
   };
 
+  const manualSave = () => {
+    const emulator = (window as any).EJS_emulator || (window as any).EJS_instance;
+    if (emulator && emulator.saveState) {
+      addLog('Manually triggering saveState via EJS_emulator...');
+      emulator.saveState();
+    } else {
+      addLog('EJS_emulator.saveState not available. Trying EJS_onSaveState directly...', true);
+    }
+  };
+
+  const manualLoad = () => {
+    const emulator = (window as any).EJS_emulator || (window as any).EJS_instance;
+    if (emulator && emulator.loadState) {
+      addLog('Manually triggering loadState via EJS_emulator...');
+      // We need to pass the data to loadState
+      const key = `playz_save_${gameId}`;
+      const data = localStorage.getItem(key);
+      if (data) {
+        if (data.startsWith('data:application/octet-stream;base64,')) {
+          const base64 = data.split(',')[1];
+          const binary = window.atob(base64);
+          const uint8 = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            uint8[i] = binary.charCodeAt(i);
+          }
+          emulator.loadState(uint8);
+          addLog('Manual load triggered with decoded data.');
+        } else {
+          emulator.loadState(data);
+          addLog('Manual load triggered with raw data.');
+        }
+      } else {
+        addLog('No save state found for manual load.', true);
+      }
+    } else {
+      addLog('EJS_emulator.loadState not available', true);
+    }
+  };
+
   return (
     <div className="game-container relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl group" ref={containerRef}>
       {/* Emulator Container */}
       <div id="retro-game-container" className="w-full h-full"></div>
+      
+      {/* Debug Overlay Toggle */}
+      <button 
+        onClick={() => setShowDebug(!showDebug)}
+        className="absolute bottom-4 left-4 z-50 bg-black/50 hover:bg-black/80 text-white/50 hover:text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all border border-white/10"
+      >
+        {showDebug ? 'Hide Debug' : 'Show Debug'}
+      </button>
+
+      {/* Debug Logs Overlay */}
+      {showDebug && (
+        <div className="absolute inset-x-0 bottom-0 z-40 bg-black/90 border-t border-white/10 p-4 font-mono text-[10px] max-h-[150px] overflow-y-auto">
+          <div className="flex justify-between items-center mb-2 border-b border-white/10 pb-1">
+            <span className="text-emerald-500 font-bold uppercase">Emulator Debug Console</span>
+            <div className="flex items-center gap-4 pointer-events-auto">
+              <button 
+                onClick={manualSave}
+                className="text-blue-400 hover:text-blue-300 font-black uppercase"
+              >
+                Save State
+              </button>
+              <button 
+                onClick={manualLoad}
+                className="text-amber-400 hover:text-amber-300 font-black uppercase"
+              >
+                Load State
+              </button>
+              <button 
+                onClick={() => setDebugLogs([])}
+                className="text-white/40 hover:text-white transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+            <span className="text-white/30">{debugLogs.length} logs</span>
+          </div>
+          <div className="space-y-1">
+            {debugLogs.map((log, i) => (
+              <div key={i} className={log.includes('error') || log.includes('failed') ? 'text-red-400' : log.includes('SUCCESS') || log.includes('Saved') ? 'text-emerald-400' : 'text-white/60'}>
+                {log}
+              </div>
+            ))}
+            {debugLogs.length === 0 && <div className="text-white/20 italic">No logs yet...</div>}
+          </div>
+        </div>
+      )}
 
           {/* Loading Overlay */}
           {isLoading && !error && (

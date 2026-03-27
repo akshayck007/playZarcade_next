@@ -25,6 +25,7 @@ export function GameCard({ game }: GameCardProps) {
             src={game.thumbnail} 
             alt={game.title}
             fill
+            unoptimized
             loading="lazy"
             className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[0.3] group-hover:grayscale-0"
             referrerPolicy="no-referrer"
