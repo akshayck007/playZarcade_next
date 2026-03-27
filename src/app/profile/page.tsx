@@ -62,6 +62,7 @@ export default function ProfilePage() {
                     fill 
                     className="object-cover"
                     referrerPolicy="no-referrer"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full bg-white/5 flex items-center justify-center">

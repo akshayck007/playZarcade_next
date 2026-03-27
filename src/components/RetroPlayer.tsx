@@ -332,12 +332,10 @@ export default function RetroPlayer({ romUrl, system, title, gameId: propGameId 
         blobUrl = URL.createObjectURL(blob);
         
         console.log('Manual fetch successful, starting emulator with blob URL');
-        const script = startEmulator(blobUrl);
+        const cleanup = startEmulator(blobUrl);
         
         return () => {
-          if (script && document.body.contains(script)) {
-            document.body.removeChild(script);
-          }
+          cleanup?.();
           if (blobUrl) URL.revokeObjectURL(blobUrl);
         };
       } catch (err: any) {
@@ -346,11 +344,9 @@ export default function RetroPlayer({ romUrl, system, title, gameId: propGameId 
         // Fallback: Try to let the emulator handle the URL directly
         console.log('Attempting fallback: Direct URL load...');
         try {
-          const script = startEmulator(romUrl);
+          const cleanup = startEmulator(romUrl);
           return () => {
-            if (script && document.body.contains(script)) {
-              document.body.removeChild(script);
-            }
+            cleanup?.();
           };
         } catch (fallbackErr) {
           setError(`Failed to load game: ${err.message}. This is likely due to CORS restrictions on the source server.`);

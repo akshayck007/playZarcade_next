@@ -64,6 +64,7 @@ export default async function DevAdminLayout({
                   fill 
                   className="object-cover" 
                   referrerPolicy="no-referrer"
+                  unoptimized
                 />
               ) : (
                 user?.email?.substring(0, 2).toUpperCase() || "DV"

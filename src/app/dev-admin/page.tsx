@@ -83,6 +83,7 @@ export default async function DevDashboard() {
                       fill 
                       className="object-cover"
                       referrerPolicy="no-referrer"
+                      unoptimized
                     />
                   </div>
                   <div className="flex flex-col">

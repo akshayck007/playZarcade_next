@@ -79,6 +79,7 @@ export default async function BlogPage() {
                     fill
                     className="object-cover scale-110 group-hover:scale-100 transition-transform duration-700"
                     referrerPolicy="no-referrer"
+                    unoptimized
                   />
                   <div className="absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>

@@ -154,6 +154,7 @@ export default function RetroContent({ initialGames, retroEnabled: initialRetroE
             fill
             className="object-cover opacity-20 grayscale scale-110"
             referrerPolicy="no-referrer"
+            unoptimized
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050505]/50 to-[#050505]"></div>
           <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]"></div>
@@ -343,6 +344,7 @@ function GameItem({ game, index }: { game: any, index: number }) {
               className="object-cover transition-transform duration-1000 group-hover:scale-110 grayscale-[0.4] group-hover:grayscale-0 opacity-80 group-hover:opacity-100"
               referrerPolicy="no-referrer"
               onError={() => setImgError(true)}
+              unoptimized
             />
           ) : (
             <div className="flex flex-col items-center justify-center gap-4 text-white/5 group-hover:text-neon-cyan/20 transition-colors">

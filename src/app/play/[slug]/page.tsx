@@ -112,6 +112,7 @@ export default async function SeoPlayPage({ params }: SeoPageProps) {
             fill
             className="object-cover blur-xl"
             referrerPolicy="no-referrer"
+            unoptimized
           />
         </div>
         

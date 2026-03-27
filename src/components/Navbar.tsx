@@ -238,6 +238,7 @@ export function Navbar({ categories, retroEnabled = true }: NavbarProps) {
                               fill
                               className="object-cover"
                               referrerPolicy="no-referrer"
+                              unoptimized
                             />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -294,6 +295,7 @@ export function Navbar({ categories, retroEnabled = true }: NavbarProps) {
                     height={40} 
                     className="w-full h-full object-cover" 
                     referrerPolicy="no-referrer"
+                    unoptimized
                   />
                 ) : (
                   <User className="w-5 h-5 text-neon-cyan" />
@@ -429,6 +431,7 @@ export function Navbar({ categories, retroEnabled = true }: NavbarProps) {
                           fill
                           className="object-cover"
                           referrerPolicy="no-referrer"
+                          unoptimized
                         />
                       </div>
                       <div className="flex-1 min-w-0">

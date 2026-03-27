@@ -80,6 +80,7 @@ export default async function AdminLayout({
                   fill 
                   className="object-cover" 
                   referrerPolicy="no-referrer"
+                  unoptimized
                 />
               ) : (
                 user.email?.substring(0, 2).toUpperCase()

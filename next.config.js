@@ -96,6 +96,10 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'media-rockstargames-com.akamaized.net',
+      },
+      {
+        protocol: 'https',
         hostname: '**.rockstargames.com',
       },
       {

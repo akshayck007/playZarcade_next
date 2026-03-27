@@ -232,6 +232,7 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
                               fill
                               className="object-cover" 
                               referrerPolicy="no-referrer" 
+                              unoptimized
                             />
                           </div>
                         )}
@@ -325,6 +326,7 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
                       fill 
                       className="object-cover transition-transform group-hover:scale-110" 
                       referrerPolicy="no-referrer"
+                      unoptimized
                     />
                   </div>
                   <div className="flex flex-col justify-center min-w-0">

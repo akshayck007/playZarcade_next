@@ -398,6 +398,7 @@ export function TrendMiningConsole() {
                                   fill
                                   className="object-cover" 
                                   referrerPolicy="no-referrer" 
+                                  unoptimized
                                 />
                               </div>
                             )}

@@ -230,7 +230,14 @@ export default function NewGamePage() {
                   />
                   {formData.thumbnail && (
                     <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/5 relative border border-white/10">
-                      <img src={formData.thumbnail} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <Image 
+                        src={formData.thumbnail} 
+                        alt="Preview" 
+                        fill 
+                        className="object-cover" 
+                        referrerPolicy="no-referrer"
+                        unoptimized
+                      />
                     </div>
                   )}
                 </div>

@@ -264,7 +264,7 @@ export default function SectionOrderPage({ params }: { params: Promise<{ slug: s
                         <div key={game.id} className="flex items-center justify-between p-4 glass rounded-2xl border border-white/5 hover:border-white/10 transition-all group">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-xl overflow-hidden relative bg-white/5">
-                              <Image src={game.thumbnail} alt="" fill className="object-cover" referrerPolicy="no-referrer" />
+                              <Image src={game.thumbnail} alt="" fill className="object-cover" referrerPolicy="no-referrer" unoptimized />
                             </div>
                             <div>
                               <p className="font-bold text-sm">{game.title}</p>
@@ -338,6 +338,7 @@ export default function SectionOrderPage({ params }: { params: Promise<{ slug: s
                   fill 
                   className="object-cover"
                   referrerPolicy="no-referrer"
+                  unoptimized
                 />
               </div>
 

@@ -197,6 +197,7 @@ export function GameLibraryClient({ initialGames, gameSectionsMap }: GameLibrary
                           fill 
                           className="object-cover"
                           referrerPolicy="no-referrer"
+                          unoptimized
                         />
                       </div>
                       <div className="flex flex-col">

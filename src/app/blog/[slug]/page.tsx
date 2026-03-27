@@ -60,6 +60,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           className="object-cover scale-105 animate-slow-zoom"
           priority
           referrerPolicy="no-referrer"
+          unoptimized
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-[#050505]" />
         
@@ -163,6 +164,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                       fill 
                       className="object-cover"
                       referrerPolicy="no-referrer"
+                      unoptimized
                     />
                   </div>
                   <div className="flex-1 min-w-0">

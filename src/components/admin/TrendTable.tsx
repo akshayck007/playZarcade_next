@@ -445,6 +445,7 @@ export function TrendTable({ initialTrends }: { initialTrends: Trend[] }) {
                             fill
                             className="object-cover" 
                             referrerPolicy="no-referrer" 
+                            unoptimized
                           />
                         </div>
                       )}
