@@ -7,12 +7,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
 
 interface GamePlayerProps {
+  gameId: string;
   iframeUrl: string;
   title: string;
   thumbnail: string;
 }
 
-export function GamePlayer({ iframeUrl, title, thumbnail }: GamePlayerProps) {
+export function GamePlayer({ gameId, iframeUrl, title, thumbnail }: GamePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [playTime, setPlayTime] = useState(0);
   const [xpGained, setXpGained] = useState<number | null>(null);
@@ -22,6 +23,7 @@ export function GamePlayer({ iframeUrl, title, thumbnail }: GamePlayerProps) {
     const locations = ['New York', 'London', 'Tokyo', 'Paris', 'Berlin', 'Sydney', 'Mumbai', 'São Paulo', 'Toronto', 'Dubai'];
     const randomLocation = locations[Math.floor(Math.random() * locations.length)];
     
+    // 1. Log Live Activity
     await supabase
       .from('LiveActivity')
       .insert({ 
@@ -29,7 +31,26 @@ export function GamePlayer({ iframeUrl, title, thumbnail }: GamePlayerProps) {
         location: randomLocation,
         timestamp: new Date().toISOString()
       });
-  }, [title]);
+
+    // 2. Increment Play Count and Trend Score
+    // We use a small increment for trendScore on each play to reflect internal popularity
+    const { data: game } = await supabase
+      .from('Game')
+      .select('playCount, trendScore')
+      .eq('id', gameId)
+      .single();
+
+    if (game) {
+      await supabase
+        .from('Game')
+        .update({ 
+          playCount: (game.playCount || 0) + 1,
+          trendScore: (game.trendScore || 0) + 1, // Internal play boost
+          updatedAt: new Date().toISOString()
+        })
+        .eq('id', gameId);
+    }
+  }, [title, gameId]);
 
   useEffect(() => {
     const interval = setInterval(() => {

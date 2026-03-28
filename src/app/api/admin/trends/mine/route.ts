@@ -166,6 +166,42 @@ async function fetchCompetitorTrends() {
       console.error(`Competitor fetch failed for ${comp.name}:`, e);
     }
   }
+
+  // 3. Fetch from itch.io via AI (since direct scraping is often blocked)
+  try {
+    const itchResponse = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Search for the top 5 trending web games on itch.io right now. 
+      Return as a JSON array of objects with 'keyword' and 'reason'.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              keyword: { type: Type.STRING },
+              reason: { type: Type.STRING }
+            },
+            required: ["keyword", "reason"]
+          }
+        },
+        tools: [{ googleSearch: {} }]
+      }
+    });
+    
+    const itchData = JSON.parse(itchResponse.text);
+    itchData.forEach((item: any) => {
+      compTrends.push({
+        keyword: item.keyword,
+        volume: 18000,
+        source: 'itch.io'
+      });
+    });
+  } catch (e) {
+    console.error("itch.io trend fetch failed:", e);
+  }
+
   return compTrends;
 }
 
@@ -262,7 +298,7 @@ export async function POST(req: Request) {
     const keywordToId = new Map(existingKeywords?.map(k => [k.keyword.toLowerCase(), k.id]) || []);
 
     // Prepare bulk upsert for TrendingKeyword
-    const upsertData = trends.map(trend => {
+    const upsertData = await Promise.all(trends.map(async (trend) => {
       const keywordLower = trend.keyword.toLowerCase();
       const existing = existingKeywords?.find(k => k.keyword.toLowerCase() === keywordLower);
       const previousVolume = existing ? (existing as any).searchVolume : 0;
@@ -270,14 +306,55 @@ export async function POST(req: Request) {
       // Calculate Trend Velocity (Growth Rate)
       const velocity = previousVolume > 0 ? (trend.volume - previousVolume) / previousVolume : 0;
       
+      // Matching Logic: Find relevant games in our database
+      let relevantGameIds: string[] = [];
+      
+      // 1. Try exact title match
+      const { data: exactMatches } = await supabase
+        .from("Game")
+        .select("id")
+        .ilike("title", trend.keyword)
+        .limit(5);
+      
+      if (exactMatches && exactMatches.length > 0) {
+        relevantGameIds = exactMatches.map(g => g.id);
+      } else {
+        // 2. Try partial match or tag match
+        const { data: partialMatches } = await supabase
+          .from("Game")
+          .select("id")
+          .or(`title.ilike.%${trend.keyword}%,tags.cs.{${trend.keyword}}`)
+          .limit(3);
+        
+        if (partialMatches && partialMatches.length > 0) {
+          relevantGameIds = partialMatches.map(g => g.id);
+        }
+      }
+
+      // 3. If still no matches, use AI to find similar games (Future: use embeddings)
+      // For now, we'll stick to the above or let the AI suggest categories/tags
+      
+      const unifiedScore = trend.unifiedScore || 0;
+      
+      // Update trendScore for matched games
+      if (relevantGameIds.length > 0) {
+        await supabase
+          .from("Game")
+          .update({ 
+            trendScore: unifiedScore + 50, // Boost matched games
+            updatedAt: new Date().toISOString()
+          })
+          .in("id", relevantGameIds);
+      }
+
       const item: any = {
         id: keywordToId.get(keywordLower) || crypto.randomUUID(),
         keyword: trend.keyword,
         searchVolume: trend.volume,
-        status: (trend.volume > 15000 || velocity > 0.5 || (trend.unifiedScore || 0) > 80) ? "shadow_page_live" : "detected",
+        status: (trend.volume > 15000 || velocity > 0.5 || unifiedScore > 80) ? "shadow_page_live" : "detected",
         type: (trend.source || '').includes('Rising') ? 'rising' : 'top',
         source: trend.source || 'Google Trends',
-        unifiedScore: trend.unifiedScore || 0,
+        unifiedScore: unifiedScore,
         lastUpdated: new Date().toISOString(),
         shadowSlug: trend.keyword.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         shadowType: 'game',
@@ -285,11 +362,12 @@ export async function POST(req: Request) {
         shadowThumbnailUrl: trend.thumbnailUrl || "",
         shadowTitle: trend.seoTitle || `${trend.keyword} - Play Online Now`,
         shadowSeoDescription: trend.seoDescription || `Play ${trend.keyword} online for free. Discover the latest trending games and unblocked web games on PlayZ Arcade.`,
-        shadowContent: trend.shadowContent || ""
+        shadowContent: trend.shadowContent || "",
+        relevantGameIds: relevantGameIds
       };
       
       return item;
-    });
+    }));
 
     console.log(`[TREND MINE] POST: Upserting ${upsertData.length} items. Sample keyword:`, upsertData[0]?.keyword);
 
@@ -508,7 +586,7 @@ export async function GET(req: Request) {
     const keywordToId = new Map(existingKeywords?.map(k => [k.keyword.toLowerCase(), k.id]) || []);
 
     // Prepare bulk upsert for TrendingKeyword
-    const upsertData = uniqueTrends.map(trend => {
+    const upsertData = await Promise.all(uniqueTrends.map(async (trend) => {
       const keywordLower = trend.keyword.toLowerCase();
       const existing = existingKeywords?.find(k => k.keyword.toLowerCase() === keywordLower);
       const previousVolume = existing ? (existing as any).searchVolume : 0;
@@ -517,6 +595,42 @@ export async function GET(req: Request) {
       const velocity = previousVolume > 0 ? (trend.volume - previousVolume) / previousVolume : 0;
       const unifiedScore = (trend as any).unifiedScore || 0;
       
+      // Matching Logic: Find relevant games in our database
+      let relevantGameIds: string[] = [];
+      
+      // 1. Try exact title match
+      const { data: exactMatches } = await supabase
+        .from("Game")
+        .select("id")
+        .ilike("title", trend.keyword)
+        .limit(5);
+      
+      if (exactMatches && exactMatches.length > 0) {
+        relevantGameIds = exactMatches.map(g => g.id);
+      } else {
+        // 2. Try partial match or tag match
+        const { data: partialMatches } = await supabase
+          .from("Game")
+          .select("id")
+          .or(`title.ilike.%${trend.keyword}%,tags.cs.{${trend.keyword}}`)
+          .limit(3);
+        
+        if (partialMatches && partialMatches.length > 0) {
+          relevantGameIds = partialMatches.map(g => g.id);
+        }
+      }
+
+      // Update trendScore for matched games
+      if (relevantGameIds.length > 0) {
+        await supabase
+          .from("Game")
+          .update({ 
+            trendScore: unifiedScore + 50, // Boost matched games
+            updatedAt: new Date().toISOString()
+          })
+          .in("id", relevantGameIds);
+      }
+
       const item: any = {
         id: keywordToId.get(keywordLower) || crypto.randomUUID(),
         keyword: trend.keyword,
@@ -531,11 +645,12 @@ export async function GET(req: Request) {
         shadowIframeUrl: (trend as any).iframeUrl,
         shadowThumbnailUrl: (trend as any).thumbnailUrl,
         shadowSlug: trend.keyword.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-        shadowType: 'game'
+        shadowType: 'game',
+        relevantGameIds: relevantGameIds
       };
       
       return item;
-    });
+    }));
 
     console.log(`[TREND MINE] GET: Upserting ${upsertData.length} items. Sample keyword:`, upsertData[0]?.keyword);
 

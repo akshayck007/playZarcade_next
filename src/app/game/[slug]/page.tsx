@@ -168,7 +168,7 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
           ) : game.isRetro ? (
             <RetroPlayer romUrl={game.romUrl!} system={game.console!} title={game.title} gameId={game.id} />
           ) : (
-            <GamePlayer iframeUrl={game.iframeUrl!} title={game.title} thumbnail={game.thumbnail} />
+            <GamePlayer gameId={game.id} iframeUrl={game.iframeUrl!} title={game.title} thumbnail={game.thumbnail} />
           )}
 
           {/* Action Bar */}
