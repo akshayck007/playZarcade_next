@@ -37,7 +37,6 @@ export function GameActions({ game }: GameActionsProps) {
     } else {
       // Copy to clipboard
       navigator.clipboard.writeText(`${text} ${challengeUrl}`);
-      alert('Challenge link copied to clipboard!');
     }
   };
 
@@ -98,7 +97,7 @@ export function GameActions({ game }: GameActionsProps) {
           <span className="text-[10px] text-neon-magenta/60 uppercase tracking-[0.2em] font-black">{game.Category?.name}</span>
         </div>
         <div className="hidden md:block h-8 w-px bg-white/10"></div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center flex-wrap gap-4 md:gap-6">
           <button 
             onClick={toggleLike}
             className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors ${isLiked ? 'text-neon-magenta' : 'text-white/40 hover:text-neon-magenta'}`}

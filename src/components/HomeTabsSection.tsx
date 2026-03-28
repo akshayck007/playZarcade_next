@@ -216,14 +216,14 @@ export function HomeTabsSection() {
           <>
             <button 
               onClick={() => scroll('left')}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 glass rounded-full flex items-center justify-center text-white/50 hover:text-neon-cyan hover:border-neon-cyan/50 transition-all opacity-0 group-hover/tabs:opacity-100 hidden md:flex z-20"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 glass rounded-full flex items-center justify-center text-white/50 hover:text-neon-cyan hover:border-neon-cyan/50 transition-all opacity-100 md:opacity-0 md:group-hover/tabs:opacity-100 z-20"
               aria-label="Scroll Left"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <button 
               onClick={() => scroll('right')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 glass rounded-full flex items-center justify-center text-white/50 hover:text-neon-cyan hover:border-neon-cyan/50 transition-all opacity-0 group-hover/tabs:opacity-100 hidden md:flex z-20"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 glass rounded-full flex items-center justify-center text-white/50 hover:text-neon-cyan hover:border-neon-cyan/50 transition-all opacity-100 md:opacity-0 md:group-hover/tabs:opacity-100 z-20"
               aria-label="Scroll Right"
             >
               <ChevronRight className="w-6 h-6" />

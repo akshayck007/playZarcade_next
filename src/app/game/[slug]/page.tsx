@@ -199,7 +199,7 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
                     <Keyboard className="w-5 h-5 text-emerald-500" />
                     Controls
                   </h2>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {Object.entries(game.controls as Record<string, string>).map(([key, action]) => (
                       <div key={key} className="flex items-center justify-between glass px-4 py-2 rounded-xl">
                         <span className="text-[10px] font-black uppercase tracking-widest text-white/40">{action}</span>

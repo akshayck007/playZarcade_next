@@ -104,7 +104,7 @@ export default async function SeoPlayPage({ params }: SeoPageProps) {
   return (
     <div className="space-y-12">
       {/* Hero / Play Section */}
-      <section className="relative h-[500px] rounded-3xl overflow-hidden glass border border-white/10">
+      <section className="relative min-h-[400px] md:h-[500px] rounded-3xl overflow-hidden glass border border-white/10">
         <div className="absolute inset-0 opacity-20">
           <Image 
             src={game.thumbnail} 
@@ -116,17 +116,17 @@ export default async function SeoPlayPage({ params }: SeoPageProps) {
           />
         </div>
         
-        <div className="relative h-full flex flex-col items-center justify-center text-center p-12 space-y-8">
+        <div className="relative h-full flex flex-col items-center justify-center text-center p-6 md:p-12 space-y-8">
           <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-500 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/30">
             <Icon className="w-3 h-3" />
             {modInfo.title} Mode Active
           </div>
           
           <div className="space-y-4">
-            <h1 className="text-6xl font-black uppercase tracking-tighter">
+            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter">
               Play {game.title} <span className="text-emerald-500">{modInfo.title}</span>
             </h1>
-            <p className="text-white/60 max-w-2xl mx-auto text-lg leading-relaxed">
+            <p className="text-white/60 max-w-2xl mx-auto text-sm md:text-lg leading-relaxed">
               {modInfo.desc} You are about to play the most popular {game.category?.name} game on PlayZ Arcade.
             </p>
           </div>

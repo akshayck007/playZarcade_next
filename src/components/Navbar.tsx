@@ -108,7 +108,7 @@ export function Navbar({ categories, retroEnabled = true }: NavbarProps) {
             PlayZ<span className="text-white italic">Arcade</span>
           </Link>
           
-          <nav className="hidden md:flex items-center gap-6 text-xs font-black uppercase tracking-widest text-white/60">
+          <nav className="hidden lg:flex items-center gap-6 text-xs font-black uppercase tracking-widest text-white/60">
             <Link href="/" className="hover:text-neon-cyan transition-colors flex items-center gap-2">
               <Home className="w-3.5 h-3.5" />
               Home
@@ -353,9 +353,9 @@ export function Navbar({ categories, retroEnabled = true }: NavbarProps) {
             </Link>
           )}
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile/Tablet Menu Toggle */}
           <button 
-            className="md:hidden p-2 text-white/60 hover:text-white"
+            className="lg:hidden p-2 text-white/60 hover:text-white"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -363,10 +363,10 @@ export function Navbar({ categories, retroEnabled = true }: NavbarProps) {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile/Tablet Menu */}
       {isMenuOpen && (
         <div 
-          className="md:hidden absolute top-full left-0 w-full bg-[#0a0a0a] border-b border-white/10 overflow-hidden z-50"
+          className="lg:hidden absolute top-full left-0 w-full bg-[#0a0a0a] border-b border-white/10 overflow-hidden z-50"
         >
           <nav className="flex flex-col gap-4 py-6 px-6">
             <div className="relative mb-4">
