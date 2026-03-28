@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/admin/trends/mine?cron_secret=YOUR_CRON_SECRET",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}

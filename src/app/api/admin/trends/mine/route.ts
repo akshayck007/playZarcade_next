@@ -297,42 +297,83 @@ export async function POST(req: Request) {
 
     const keywordToId = new Map(existingKeywords?.map(k => [k.keyword.toLowerCase(), k.id]) || []);
 
-    // 1. Get all keywords for batch matching
-    const allKeywords = trends.map(t => t.keyword);
-    const keywordLowerMap = new Map(trends.map(t => [t.keyword.toLowerCase(), t]));
-
-    // 2. Batch fetch exact matches (1 subrequest)
-    const { data: matchedGames } = await supabase
+    // 1. GLOBAL RESET: Lower scores of all games slightly to allow new trends to surface
+    // This "cools down" the old "shitty" games
+    await supabase.rpc('decay_trend_scores'); 
+    // If RPC doesn't exist, we'll do a manual update for now
+    await supabase
       .from("Game")
-      .select("id, title")
-      .in("title", allKeywords);
+      .update({ trendScore: 50 }) // Reset baseline
+      .lt("trendScore", 5000); // Don't reset games that were just boosted
 
-    const titleToIdMap = new Map(matchedGames?.map(g => [g.title.toLowerCase(), g.id]) || []);
+    // 2. Get all keywords for batch matching
+    const allKeywords = trends.map(t => t.keyword);
+    
+    // 3. FUZZY MATCHING: Find games that contain the keyword or match tags
+    // We'll do this in a loop but optimized to stay under subrequest limits
+    const boostAmount = 10000;
+    const processedGameIds = new Set<string>();
 
-    // Prepare bulk upsert for TrendingKeyword
-    const upsertData = trends.map(trend => {
+    const upsertData = await Promise.all(trends.map(async (trend) => {
       const keywordLower = trend.keyword.toLowerCase();
       const existing = existingKeywords?.find(k => k.keyword.toLowerCase() === keywordLower);
       const previousVolume = existing ? (existing as any).searchVolume : 0;
-      
-      // Calculate Trend Velocity (Growth Rate)
       const velocity = previousVolume > 0 ? (trend.volume - previousVolume) / previousVolume : 0;
-      
-      // Matching Logic: Use batch results
+      const unifiedScore = trend.unifiedScore || 0;
+
+      // FUZZY MATCHING LOGIC
+      const { data: matches } = await supabase
+        .from("Game")
+        .select("id, categoryId, tags")
+        .or(`title.ilike.%${trend.keyword}%,tags.cs.{${trend.keyword}}`)
+        .limit(5);
+
       let relevantGameIds: string[] = [];
-      const exactMatchId = titleToIdMap.get(keywordLower);
-      if (exactMatchId) {
-        relevantGameIds = [exactMatchId];
+      if (matches && matches.length > 0) {
+        relevantGameIds = matches.map(m => m.id);
+        
+        // CATEGORY RIPPLE: Boost the matched games AND their "neighbors"
+        for (const match of matches) {
+          if (processedGameIds.has(match.id)) continue;
+          
+          // Boost the actual match
+          await supabase
+            .from("Game")
+            .update({ 
+              trendScore: boostAmount + (unifiedScore * 10),
+              updatedAt: new Date().toISOString()
+            })
+            .eq("id", match.id);
+          
+          processedGameIds.add(match.id);
+
+          // Ripple: Boost 5 high-quality games in the same category to fill the trending list
+          if (match.categoryId) {
+            const { data: neighbors } = await supabase
+              .from("Game")
+              .select("id")
+              .eq("categoryId", match.categoryId)
+              .gt("qualityScore", 70)
+              .limit(5);
+            
+            if (neighbors) {
+              const neighborIds = neighbors.map(n => n.id).filter(id => !processedGameIds.has(id));
+              if (neighborIds.length > 0) {
+                await supabase
+                  .from("Game")
+                  .update({ trendScore: boostAmount / 2 }) // Half boost for similar games
+                  .in("id", neighborIds);
+                neighborIds.forEach(id => processedGameIds.add(id));
+              }
+            }
+          }
+        }
       }
 
-      const unifiedScore = trend.unifiedScore || 0;
-      
       const item: any = {
         id: keywordToId.get(keywordLower) || crypto.randomUUID(),
         keyword: trend.keyword,
         searchVolume: trend.volume,
-        // PRESERVE SHADOW PAGE LOGIC:
-        // If volume is high or score is high, mark as shadow_page_live
         status: (trend.volume > 15000 || velocity > 0.5 || unifiedScore > 80) ? "shadow_page_live" : "detected",
         type: (trend.source || '').includes('Rising') ? 'rising' : 'top',
         source: trend.source || 'Google Trends',
@@ -349,19 +390,7 @@ export async function POST(req: Request) {
       };
       
       return item;
-    });
-
-    // 3. Update trendScore for matched games in bulk (1 subrequest)
-    const gamesToBoost = upsertData.filter(d => d.relevantGameIds.length > 0).flatMap(d => d.relevantGameIds);
-    if (gamesToBoost.length > 0) {
-      await supabase
-        .from("Game")
-        .update({ 
-          trendScore: 100, // Boost matched games
-          updatedAt: new Date().toISOString()
-        })
-        .in("id", gamesToBoost);
-    }
+    }));
 
     console.log(`[TREND MINE] POST: Upserting ${upsertData.length} items. Sample keyword:`, upsertData[0]?.keyword);
 
@@ -399,6 +428,13 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const isPreview = searchParams.get('preview') === 'true';
+    const cronSecret = searchParams.get('cron_secret');
+
+    // Simple security check for automation
+    if (!isPreview && process.env.CRON_SECRET && cronSecret !== process.env.CRON_SECRET) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const trends: { keyword: string; volume: number; source: string }[] = [];
 
     // 1. Fetch from Google Trends RSS (Daily and Real-time)
@@ -579,33 +615,73 @@ export async function GET(req: Request) {
 
     const keywordToId = new Map(existingKeywords?.map(k => [k.keyword.toLowerCase(), k.id]) || []);
 
-    // 1. Get all keywords for batch matching
-    const allKeywords = uniqueTrends.map(t => t.keyword);
-    const keywordLowerMap = new Map(uniqueTrends.map(t => [t.keyword.toLowerCase(), t]));
-
-    // 2. Batch fetch exact matches (1 subrequest)
-    const { data: matchedGames } = await supabase
+    // 1. GLOBAL RESET: Lower scores of all games slightly to allow new trends to surface
+    // This "cools down" the old "shitty" games
+    await supabase.rpc('decay_trend_scores'); 
+    // If RPC doesn't exist, we'll do a manual update for now
+    await supabase
       .from("Game")
-      .select("id, title")
-      .in("title", allKeywords);
+      .update({ trendScore: 50 }) // Reset baseline
+      .lt("trendScore", 5000); // Don't reset games that were just boosted
 
-    const titleToIdMap = new Map(matchedGames?.map(g => [g.title.toLowerCase(), g.id]) || []);
+    // 2. FUZZY MATCHING: Find games that contain the keyword or match tags
+    const boostAmount = 10000;
+    const processedGameIds = new Set<string>();
 
-    // Prepare bulk upsert for TrendingKeyword
-    const upsertData = uniqueTrends.map(trend => {
+    const upsertData = await Promise.all(uniqueTrends.map(async (trend) => {
       const keywordLower = trend.keyword.toLowerCase();
       const existing = existingKeywords?.find(k => k.keyword.toLowerCase() === keywordLower);
       const previousVolume = existing ? (existing as any).searchVolume : 0;
-      
-      // Calculate Trend Velocity (Growth Rate)
       const velocity = previousVolume > 0 ? (trend.volume - previousVolume) / previousVolume : 0;
       const unifiedScore = (trend as any).unifiedScore || 0;
-      
-      // Matching Logic: Use batch results
+
+      // FUZZY MATCHING LOGIC
+      const { data: matches } = await supabase
+        .from("Game")
+        .select("id, categoryId, tags")
+        .or(`title.ilike.%${trend.keyword}%,tags.cs.{${trend.keyword}}`)
+        .limit(5);
+
       let relevantGameIds: string[] = [];
-      const exactMatchId = titleToIdMap.get(keywordLower);
-      if (exactMatchId) {
-        relevantGameIds = [exactMatchId];
+      if (matches && matches.length > 0) {
+        relevantGameIds = matches.map(m => m.id);
+        
+        // CATEGORY RIPPLE: Boost the matched games AND their "neighbors"
+        for (const match of matches) {
+          if (processedGameIds.has(match.id)) continue;
+          
+          // Boost the actual match
+          await supabase
+            .from("Game")
+            .update({ 
+              trendScore: boostAmount + (unifiedScore * 10),
+              updatedAt: new Date().toISOString()
+            })
+            .eq("id", match.id);
+          
+          processedGameIds.add(match.id);
+
+          // Ripple: Boost 5 high-quality games in the same category to fill the trending list
+          if (match.categoryId) {
+            const { data: neighbors } = await supabase
+              .from("Game")
+              .select("id")
+              .eq("categoryId", match.categoryId)
+              .gt("qualityScore", 70)
+              .limit(5);
+            
+            if (neighbors) {
+              const neighborIds = neighbors.map(n => n.id).filter(id => !processedGameIds.has(id));
+              if (neighborIds.length > 0) {
+                await supabase
+                  .from("Game")
+                  .update({ trendScore: boostAmount / 2 }) // Half boost for similar games
+                  .in("id", neighborIds);
+                neighborIds.forEach(id => processedGameIds.add(id));
+              }
+            }
+          }
+        }
       }
 
       const item: any = {
@@ -628,19 +704,7 @@ export async function GET(req: Request) {
       };
       
       return item;
-    });
-
-    // 3. Update trendScore for matched games in bulk (1 subrequest)
-    const gamesToBoost = upsertData.filter(d => d.relevantGameIds.length > 0).flatMap(d => d.relevantGameIds);
-    if (gamesToBoost.length > 0) {
-      await supabase
-        .from("Game")
-        .update({ 
-          trendScore: 100, // Boost matched games
-          updatedAt: new Date().toISOString()
-        })
-        .in("id", gamesToBoost);
-    }
+    }));
 
     console.log(`[TREND MINE] GET: Upserting ${upsertData.length} items. Sample keyword:`, upsertData[0]?.keyword);
 
