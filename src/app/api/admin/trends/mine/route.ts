@@ -6,11 +6,19 @@ import { GoogleGenAI, Type } from "@google/genai";
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+// Helper to get AI instance safely
+function getAI() {
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("NEXT_PUBLIC_GEMINI_API_KEY is not set");
+  }
+  return new GoogleGenAI({ apiKey });
+}
 
 // AI Filtering and Categorization
 async function processTrendsWithAI(trends: { keyword: string; volume: number; source: string; thumbnailUrl?: string; gameUrl?: string }[]) {
   try {
+    const ai = getAI();
     // Pre-filter obviously non-gaming trends to save tokens and improve quality
     const filteredTrends = trends.filter(t => {
       const k = t.keyword.toLowerCase();
@@ -169,6 +177,7 @@ async function fetchCompetitorTrends() {
 
   // 3. Fetch from itch.io via AI (since direct scraping is often blocked)
   try {
+    const ai = getAI();
     const itchResponse = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Search for the top 5 trending web games on itch.io right now. 
@@ -207,6 +216,7 @@ async function fetchCompetitorTrends() {
 
 async function fetchTikTokTrends() {
   try {
+    const ai = getAI();
     const jsonResponse = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Search for the top 5 viral browser games or gaming hashtags currently trending on TikTok. 
