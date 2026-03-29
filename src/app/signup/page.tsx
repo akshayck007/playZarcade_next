@@ -84,100 +84,37 @@ export default function SignupPage() {
           <h1 className="text-4xl font-black uppercase tracking-tighter italic">
             Join the <span className="text-emerald-500">Arcade</span>
           </h1>
-          <p className="text-white/40 font-medium">Create an account to track your high scores.</p>
+          <p className="text-white/40 font-medium text-sm">Create an account with Google to track your high scores and earn XP.</p>
         </div>
 
-        <form onSubmit={handleSignup} className="space-y-6">
+        <div className="space-y-6">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-2xl text-xs font-bold uppercase tracking-widest text-center">
               {error}
             </div>
           )}
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-4">Username</label>
-              <div className="relative">
-                <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
-                <input 
-                  type="text" 
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="gamer123"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-4">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
-                <input 
-                  type="email" 
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-4">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
-                <input 
-                  type="password" 
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
-                />
-              </div>
-            </div>
-          </div>
-
-          <button 
-            type="submit"
-            disabled={isLoading || isGoogleLoading}
-            className="w-full bg-emerald-500 text-black py-4 rounded-2xl font-black uppercase tracking-tight flex items-center justify-center gap-2 hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-50"
-          >
-            {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                Sign Up <ArrowRight className="w-5 h-5" />
-              </>
-            )}
-          </button>
-
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/5"></div>
-            </div>
-            <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest">
-              <span className="bg-[#0a0a0a] px-4 text-white/20">Or continue with</span>
-            </div>
-          </div>
-
           <button 
             type="button"
             onClick={handleGoogleLogin}
             disabled={isLoading || isGoogleLoading}
-            className="w-full bg-white/5 border border-white/10 text-white py-4 rounded-2xl font-black uppercase tracking-tight flex items-center justify-center gap-3 hover:bg-white/10 transition-all disabled:opacity-50"
+            className="w-full bg-emerald-500 text-black py-5 rounded-2xl font-black uppercase tracking-tight flex items-center justify-center gap-3 hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-50 group"
           >
             {isGoogleLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-6 h-6 animate-spin" />
             ) : (
               <>
-                <Chrome className="w-5 h-5" />
-                Google Account
+                <Chrome className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                <span className="text-lg">Sign up with Google</span>
               </>
             )}
           </button>
-        </form>
+
+          <p className="text-[10px] text-center text-white/20 uppercase font-black tracking-widest leading-relaxed">
+            By signing up, you agree to our <br />
+            <Link href="/terms-of-service" className="hover:text-white transition-colors underline">Terms</Link> & <Link href="/privacy-policy" className="hover:text-white transition-colors underline">Privacy Policy</Link>
+          </p>
+        </div>
 
         <div className="pt-6 border-t border-white/5 text-center">
           <p className="text-sm text-white/40">
