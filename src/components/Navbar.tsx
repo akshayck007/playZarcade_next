@@ -294,79 +294,80 @@ export function Navbar({ categories, retroEnabled = true, logoUrl }: NavbarProps
           </div>
           
           <ThemeToggle />
-          <UserLevelBadge />
+          <div className="hidden lg:flex items-center gap-4">
+            <UserLevelBadge />
 
-          {user ? (
-            <div className="relative" ref={profileRef}>
-              <button 
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="w-10 h-10 rounded-full bg-neon-cyan/20 border border-neon-cyan/30 flex items-center justify-center overflow-hidden hover:border-neon-cyan transition-all"
-              >
-                {user.user_metadata?.avatar_url ? (
-                  <Image 
-                    src={user.user_metadata.avatar_url} 
-                    alt="Profile" 
-                    width={40} 
-                    height={40} 
-                    className="w-full h-full object-cover" 
-                    referrerPolicy="no-referrer"
-                    unoptimized
-                  />
-                ) : (
-                  <User className="w-5 h-5 text-neon-cyan" />
-                )}
-              </button>
+            {user ? (
+              <div className="relative" ref={profileRef}>
+                <button 
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="w-10 h-10 rounded-full bg-neon-cyan/20 border border-neon-cyan/30 flex items-center justify-center overflow-hidden hover:border-neon-cyan transition-all"
+                >
+                  {user.user_metadata?.avatar_url ? (
+                    <Image 
+                      src={user.user_metadata.avatar_url} 
+                      alt="Profile" 
+                      width={40} 
+                      height={40} 
+                      className="w-full h-full object-cover" 
+                      referrerPolicy="no-referrer"
+                      unoptimized
+                    />
+                  ) : (
+                    <User className="w-5 h-5 text-neon-cyan" />
+                  )}
+                </button>
 
-                {isProfileOpen && (
-                  <div
-                    className="absolute top-full right-0 mt-2 w-48 bg-dark-surface border border-white/10 rounded-xl p-2 shadow-2xl z-50"
-                  >
-                    <div className="px-3 py-2 border-b border-white/5 mb-1">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-white/40 truncate">
-                        {user.email}
-                      </p>
-                    </div>
-                    <Link 
-                      href="/profile" 
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors text-white"
+                  {isProfileOpen && (
+                    <div
+                      className="absolute top-full right-0 mt-2 w-48 bg-dark-surface border border-white/10 rounded-xl p-2 shadow-2xl z-50"
                     >
-                      <User className="w-4 h-4" />
-                      My Profile
-                    </Link>
-                    {isAdmin(user) && (
+                      <div className="px-3 py-2 border-b border-white/5 mb-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-white/40 truncate">
+                          {user.email}
+                        </p>
+                      </div>
                       <Link 
-                        href="/admin" 
+                        href="/profile" 
                         onClick={() => setIsProfileOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors text-emerald-500"
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors text-white"
                       >
-                        <ShieldCheck className="w-4 h-4" />
-                        Admin Panel
+                        <User className="w-4 h-4" />
+                        My Profile
                       </Link>
-                    )}
-                    <button 
-                      onClick={async () => {
-                        await supabase.auth.signOut();
-                        setIsProfileOpen(false);
-                        router.refresh();
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-500 text-xs font-bold transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-            </div>
-          ) : (
-            <Link 
-              href="/login"
-              className="cyber-button text-xs flex items-center gap-2"
-            >
-              <span className="hidden sm:inline">Login</span>
-              <LogIn className="w-4 h-4 sm:hidden" />
-            </Link>
-          )}
+                      {isAdmin(user) && (
+                        <Link 
+                          href="/admin" 
+                          onClick={() => setIsProfileOpen(false)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-xs font-bold transition-colors text-emerald-500"
+                        >
+                          <ShieldCheck className="w-4 h-4" />
+                          Admin Panel
+                        </Link>
+                      )}
+                      <button 
+                        onClick={async () => {
+                          await supabase.auth.signOut();
+                          setIsProfileOpen(false);
+                          router.refresh();
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-500 text-xs font-bold transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+              </div>
+            ) : (
+              <Link 
+                href="/login"
+                className="cyber-button text-xs flex items-center gap-2"
+              >
+                <span>Login</span>
+              </Link>
+            )}
+          </div>
 
           {/* Mobile/Tablet Menu Toggle */}
           <button 
@@ -492,25 +493,67 @@ export function Navbar({ categories, retroEnabled = true, logoUrl }: NavbarProps
             </Link>
             
             {user ? (
-              <>
-                <Link href="/profile" className="text-lg font-bold uppercase tracking-tight flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
-                  <User className="w-5 h-5 text-neon-cyan" />
-                  My Profile
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <Link 
+                  href="/profile" 
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors" 
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-neon-cyan/30 flex-shrink-0">
+                    {user.user_metadata?.avatar_url ? (
+                      <Image 
+                        src={user.user_metadata.avatar_url} 
+                        alt="Profile" 
+                        width={40} 
+                        height={40} 
+                        className="w-full h-full object-cover"
+                        unoptimized 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-neon-cyan/20">
+                        <User className="w-5 h-5 text-neon-cyan" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-black uppercase tracking-tight text-white truncate">My Profile</div>
+                    <div className="text-[10px] text-white/40 truncate">{user.email}</div>
+                  </div>
                 </Link>
+                
+                {isAdmin(user) && (
+                  <Link 
+                    href="/admin" 
+                    className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500" 
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <ShieldCheck className="w-5 h-5" />
+                    <span className="text-xs font-black uppercase tracking-widest">Admin Panel</span>
+                  </Link>
+                )}
+
                 <button 
                   onClick={async () => {
                     await supabase.auth.signOut();
                     setIsMenuOpen(false);
                     router.refresh();
                   }}
-                  className="text-lg font-bold uppercase tracking-tight text-red-500 flex items-center gap-2"
+                  className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-widest hover:bg-red-500/10 transition-colors"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-4 h-4" />
                   Sign Out
                 </button>
-              </>
+              </div>
             ) : (
-              <Link href="/login" className="text-lg font-bold uppercase tracking-tight text-emerald-500" onClick={() => setIsMenuOpen(false)}>Login / Sign Up</Link>
+              <div className="pt-4 border-t border-white/5">
+                <Link 
+                  href="/login" 
+                  className="cyber-button w-full justify-center py-4 text-sm" 
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login / Sign Up
+                </Link>
+              </div>
             )}
             
             <div className="space-y-4">
