@@ -220,6 +220,8 @@ CREATE TABLE IF NOT EXISTS public."Profile" (
     role TEXT DEFAULT 'user',
     "xp" INTEGER DEFAULT 0,
     "level" INTEGER DEFAULT 1,
+    "totalPlayTime" INTEGER DEFAULT 0,
+    "lastUpdated" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -227,24 +229,33 @@ CREATE TABLE IF NOT EXISTS public."Profile" (
 ALTER TABLE public."Profile" ENABLE ROW LEVEL SECURITY;
 
 -- Policies for Profile
+DROP POLICY IF EXISTS "Anyone can view profiles" ON public."Profile";
+DROP POLICY IF EXISTS "Users can update their own profile" ON public."Profile";
+DROP POLICY IF EXISTS "Allow all access for anon on Profile" ON public."Profile";
+
 CREATE POLICY "Anyone can view profiles" ON public."Profile" FOR SELECT USING (true);
 CREATE POLICY "Users can update their own profile" ON public."Profile" FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Allow all access for anon on Profile" ON public."Profile" FOR ALL USING (true) WITH CHECK (true);
 
 -- Trigger to create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $
+RETURNS trigger AS $$
 BEGIN
   INSERT INTO public."Profile" (id, email, "fullName", "avatarUrl")
   VALUES (
     new.id,
     new.email,
-    new.raw_user_meta_data->>'full_name',
-    new.raw_user_meta_data->>'avatar_url'
-  );
+    COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''),
+    COALESCE(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture', '')
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    "fullName" = EXCLUDED."fullName",
+    "avatarUrl" = EXCLUDED."avatarUrl",
+    "updatedAt" = timezone('utc'::text, now());
   RETURN new;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Drop trigger if exists and recreate
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
@@ -252,7 +263,21 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 14. Comments Table
+-- 14. Live Activity Table
+CREATE TABLE IF NOT EXISTS public."LiveActivity" (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    "gameTitle" TEXT NOT NULL,
+    location TEXT,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public."LiveActivity" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public read access on LiveActivity" ON public."LiveActivity";
+DROP POLICY IF EXISTS "Allow all access for anon on LiveActivity" ON public."LiveActivity";
+CREATE POLICY "Allow public read access on LiveActivity" ON public."LiveActivity" FOR SELECT USING (true);
+CREATE POLICY "Allow all access for anon on LiveActivity" ON public."LiveActivity" FOR ALL USING (true) WITH CHECK (true);
+
+-- 15. Comments Table
 CREATE TABLE IF NOT EXISTS public."Comment" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     "gameId" TEXT NOT NULL REFERENCES public."Game"(id) ON DELETE CASCADE,

@@ -349,7 +349,7 @@ export function Navbar({ categories, retroEnabled = true, logoUrl }: NavbarProps
                         onClick={async () => {
                           await supabase.auth.signOut();
                           setIsProfileOpen(false);
-                          router.refresh();
+                          window.location.href = '/';
                         }}
                         className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-500 text-xs font-bold transition-colors"
                       >
@@ -536,7 +536,7 @@ export function Navbar({ categories, retroEnabled = true, logoUrl }: NavbarProps
                   onClick={async () => {
                     await supabase.auth.signOut();
                     setIsMenuOpen(false);
-                    router.refresh();
+                    window.location.href = '/';
                   }}
                   className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-widest hover:bg-red-500/10 transition-colors"
                 >

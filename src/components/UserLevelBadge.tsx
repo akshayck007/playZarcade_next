@@ -18,21 +18,13 @@ export function UserLevelBadge() {
       }
 
       const { data, error } = await supabase
-        .from('UserStats')
+        .from('Profile')
         .select('xp, level')
         .eq('id', user.id)
         .maybeSingle();
 
       if (data) {
         setStats(data);
-      } else if (!error) {
-        // Create initial stats if not exists
-        const { data: newStats } = await supabase
-          .from('UserStats')
-          .insert({ id: user.id, xp: 0, level: 1 })
-          .select()
-          .single();
-        if (newStats) setStats(newStats);
       }
       setLoading(false);
     }
@@ -45,7 +37,7 @@ export function UserLevelBadge() {
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
-        table: 'UserStats' 
+        table: 'Profile' 
       }, (payload) => {
         setStats(payload.new as any);
       })
