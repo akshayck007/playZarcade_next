@@ -6,7 +6,6 @@ import { GameCard } from "@/components/GameCard";
 import { GameActions } from "@/components/GameActions";
 import { GamePlayer } from "@/components/GamePlayer";
 import RetroPlayer from "@/components/RetroPlayer";
-import { AdSlot } from "@/components/AdSlot";
 import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle, TrendingUp, Swords } from "lucide-react";
 import Markdown from "@/components/Markdown";
 
@@ -287,9 +286,6 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
               </div>
             </div>
           )}
-
-          {/* Ad Slot */}
-          <AdSlot id="game-page-sidebar" type="skyscraper" className="mx-auto" />
 
           {/* Quick Stats */}
           <div className="glass p-6 rounded-3xl space-y-4">

@@ -27,6 +27,7 @@ export function HomeTabsSection() {
   const [games, setGames] = useState<any[]>([]);
   const [loadingGames, setLoadingGames] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
 
   // Check for history to show/hide Continue Playing tab
   useEffect(() => {
@@ -62,6 +63,20 @@ export function HomeTabsSection() {
         : scrollLeft + clientWidth * 0.8;
       
       scrollContainerRef.current.scrollTo({
+        left: scrollTo,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    if (tabsContainerRef.current) {
+      const { scrollLeft, clientWidth } = tabsContainerRef.current;
+      const scrollTo = direction === 'left' 
+        ? scrollLeft - clientWidth * 0.5 
+        : scrollLeft + clientWidth * 0.5;
+      
+      tabsContainerRef.current.scrollTo({
         left: scrollTo,
         behavior: 'smooth'
       });
@@ -160,8 +175,11 @@ export function HomeTabsSection() {
   return (
     <section className="space-y-8">
       {/* Tabs Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-x-auto scrollbar-hide">
-        <div className="flex items-center gap-2 p-1 bg-white/5 rounded-2xl border border-white/5">
+      <div className="relative group/tabs-header">
+        <div 
+          ref={tabsContainerRef}
+          className="flex items-center gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 overflow-x-auto scrollbar-hide scroll-smooth"
+        >
           {filteredTabs.map((tab) => (
             <button
               key={tab.slug}
@@ -178,6 +196,22 @@ export function HomeTabsSection() {
             </button>
           ))}
         </div>
+
+        {/* Tab Navigation Arrows */}
+        <button 
+          onClick={() => scrollTabs('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-full bg-gradient-to-r from-black/80 to-transparent flex items-center justify-start pl-1 text-white/40 hover:text-neon-cyan transition-all opacity-0 group-hover/tabs-header:opacity-100 z-10 md:hidden"
+          aria-label="Scroll Tabs Left"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <button 
+          onClick={() => scrollTabs('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-full bg-gradient-to-l from-black/80 to-transparent flex items-center justify-end pr-1 text-white/40 hover:text-neon-cyan transition-all opacity-0 group-hover/tabs-header:opacity-100 z-10 md:hidden"
+          aria-label="Scroll Tabs Right"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Games List */}

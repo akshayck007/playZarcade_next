@@ -199,13 +199,6 @@ export default async function SeoPlayPage({ params }: SeoPageProps) {
               ))}
             </div>
           </div>
-
-          <div className="h-[400px] glass rounded-3xl flex flex-col items-center justify-center p-6 text-center border-dashed border-white/10">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mb-4">Advertisement</span>
-            <div className="w-full h-full bg-white/5 rounded-2xl flex items-center justify-center">
-              <span className="text-xs text-white/10 font-bold uppercase">Square Ad Slot</span>
-            </div>
-          </div>
         </aside>
       </div>
 

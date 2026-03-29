@@ -41,7 +41,6 @@ export async function generateMetadata(): Promise<Metadata> {
     title,
     description,
     metadataBase: new URL(baseUrl),
-    manifest: "/manifest.json",
     alternates: {
       canonical: "/",
     },
@@ -99,6 +98,7 @@ export async function generateMetadata(): Promise<Metadata> {
     verification: {
       google: settings?.googleVerification,
     },
+    manifest: "/manifest.json",
   };
 }
 
