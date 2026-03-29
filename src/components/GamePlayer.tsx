@@ -91,7 +91,7 @@ export function GamePlayer({ gameId, iframeUrl, title, thumbnail }: GamePlayerPr
     if (!user) return;
 
     const { data: stats } = await supabase
-      .from('UserStats')
+      .from('Profile')
       .select('xp, level, totalPlayTime')
       .eq('id', user.id)
       .maybeSingle();
@@ -101,7 +101,7 @@ export function GamePlayer({ gameId, iframeUrl, title, thumbnail }: GamePlayerPr
       const newLevel = Math.floor(newXp / 1000) + 1;
       
       await supabase
-        .from('UserStats')
+        .from('Profile')
         .update({ 
           xp: newXp, 
           level: newLevel,

@@ -11,6 +11,7 @@ export default function ProfilePage() {
   const supabase = createClientComponentClient();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,6 +22,18 @@ export default function ProfilePage() {
         return;
       }
       setUser(session.user);
+
+      // Fetch profile stats
+      const { data: profileData } = await supabase
+        .from('Profile')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      
+      if (profileData) {
+        setProfile(profileData);
+      }
+
       setLoading(false);
     };
 
@@ -100,11 +113,13 @@ export default function ProfilePage() {
             <div className="glass p-8 rounded-3xl border border-white/10 grid grid-cols-2 gap-4">
               <div className="text-center space-y-1">
                 <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Level</p>
-                <p className="text-2xl font-black text-neon-cyan">12</p>
+                <p className="text-2xl font-black text-neon-cyan">{profile?.level || 1}</p>
               </div>
               <div className="text-center space-y-1">
                 <p className="text-[10px] font-black uppercase tracking-widest text-white/20">XP</p>
-                <p className="text-2xl font-black text-neon-magenta">2.4K</p>
+                <p className="text-2xl font-black text-neon-magenta">
+                  {profile?.xp >= 1000 ? `${(profile.xp / 1000).toFixed(1)}K` : profile?.xp || 0}
+                </p>
               </div>
             </div>
 
