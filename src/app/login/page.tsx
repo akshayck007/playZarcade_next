@@ -12,8 +12,6 @@ export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
   const supabase = createClientComponentClient();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,28 +35,6 @@ export default function LoginPage() {
     checkUser();
   }, [router, supabase.auth]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-      
-      router.push('/');
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
     setError(null);
@@ -73,32 +49,6 @@ export default function LoginPage() {
     } catch (err: any) {
       setError(err.message || "Failed to sign in with Google");
       setIsGoogleLoading(false);
-    }
-  };
-
-  const [isMagicLoading, setIsMagicLoading] = useState(false);
-  const [magicSent, setMagicSent] = useState(false);
-
-  const handleMagicLink = async () => {
-    if (!email) {
-      setError("Please enter your email first");
-      return;
-    }
-    setIsMagicLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        }
-      });
-      if (error) throw error;
-      setMagicSent(true);
-    } catch (err: any) {
-      setError(err.message || "Failed to send magic link");
-    } finally {
-      setIsMagicLoading(false);
     }
   };
 
@@ -130,14 +80,6 @@ export default function LoginPage() {
             <code className="block p-2 bg-black/40 rounded text-[9px] font-mono text-neon-cyan break-all">
               {typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : ''}
             </code>
-            <button 
-              type="button"
-              onClick={handleMagicLink}
-              disabled={isMagicLoading}
-              className="w-full py-2 bg-neon-cyan/10 border border-neon-cyan/30 rounded-xl text-[10px] font-black uppercase tracking-widest text-neon-cyan hover:bg-neon-cyan/20 transition-all flex items-center justify-center gap-2"
-            >
-              {isMagicLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : magicSent ? "Link Sent!" : "Send Magic Link (Email Login)"}
-            </button>
             <Link 
               href="/dev-admin"
               className="block w-full py-2 text-center text-[9px] font-black uppercase tracking-widest text-white/20 hover:text-white/40 transition-all"

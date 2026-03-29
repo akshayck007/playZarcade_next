@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public."Category" (
 
 -- 2. Games Table
 CREATE TABLE IF NOT EXISTS public."Game" (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     description TEXT,
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS public."Section" (
 CREATE TABLE IF NOT EXISTS public."SectionItem" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     "sectionId" UUID REFERENCES public."Section"(id) ON DELETE CASCADE,
-    "gameId" UUID REFERENCES public."Game"(id) ON DELETE CASCADE,
+    "gameId" TEXT REFERENCES public."Game"(id) ON DELETE CASCADE,
     "order" INTEGER DEFAULT 0,
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -117,7 +117,7 @@ CREATE POLICY "Allow all access for anon on BlogPost" ON public."BlogPost" FOR A
 CREATE TABLE IF NOT EXISTS public."UserFavorite" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     "userId" UUID NOT NULL, -- References auth.users(id)
-    "gameId" UUID REFERENCES public."Game"(id) ON DELETE CASCADE,
+    "gameId" TEXT REFERENCES public."Game"(id) ON DELETE CASCADE,
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE("userId", "gameId")
 );
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS public."UserFavorite" (
 CREATE TABLE IF NOT EXISTS public."UserHistory" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     "userId" UUID NOT NULL, -- References auth.users(id)
-    "gameId" UUID REFERENCES public."Game"(id) ON DELETE CASCADE,
+    "gameId" TEXT REFERENCES public."Game"(id) ON DELETE CASCADE,
     "lastPlayedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE("userId", "gameId")
 );
@@ -175,7 +175,7 @@ CREATE POLICY "Allow all access for anon on TrendingKeyword" ON public."Trending
 CREATE TABLE IF NOT EXISTS public."SeoPage" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     slug TEXT NOT NULL UNIQUE,
-    "gameId" UUID REFERENCES public."Game"(id) ON DELETE CASCADE,
+    "gameId" TEXT REFERENCES public."Game"(id) ON DELETE CASCADE,
     modifier TEXT,
     "customTitle" TEXT,
     "customDescription" TEXT,
@@ -255,7 +255,7 @@ CREATE TRIGGER on_auth_user_created
 -- 14. Comments Table
 CREATE TABLE IF NOT EXISTS public."Comment" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    "gameId" UUID NOT NULL REFERENCES public."Game"(id) ON DELETE CASCADE,
+    "gameId" TEXT NOT NULL REFERENCES public."Game"(id) ON DELETE CASCADE,
     "userId" UUID NOT NULL REFERENCES public."Profile"(id) ON DELETE CASCADE,
     "parentId" UUID REFERENCES public."Comment"(id) ON DELETE CASCADE,
     content TEXT NOT NULL,

@@ -200,17 +200,17 @@ export function HomeTabsSection() {
         {/* Tab Navigation Arrows */}
         <button 
           onClick={() => scrollTabs('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-full bg-gradient-to-r from-black/80 to-transparent flex items-center justify-start pl-1 text-white/40 hover:text-neon-cyan transition-all opacity-0 group-hover/tabs-header:opacity-100 z-10 md:hidden"
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-full bg-gradient-to-r from-black/80 to-transparent flex items-center justify-start pl-1 text-white/40 hover:text-neon-cyan transition-all opacity-0 group-hover/tabs-header:opacity-100 z-10"
           aria-label="Scroll Tabs Left"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-5 h-5" />
         </button>
         <button 
           onClick={() => scrollTabs('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-full bg-gradient-to-l from-black/80 to-transparent flex items-center justify-end pr-1 text-white/40 hover:text-neon-cyan transition-all opacity-0 group-hover/tabs-header:opacity-100 z-10 md:hidden"
+          className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-full bg-gradient-to-l from-black/80 to-transparent flex items-center justify-end pr-1 text-white/40 hover:text-neon-cyan transition-all opacity-0 group-hover/tabs-header:opacity-100 z-10"
           aria-label="Scroll Tabs Right"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-5 h-5" />
         </button>
       </div>
 

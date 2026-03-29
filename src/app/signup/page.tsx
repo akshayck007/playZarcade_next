@@ -11,9 +11,6 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default function SignupPage() {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,33 +25,6 @@ export default function SignupPage() {
     };
     checkUser();
   }, [router]);
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: username,
-          }
-        }
-      });
-
-      if (error) throw error;
-      
-      alert("Check your email for the confirmation link!");
-      router.push('/login');
-    } catch (err: any) {
-      setError(err.message || "Failed to create account");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
