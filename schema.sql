@@ -40,10 +40,19 @@ CREATE TABLE IF NOT EXISTS public."Settings" (
     id TEXT PRIMARY KEY, -- usually 'global'
     "siteName" TEXT DEFAULT 'PlayZ Arcade',
     "defaultTheme" TEXT DEFAULT 'dark',
+    "theme" TEXT DEFAULT 'dark',
     "retroEnabled" BOOLEAN DEFAULT true,
     "trendingMode" TEXT DEFAULT 'trending',
+    "featuredMode" TEXT DEFAULT 'manual',
     "autoBoostTrending" BOOLEAN DEFAULT true,
     "autoCreateShadowGames" BOOLEAN DEFAULT false,
+    "maintenanceMode" BOOLEAN DEFAULT false,
+    "publicRegistration" BOOLEAN DEFAULT true,
+    "adsenseId" TEXT,
+    "adsTxt" TEXT,
+    "googleVerification" TEXT,
+    "faviconUrl" TEXT,
+    "logoUrl" TEXT,
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -185,13 +194,19 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('roms', 'roms', true)
 ON CONFLICT (id) DO NOTHING;
 
+-- Create the assets bucket
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('assets', 'assets', true)
+ON CONFLICT (id) DO NOTHING;
+
 -- Storage Policies for 'roms' bucket
--- Allow anyone to read files
 CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'roms');
-
--- Allow anyone to upload files (Required for the Admin panel to work with the anon key)
 CREATE POLICY "Public Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'roms');
-
--- Allow anyone to update/delete (Optional, but useful for management)
 CREATE POLICY "Public Update" ON storage.objects FOR UPDATE USING (bucket_id = 'roms');
 CREATE POLICY "Public Delete" ON storage.objects FOR DELETE USING (bucket_id = 'roms');
+
+-- Storage Policies for 'assets' bucket
+CREATE POLICY "Public Access Assets" ON storage.objects FOR SELECT USING (bucket_id = 'assets');
+CREATE POLICY "Public Upload Assets" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'assets');
+CREATE POLICY "Public Update Assets" ON storage.objects FOR UPDATE USING (bucket_id = 'assets');
+CREATE POLICY "Public Delete Assets" ON storage.objects FOR DELETE USING (bucket_id = 'assets');

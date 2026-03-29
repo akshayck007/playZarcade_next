@@ -87,13 +87,13 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     icons: {
       icon: [
-        { url: "/favicon.ico" },
-        { url: "/favicon.png", type: "image/png" },
-        { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+        { url: settings?.faviconUrl || "/favicon.ico" },
+        { url: settings?.faviconUrl || "/favicon.png", type: "image/png" },
+        { url: settings?.faviconUrl || "/icon-192.png", sizes: "192x192", type: "image/png" },
       ],
       apple: [
-        { url: "/icon-192.png" },
-        { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+        { url: settings?.faviconUrl || "/icon-192.png" },
+        { url: settings?.faviconUrl || "/icon-512.png", sizes: "512x512", type: "image/png" },
       ],
     },
     verification: {
@@ -180,7 +180,11 @@ export default async function RootLayout({
         <ThemeProvider>
           <SyncManager />
           <PwaHandler />
-          <Navbar categories={categories} retroEnabled={settings?.retroEnabled ?? true} />
+          <Navbar 
+            categories={categories} 
+            retroEnabled={settings?.retroEnabled ?? true} 
+            logoUrl={settings?.logoUrl}
+          />
           <LiveActivityTicker />
 
           <main className="max-w-7xl mx-auto px-6 py-8 relative z-10">

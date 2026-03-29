@@ -21,9 +21,10 @@ interface Category {
 interface NavbarProps {
   categories: Category[];
   retroEnabled?: boolean;
+  logoUrl?: string;
 }
 
-export function Navbar({ categories, retroEnabled = true }: NavbarProps) {
+export function Navbar({ categories, retroEnabled = true, logoUrl }: NavbarProps) {
   const supabase = createClientComponentClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGenresOpen, setIsGenresOpen] = useState(false);
@@ -104,8 +105,22 @@ export function Navbar({ categories, retroEnabled = true }: NavbarProps) {
     <header className="sticky top-0 z-50 glass border-b border-white/10 px-6 py-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-8">
-          <Link href="/" className="text-2xl font-black tracking-tighter uppercase italic cyber-text-glow text-neon-cyan">
-            PlayZ<span className="text-white italic">Arcade</span>
+          <Link href="/" className="flex items-center gap-3 group">
+            {logoUrl ? (
+              <div className="relative w-10 h-10 shrink-0">
+                <Image 
+                  src={logoUrl} 
+                  alt="Logo" 
+                  fill 
+                  className="object-contain"
+                  referrerPolicy="no-referrer"
+                  unoptimized
+                />
+              </div>
+            ) : null}
+            <span className="text-2xl font-black tracking-tighter uppercase italic cyber-text-glow text-neon-cyan">
+              PlayZ<span className="text-white italic">Arcade</span>
+            </span>
           </Link>
           
           <nav className="hidden lg:flex items-center gap-6 text-xs font-black uppercase tracking-widest text-white/60">

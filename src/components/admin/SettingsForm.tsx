@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { Save, Globe, Shield, Code, Database } from "lucide-react";
+import { Save, Globe, Shield, Code, Database, Image as ImageIcon, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 
@@ -12,7 +12,74 @@ interface SettingsFormProps {
 export function SettingsForm({ initialSettings }: SettingsFormProps) {
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'faviconUrl' | 'logoUrl') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${field}-${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('assets')
+        .getPublicUrl(filePath);
+
+      setSettings({ ...settings, [field]: publicUrl });
+    } catch (err: any) {
+      console.error(err);
+      alert('Error uploading file: ' + err.message);
+    }
+  };
+
+  const generateAIIcon = async () => {
+    setGenerating(true);
+    try {
+      const response = await fetch('/api/admin/generate-icon', {
+        method: 'POST',
+      });
+      const data = await response.json();
+      
+      if (!data.success) throw new Error(data.error);
+
+      // Convert base64 to blob
+      const byteCharacters = atob(data.base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'image/png' });
+
+      const fileName = `favicon-ai-${Date.now()}.png`;
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(fileName, blob);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('assets')
+        .getPublicUrl(fileName);
+
+      setSettings({ ...settings, faviconUrl: publicUrl });
+      setMessage({ type: 'success', text: 'AI Icon generated and saved!' });
+    } catch (err: any) {
+      console.error(err);
+      setMessage({ type: 'error', text: 'AI Generation failed: ' + err.message });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -89,6 +156,74 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                   <option value="light">Light Mode</option>
                   <option value="system">System Preference</option>
                 </select>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                  <ImageIcon className="w-3 h-3" />
+                  Site Logo
+                </label>
+                <div className="flex items-center gap-4">
+                  {settings?.logoUrl && (
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 border border-white/10 flex-shrink-0">
+                      <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                    </div>
+                  )}
+                  <div className="flex-grow">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, 'logoUrl')}
+                      className="hidden" 
+                      id="logo-upload"
+                    />
+                    <label 
+                      htmlFor="logo-upload"
+                      className="block w-full glass p-3 rounded-xl text-xs font-bold text-center cursor-pointer hover:bg-white/5 transition-colors"
+                    >
+                      {settings?.logoUrl ? 'Change Logo' : 'Upload Logo'}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                  <Sparkles className="w-3 h-3 text-emerald-500" />
+                  Favicon (AI Generated or Upload)
+                </label>
+                <div className="flex items-center gap-4">
+                  {settings?.faviconUrl && (
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 border border-white/10 flex-shrink-0">
+                      <img src={settings.faviconUrl} alt="Favicon" className="w-full h-full object-contain" />
+                    </div>
+                  )}
+                  <div className="flex-grow flex gap-2">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, 'faviconUrl')}
+                      className="hidden" 
+                      id="favicon-upload"
+                    />
+                    <label 
+                      htmlFor="favicon-upload"
+                      className="flex-grow glass p-3 rounded-xl text-xs font-bold text-center cursor-pointer hover:bg-white/5 transition-colors"
+                    >
+                      Upload
+                    </label>
+                    <button
+                      onClick={generateAIIcon}
+                      disabled={generating}
+                      className="glass p-3 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-emerald-500/10 transition-colors disabled:opacity-50"
+                    >
+                      {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-emerald-500" />}
+                      AI Gen
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
