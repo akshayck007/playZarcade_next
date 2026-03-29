@@ -20,7 +20,15 @@ export function GamePlayer({ gameId, iframeUrl, title, thumbnail }: GamePlayerPr
   const [iframeError, setIframeError] = useState(false);
 
   const logActivity = useCallback(async () => {
-    const locations = ['New York', 'London', 'Tokyo', 'Paris', 'Berlin', 'Sydney', 'Mumbai', 'São Paulo', 'Toronto', 'Dubai'];
+    const locations = [
+      'New York', 'London', 'Tokyo', 'Paris', 'Berlin', 'Sydney', 'Mumbai', 'São Paulo', 'Toronto', 'Dubai',
+      'Singapore', 'Hong Kong', 'Seoul', 'Amsterdam', 'Madrid', 'Mexico City', 'Chicago', 'Los Angeles', 'San Francisco',
+      'Seattle', 'Austin', 'Miami', 'Atlanta', 'Boston', 'Vancouver', 'Montreal', 'Dublin', 'Stockholm', 'Oslo',
+      'Copenhagen', 'Helsinki', 'Vienna', 'Zurich', 'Milan', 'Rome', 'Barcelona', 'Lisbon', 'Prague', 'Warsaw',
+      'Budapest', 'Athens', 'Istanbul', 'Tel Aviv', 'Bangkok', 'Jakarta', 'Kuala Lumpur', 'Manila', 'Ho Chi Minh City',
+      'Taipei', 'Melbourne', 'Brisbane', 'Perth', 'Auckland', 'Wellington', 'Johannesburg', 'Cape Town', 'Nairobi',
+      'Lagos', 'Cairo', 'Casablanca', 'Buenos Aires', 'Santiago', 'Lima', 'Bogota', 'Rio de Janeiro'
+    ];
     const randomLocation = locations[Math.floor(Math.random() * locations.length)];
     
     // 1. Log Live Activity

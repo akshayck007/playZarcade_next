@@ -17,6 +17,8 @@ export function LiveActivityTicker() {
   const [isDismissed, setIsDismissed] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const [onlineCount, setOnlineCount] = useState(0);
+
   useEffect(() => {
     // Check if user has dismissed the ticker
     const dismissed = localStorage.getItem('playz_live_activity_dismissed');
@@ -50,6 +52,17 @@ export function LiveActivityTicker() {
         .slice(0, 5);
 
       setActivities(filtered);
+
+      // 4. Calculate "Realistic" Online Count
+      // We'll count activities in the last 15 minutes as a proxy for active users
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from('LiveActivity')
+        .select('*', { count: 'exact', head: true })
+        .gt('timestamp', fifteenMinutesAgo);
+      
+      // Add a base "organic" feel (e.g., 42 + real count * 3)
+      setOnlineCount(42 + (count || 0) * 3);
     }
 
     fetchActivities();
@@ -108,7 +121,7 @@ export function LiveActivityTicker() {
           </div>
           <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/20 pr-6">
             <Users className="w-3 h-3" />
-            {Math.floor(Math.random() * 500) + 1200} Online
+            {onlineCount.toLocaleString()} Online
           </div>
         </div>
 

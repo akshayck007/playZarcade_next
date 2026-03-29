@@ -19,7 +19,7 @@ export function CategoryTabs({ activeTab, onTabChange, onOpenMore }: CategoryTab
   ];
 
   return (
-    <div className="flex items-center justify-between gap-4 overflow-x-auto pb-2 no-scrollbar">
+    <div className="flex items-center justify-between gap-4 overflow-x-auto pb-2 scrollbar-hide">
       <div className="flex items-center gap-2">
         {tabs.map((tab) => (
           <button
