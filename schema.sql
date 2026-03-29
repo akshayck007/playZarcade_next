@@ -210,3 +210,80 @@ CREATE POLICY "Public Access Assets" ON storage.objects FOR SELECT USING (bucket
 CREATE POLICY "Public Upload Assets" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'assets');
 CREATE POLICY "Public Update Assets" ON storage.objects FOR UPDATE USING (bucket_id = 'assets');
 CREATE POLICY "Public Delete Assets" ON storage.objects FOR DELETE USING (bucket_id = 'assets');
+
+-- 13. Profiles Table
+CREATE TABLE IF NOT EXISTS public."Profile" (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT,
+    "fullName" TEXT,
+    "avatarUrl" TEXT,
+    role TEXT DEFAULT 'user',
+    "xp" INTEGER DEFAULT 0,
+    "level" INTEGER DEFAULT 1,
+    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable RLS
+ALTER TABLE public."Profile" ENABLE ROW LEVEL SECURITY;
+
+-- Policies for Profile
+CREATE POLICY "Anyone can view profiles" ON public."Profile" FOR SELECT USING (true);
+CREATE POLICY "Users can update their own profile" ON public."Profile" FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Allow all access for anon on Profile" ON public."Profile" FOR ALL USING (true) WITH CHECK (true);
+
+-- Trigger to create profile on signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $
+BEGIN
+  INSERT INTO public."Profile" (id, email, "fullName", "avatarUrl")
+  VALUES (
+    new.id,
+    new.email,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'avatar_url'
+  );
+  RETURN new;
+END;
+$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Drop trigger if exists and recreate
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 14. Comments Table
+CREATE TABLE IF NOT EXISTS public."Comment" (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    "gameId" UUID NOT NULL REFERENCES public."Game"(id) ON DELETE CASCADE,
+    "userId" UUID NOT NULL REFERENCES public."Profile"(id) ON DELETE CASCADE,
+    "parentId" UUID REFERENCES public."Comment"(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    "isLovedByAdmin" BOOLEAN DEFAULT false,
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 15. Comment Interactions Table (Likes/Dislikes)
+CREATE TABLE IF NOT EXISTS public."CommentInteraction" (
+    "commentId" UUID NOT NULL REFERENCES public."Comment"(id) ON DELETE CASCADE,
+    "userId" UUID NOT NULL REFERENCES public."Profile"(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('like', 'dislike')),
+    PRIMARY KEY ("commentId", "userId")
+);
+
+-- Enable RLS
+ALTER TABLE public."Comment" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."CommentInteraction" ENABLE ROW LEVEL SECURITY;
+
+-- Policies for Comments
+CREATE POLICY "Anyone can view comments" ON public."Comment" FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can post comments" ON public."Comment" FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Users can update their own comments" ON public."Comment" FOR UPDATE USING (auth.uid() = "userId");
+CREATE POLICY "Users can delete their own comments" ON public."Comment" FOR DELETE USING (auth.uid() = "userId");
+CREATE POLICY "Allow all access for anon on Comment" ON public."Comment" FOR ALL USING (true) WITH CHECK (true);
+
+-- Policies for Interactions
+CREATE POLICY "Anyone can view interactions" ON public."CommentInteraction" FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can interact" ON public."CommentInteraction" FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow all access for anon on CommentInteraction" ON public."CommentInteraction" FOR ALL USING (true) WITH CHECK (true);

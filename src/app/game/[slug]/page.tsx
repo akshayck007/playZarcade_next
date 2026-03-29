@@ -8,6 +8,7 @@ import { GamePlayer } from "@/components/GamePlayer";
 import RetroPlayer from "@/components/RetroPlayer";
 import { Play, Maximize2, Share2, Heart, MessageSquare, Info, Keyboard, HelpCircle, TrendingUp, Swords } from "lucide-react";
 import Markdown from "@/components/Markdown";
+import { CommentSection } from "@/components/CommentSection";
 
 // Using Edge Runtime for Cloudflare Pages
 export const runtime = "edge";
@@ -15,7 +16,7 @@ export const revalidate = 3600; // Revalidate every hour
 
 interface GamePageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ challenge?: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: GamePageProps) {
@@ -58,8 +59,8 @@ export async function generateMetadata({ params }: GamePageProps) {
 
 export default async function GamePage({ params, searchParams }: GamePageProps) {
   const { slug } = await params;
-  const { challenge } = await searchParams;
-  const isChallenge = challenge === 'true';
+  const resolvedSearchParams = await searchParams;
+  const isChallenge = resolvedSearchParams.challenge === 'true';
   const baseUrl = process.env.APP_URL?.replace(/\/$/, '') || 'https://playzarcade.com';
   
   const { data: game, error } = await supabase
@@ -259,6 +260,9 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
               )}
             </div>
           </div>
+
+          {/* Comments Section */}
+          <CommentSection gameId={game.id} />
         </div>
 
         {/* Sidebar - Ads & Related */}
