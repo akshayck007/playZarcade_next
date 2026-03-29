@@ -15,9 +15,17 @@ interface GamePlayerProps {
 
 export function GamePlayer({ gameId, iframeUrl, title, thumbnail }: GamePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [playTime, setPlayTime] = useState(0);
   const [xpGained, setXpGained] = useState<number | null>(null);
   const [iframeError, setIframeError] = useState(false);
+
+  // Force focus on the iframe when the container is clicked
+  const handleFocus = () => {
+    if (iframeRef.current) {
+      iframeRef.current.focus();
+    }
+  };
 
   const logActivity = useCallback(async () => {
     const locations = [
@@ -122,14 +130,17 @@ export function GamePlayer({ gameId, iframeUrl, title, thumbnail }: GamePlayerPr
   return (
     <div 
       ref={containerRef}
-      className="game-container relative aspect-video bg-black rounded-3xl overflow-hidden border border-white/5 shadow-2xl group"
+      onClick={handleFocus}
+      className="game-container relative aspect-video bg-black rounded-3xl overflow-hidden border border-white/5 shadow-2xl group cursor-pointer"
     >
       <iframe 
+        ref={iframeRef}
         src={iframeUrl} 
-        className="w-full h-full border-0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+        className="w-full h-full border-0 focus:outline-none"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen; gamepad; keyboard-map; pointer-lock"
         sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-scripts allow-same-origin"
         allowFullScreen
+        tabIndex={0}
         title={title}
         onError={() => setIframeError(true)}
       />
